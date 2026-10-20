@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>دليل نشر المنظومة على الإنترنت</title>
+<style>
+:root{--ink:#13263a;--muted:#5d6d7e;--line:#dce3ea;--accent:#0b5c8a;--soft:#e3eff7;--bg:#f2f4f6;--warn:#fbf1dd}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,sans-serif;line-height:1.8;font-size:15px}
+main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
+header{background:#0f2236;color:#fff;padding:28px 20px}header div{max-width:860px;margin:0 auto}header h1{margin:0;font-size:24px}header p{margin:4px 0 0;color:#b8c7d6}
+h2{font-size:19px;margin:34px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+code{font-family:Consolas,monospace;direction:ltr;unicode-bidi:embed;background:var(--soft);padding:1px 6px;border-radius:4px}
+.box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:12px 0}.warn{background:var(--warn);border-color:#e9cf98}
+ol li{margin-bottom:8px}table{border-collapse:collapse;width:100%;background:#fff}td,th{border:1px solid var(--line);padding:8px 10px;text-align:right;vertical-align:top}th{background:var(--soft)}
+b.k{background:#0f2236;color:#fff;padding:1px 7px;border-radius:4px;font-weight:500;font-size:13px}
+</style>
+</head>
+<body>
+<header><div><h1>نشر المنظومة على الإنترنت</h1><p>رابط عام يفتح من أي جهاز، ببيانات مشتركة وحسابات للموظفين — مجانًا</p></div></header>
+<main>
+<div class="box">تُنشر المنظومة في جزأين، كلاهما مجاني ويتم من المتصفح دون برامج:
+<ul style="margin:6px 0 0"><li><b>Firebase</b> (من Google): يحفظ البيانات المشتركة وحسابات الدخول.</li><li><b>GitHub Pages</b>: يستضيف صفحة المنظومة ويعطيك الرابط العام.</li></ul>
+الوقت المتوقع: 20 إلى 30 دقيقة. تحتاج حساب Google وحساب GitHub.</div>
+
+<h2>الجزء الأول: إنشاء قاعدة البيانات في Firebase</h2>
+<ol>
+<li>افتح <code>console.firebase.google.com</code> وسجّل الدخول بحساب Google، ثم اضغط <b class="k">Create a project</b> واكتب اسمًا (مثل <code>contracts-system</code>). يمكنك إيقاف Google Analytics، فلا حاجة له.</li>
+<li><b>تفعيل تسجيل الدخول:</b> من القائمة الجانبية <b class="k">Build</b> ← <b class="k">Authentication</b> ← <b class="k">Get started</b> ← تبويب <b class="k">Sign-in method</b> ← اختر <b>Email/Password</b> ← فعّل الخيار الأول (Email/Password) ← <b class="k">Save</b>.</li>
+<li><b>إنشاء قاعدة البيانات:</b> <b class="k">Build</b> ← <b class="k">Firestore Database</b> ← <b class="k">Create database</b> ← اختر موقعًا قريبًا (مثل <code>europe-west</code>) ← اختر <b>Start in production mode</b> ← <b class="k">Create</b>.</li>
+<li><b>قواعد الحماية:</b> في صفحة Firestore افتح تبويب <b class="k">Rules</b>، احذف كل ما فيه، وانسخ مكانه محتوى الملف <code>firestore.rules</code> المرفق كاملًا، ثم <b class="k">Publish</b>.<br><span style="color:var(--muted)">هذه القواعد تمنع أي شخص من قراءة البيانات أو تعديلها ما لم يكن له حساب وصلاحية ممنوحة من المدير.</span></li>
+<li><b>تسجيل نفسك كمدير:</b> في تبويب <b class="k">Data</b> اضغط <b class="k">Start collection</b>:
+ <ul><li>Collection ID: <code>roles</code></li><li>Document ID: <b>بريدك الإلكتروني بأحرف صغيرة</b> (مثل <code>name@gmail.com</code>) — نفس البريد الذي ستسجّل به الدخول في المنظومة لاحقًا.</li><li>أضف حقلين: <code>role</code> = <code>admin</code> (نوع string)، و<code>name</code> = اسمك.</li><li><b class="k">Save</b>.</li></ul></li>
+<li><b>نسخ إعدادات الاتصال:</b> اضغط رمز الترس بجانب <b class="k">Project Overview</b> ← <b class="k">Project settings</b> ← انزل إلى <b>Your apps</b> ← اضغط رمز الويب <code>&lt;/&gt;</code> ← اكتب أي اسم ← <b class="k">Register app</b> (لا تفعّل Hosting).<br>
+ سيظهر كود فيه <code>const firebaseConfig = { apiKey: "...", ... }</code>. افتح الملف <code>firebase-config.js</code> المرفق بمحرر نصوص (Notepad)، وانسخ القيم مكان القيم الموجودة: <code>apiKey</code> و<code>authDomain</code> و<code>projectId</code> و<code>storageBucket</code> و<code>messagingSenderId</code> و<code>appId</code>. احفظ الملف.</li>
+</ol>
+
+<h2>الجزء الثاني: نشر الصفحة على GitHub Pages</h2>
+<ol>
+<li>افتح <code>github.com</code> وسجّل الدخول (أو أنشئ حسابًا مجانيًا)، ثم اضغط <b class="k">+</b> ← <b class="k">New repository</b>. اكتب اسمًا مثل <code>contracts-system</code>، واختر <b>Public</b>، واضغط <b class="k">Create repository</b>.<br><span style="color:var(--muted)">الملفات المنشورة عامة، لكنها لا تحوي أي بيانات؛ البيانات كلها في Firebase ومحمية بالقواعد وكلمات المرور.</span></li>
+<li>اضغط <b class="k">uploading an existing file</b> (أو <b class="k">Add file</b> ← <b class="k">Upload files</b>) واسحب هذه الملفات الثلاثة: <code>index.html</code> و<code>firebase-config.js</code> (بعد تعديله) و<code>.nojekyll</code>، ثم <b class="k">Commit changes</b>.</li>
+<li>افتح <b class="k">Settings</b> (أعلى المستودع) ← من القائمة الجانبية <b class="k">Pages</b> ← تحت <b>Branch</b> اختر <code>main</code> و<code>/ (root)</code> ← <b class="k">Save</b>.</li>
+<li>بعد دقيقة أو دقيقتين يظهر في نفس الصفحة رابط المنظومة بالشكل:<br><code>https://اسم-حسابك.github.io/contracts-system/</code><br>هذا هو الرابط الذي ترسله للموظفين.</li>
+<li><b>خطوة ضرورية:</b> ارجع إلى Firebase ← <b class="k">Authentication</b> ← تبويب <b class="k">Settings</b> ← <b class="k">Authorized domains</b> ← <b class="k">Add domain</b> ← اكتب <code>اسم-حسابك.github.io</code>. بدون هذه الخطوة يرفض Firebase تسجيل الدخول من الرابط.</li>
+</ol>
+
+<h2>الجزء الثالث: أول استخدام</h2>
+<ol>
+<li>افتح الرابط، واضغط <b>أنشئ حسابًا</b>، وسجّل <b>بنفس البريد</b> الذي وضعته في مجموعة <code>roles</code>، مع كلمة مرور (6 أحرف على الأقل).</li>
+<li>ستدخل كمدير، وتظهر لك رسالة «قاعدة البيانات فارغة» مع زر <b>تحميل البيانات الأولية</b>. اضغطه مرة واحدة، فتُحمَّل العقود (39) والكشوفات (393).</li>
+<li><b>إضافة الموظفين:</b> يفتح كل موظف الرابط ويضغط «أنشئ حسابًا» ببريده. ثم تدخل أنت إلى <b>الإعدادات ← المستخدمون والصلاحيات</b>، وتكتب بريده وتختار صلاحيته (محرر / مشاهد) وتضغط حفظ. من تلك اللحظة يستطيع الدخول.</li>
+</ol>
+<table><tr><th>الصلاحية</th><th>ماذا تستطيع</th></tr>
+<tr><td>مدير النظام</td><td>كل شيء، وإدارة المستخدمين، وسجل النشاط.</td></tr>
+<tr><td>محرر</td><td>إضافة وتعديل وحذف العقود والمنشآت والتمديدات والمراسلات، والاستيراد من Excel.</td></tr>
+<tr><td>مشاهد</td><td>الاطلاع والبحث والتصفية وتصدير Excel فقط.</td></tr></table>
+
+<h2>ملاحظات</h2>
+<div class="box warn"><ul style="margin:0">
+<li>الخطة المجانية في Firebase تكفي بكثير لهذا الحجم من البيانات والمستخدمين (50 ألف قراءة يوميًا).</li>
+<li>النسخ الاحتياطي: صدّر «نسخة كاملة» من صفحة الإعدادات دوريًا واحفظها لديك.</li>
+<li>عند تحديث المنظومة لنسخة أحدث، ارفع <code>index.html</code> الجديد فقط إلى GitHub (استبدل القديم). البيانات لا تتأثر.</li>
+<li>إرفاق ملفات PDF داخل بطاقة العقد غير مفعّل في هذه النسخة؛ يمكن كتابة مسار الملف أو رابطه في خانته.</li>
+<li>إذا ظهرت رسالة «هذا النطاق غير مُصرّح به»: لم تُنفَّذ الخطوة 5 من الجزء الثاني.</li>
+<li>إذا ظهرت «لم تُمنح له صلاحية بعد» لك أنت: تأكد أن اسم المستند في <code>roles</code> يطابق بريدك تمامًا بأحرف صغيرة.</li>
+</ul></div>
+</main>
+</body>
+</html>
