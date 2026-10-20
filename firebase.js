@@ -8,7 +8,7 @@ let ME=null,FB=null,FS=null,AUTH=null,readyResolve;const ready=new Promise(r=>re
 const cfg=window.FIREBASE_CONFIG;
 function screen(html){let o=document.getElementById('login');if(!o){o=document.createElement('div');o.id='login';document.body.appendChild(o)}o.hidden=false;o.innerHTML=html;return o}
 function hide(){const o=document.getElementById('login');if(o)o.hidden=true}
-const BRAND=`<div class="lg-brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2c2.6 3.6 5 6.6 5 10a5 5 0 0 1-10 0c0-2 .9-3.6 2.2-5.1.2 1.6 1 2.7 2.3 3.2C11 7.8 11.2 4.9 12 2Z" fill="#f08350"/><path d="M12 13.5c1 1.1 1.8 2 1.8 3.1a1.8 1.8 0 0 1-3.6 0c0-1.1.8-2 1.8-3.1Z" fill="#ffd9a8"/></svg></div><div><h1>منظومة العقود والاحتياجات</h1><small>وزارة الصناعة والمعادن · شركة البريقة لتسويق النفط</small></div></div>`;
+const BRAND=`<div class="lg-brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2c2.6 3.6 5 6.6 5 10a5 5 0 0 1-10 0c0-2 .9-3.6 2.2-5.1.2 1.6 1 2.7 2.3 3.2C11 7.8 11.2 4.9 12 2Z" fill="#f08350"/><path d="M12 13.5c1 1.1 1.8 2 1.8 3.1a1.8 1.8 0 0 1-3.6 0c0-1.1.8-2 1.8-3.1Z" fill="#ffd9a8"/></svg></div><div><h1>منظومة الإدارة العامة للمبيعات والشؤون التجارية</h1><small>وزارة الصناعة والمعادن · شركة البريقة لتسويق النفط</small></div></div>`;
 if(!cfg||!cfg.projectId||/YOUR_/.test(cfg.apiKey||'')){
   screen(`<div class="lg-card">${BRAND}<p style="margin:0">لم يُضبط الاتصال بقاعدة البيانات بعد.</p><p class="muted" style="margin:0;font-size:13px">افتح الملف <b dir="ltr">firebase-config.js</b> والصق فيه إعدادات مشروع Firebase كما في دليل التشغيل، ثم ارفع الملف من جديد.</p></div>`);
   window.claude={use:async()=>null};return;
