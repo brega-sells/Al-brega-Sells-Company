@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>دليل تشغيل منظومة العقود والاحتياجات</title>
+<style>
+:root{--ink:#13263a;--muted:#5d6d7e;--line:#dce3ea;--accent:#0b5c8a;--soft:#e3eff7;--bg:#f2f4f6;--warn:#fbf1dd}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,"IBM Plex Sans Arabic",sans-serif;line-height:1.8;font-size:15px}
+main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
+header{background:#0f2236;color:#fff;padding:28px 20px}
+header div{max-width:860px;margin:0 auto}
+header h1{margin:0;font-size:24px}
+header p{margin:4px 0 0;color:#b8c7d6}
+h2{font-size:19px;margin:34px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+h3{font-size:16px;margin:20px 0 6px}
+code,pre{font-family:Consolas,"Courier New",monospace;direction:ltr;unicode-bidi:embed}
+pre{background:#0f2236;color:#e3eaf1;padding:12px 16px;border-radius:8px;overflow-x:auto;text-align:left;font-size:14px}
+code{background:var(--soft);padding:1px 6px;border-radius:4px}
+.box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:12px 0}
+.warn{background:var(--warn);border-color:#e9cf98}
+table{border-collapse:collapse;width:100%;background:#fff}
+td,th{border:1px solid var(--line);padding:8px 10px;text-align:right;vertical-align:top}
+th{background:var(--soft)}
+ol li,ul li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<header><div><h1>دليل تشغيل منظومة العقود والاحتياجات</h1><p>وزارة الصناعة والمعادن · شركة البريقة لتسويق النفط — نسخة الخادم الداخلي</p></div></header>
+<main>
+
+<div class="box">
+<b>فكرة المنظومة باختصار:</b> تُشغَّل المنظومة مرة واحدة على جهاز خادم داخل الشبكة. بعدها يفتحها جميع الموظفين من متصفح الإنترنت العادي (Chrome أو Edge) على أجهزتهم، كلٌّ باسم مستخدم وكلمة مرور خاصة به. البيانات محفوظة في مكان واحد على الخادم، وأي تعديل يظهر عند الجميع خلال ثوانٍ. لا تحتاج أجهزة الموظفين إلى تثبيت أي برنامج.
+</div>
+
+<h2>1. المتطلبات</h2>
+<ul>
+<li>جهاز يعمل باستمرار داخل الشبكة (خادم Windows أو Linux، أو حتى جهاز مكتبي مخصص).</li>
+<li>برنامج <b>Python</b> الإصدار 3.8 أو أحدث. لا تحتاج المنظومة أي مكتبات إضافية.<br>
+على Windows: نزّله من <code>python.org</code> وفعّل خيار <b>Add Python to PATH</b> أثناء التثبيت. على Linux يكون مثبتًا غالبًا.</li>
+<li>لا يحتاج التشغيل إلى اتصال بالإنترنت. (إن توفّر الإنترنت تظهر الخطوط العربية بشكل أجمل فقط.)</li>
+</ul>
+
+<h2>2. التشغيل لأول مرة</h2>
+<ol>
+<li>فكّ ضغط الملف في مجلد ثابت على الخادم، مثل <code>C:\ContractsSystem</code> أو <code>/opt/contracts-system</code>.</li>
+<li>شغّل المنظومة:
+ <ul><li>على Windows: انقر نقرًا مزدوجًا على <code>Start-Windows.bat</code>.</li>
+ <li>على Linux: <code>./start-linux.sh</code></li></ul></li>
+<li>في أول تشغيل ستظهر رسالة فيها <b>كلمة مرور المدير</b> (اسم المستخدم <code>admin</code>)، وتُحفظ أيضًا في الملف <code>data/كلمة-مرور-المدير-الأولية.txt</code>.</li>
+<li>تظهر أيضًا عناوين الوصول، مثل: <code>http://192.168.1.20:8080</code>. هذا هو الرابط الذي يفتحه الموظفون.</li>
+<li>افتح الرابط وادخل بحساب المدير، ثم غيّر كلمة المرور من صفحة <b>«الإعدادات والاستيراد» ← «حسابي»</b>، واحذف ملف كلمة المرور الأولية.</li>
+</ol>
+<div class="box">تأتي المنظومة محمّلة مسبقًا بكل البيانات: 39 عقدًا من سجل عقود البريقة، و393 منشأة من كشوفات الوزارة في 5 دفعات.</div>
+
+<h3>السماح للأجهزة الأخرى بالوصول (جدار الحماية)</h3>
+<p>على Windows Server، افتح «موجّه الأوامر» كمسؤول ونفّذ:</p>
+<pre>netsh advfirewall firewall add rule name="Contracts System" dir=in action=allow protocol=TCP localport=8080</pre>
+<p>لتغيير رقم المنفذ: <code>Start-Windows.bat --port 80</code> أو <code>python server.py --port 80</code>.</p>
+
+<h2>3. إضافة الموظفين</h2>
+<ol>
+<li>ادخل بحساب المدير، ثم افتح <b>«الإعدادات والاستيراد»</b>.</li>
+<li>في قسم <b>«المستخدمون والصلاحيات»</b>: اكتب الاسم الكامل، واسم المستخدم (بالإنجليزية، مثل <code>ahmed.ali</code>)، واختر الصلاحية، واضغط «توليد كلمة مرور» ثم «حفظ المستخدم».</li>
+<li>أبلغ الموظف بالرابط واسم المستخدم وكلمة المرور. يستطيع تغيير كلمة المرور بنفسه من «حسابي».</li>
+</ol>
+<table>
+<tr><th>الصلاحية</th><th>ماذا تستطيع</th></tr>
+<tr><td>مدير النظام</td><td>كل شيء، بما فيه إدارة المستخدمين وسجل النشاط والنسخ الاحتياطي.</td></tr>
+<tr><td>محرر</td><td>إضافة العقود والمنشآت والتمديدات والمراسلات وتعديلها وحذفها، ورفع ملفات PDF، والاستيراد من Excel.</td></tr>
+<tr><td>مشاهد</td><td>الاطلاع والبحث والتصفية وتصدير Excel فقط، دون أي تعديل.</td></tr>
+</table>
+<p>كل عملية إضافة أو تعديل أو حذف تُسجَّل في <b>«سجل النشاط»</b> باسم المستخدم ووقتها.</p>
+
+<h2>4. التشغيل التلقائي مع الخادم</h2>
+<h3>على Windows</h3>
+<ol>
+<li>افتح <b>Task Scheduler</b> (برنامج جدولة المهام) ← <b>Create Task</b>.</li>
+<li>تبويب General: اختر <b>Run whether user is logged on or not</b>.</li>
+<li>تبويب Triggers: <b>At startup</b>.</li>
+<li>تبويب Actions: البرنامج <code>python</code>، والوسائط <code>server.py</code>، و<b>Start in</b> هو مجلد المنظومة (مثل <code>C:\ContractsSystem</code>).</li>
+<li>تبويب Settings: ألغِ خيار «Stop the task if it runs longer than».</li>
+</ol>
+<h3>على Linux</h3>
+<p>استخدم الملف المرفق <code>contracts-system.service</code> (عدّل المسار واسم المستخدم داخله):</p>
+<pre>sudo cp contracts-system.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now contracts-system</pre>
+
+<h2>5. النسخ الاحتياطي</h2>
+<ul>
+<li>كل البيانات في المجلد <code>data</code>: قاعدة البيانات <code>system.db</code> وملفات PDF المرفوعة في <code>data/files</code>.</li>
+<li>تحفظ المنظومة نسخة احتياطية تلقائية يوميًا في <code>data/backups</code>، وتحتفظ بآخر 30 يومًا.</li>
+<li>يستطيع المدير تنزيل نسخة فورية من «الإعدادات ← النسخ الاحتياطي».</li>
+<li><b>يُنصح بشدة</b> بنسخ مجلد <code>data</code> كاملًا بشكل دوري إلى جهاز آخر أو وحدة تخزين خارجية.</li>
+</ul>
+<p><b>للاستعادة:</b> أوقف المنظومة، ثم ضع ملف النسخة الاحتياطية مكان <code>data/system.db</code> بنفس الاسم، ثم شغّلها من جديد.</p>
+
+<h2>6. التحديث إلى نسخة أحدث</h2>
+<p>أوقف المنظومة، ثم استبدل كل الملفات <b>ما عدا مجلد <code>data</code></b>، ثم شغّلها. تبقى البيانات والمستخدمون كما هم.</p>
+
+<h2>7. نسيان كلمة مرور المدير</h2>
+<pre>python server.py --reset-admin</pre>
+<p>تظهر كلمة مرور جديدة للمستخدم <code>admin</code>.</p>
+
+<h2>8. ملاحظات الأمان</h2>
+<div class="box warn">
+<ul style="margin:0">
+<li>المنظومة مصممة للعمل <b>داخل الشبكة الداخلية فقط</b>. لا تفتح منفذها على الإنترنت مباشرة.</li>
+<li>إذا احتجتم الوصول من خارج المبنى، فليكن عبر VPN المؤسسة، أو خلف خادم وسيط (مثل IIS أو Nginx) بشهادة HTTPS.</li>
+<li>كلمات المرور محفوظة مشفّرة (PBKDF2)، وتنتهي جلسة الدخول بعد 12 ساعة.</li>
+<li>احذف حسابات الموظفين الذين يغادرون العمل فورًا من قسم المستخدمين.</li>
+</ul>
+</div>
+
+<h2>9. محتويات الحزمة</h2>
+<table>
+<tr><td><code>server.py</code></td><td>برنامج الخادم.</td></tr>
+<tr><td><code>static/</code></td><td>واجهة المنظومة التي تظهر في المتصفح.</td></tr>
+<tr><td><code>seed/initial-data.json</code></td><td>البيانات الأولية: العقود والكشوفات. تُحمَّل تلقائيًا في أول تشغيل فقط.</td></tr>
+<tr><td><code>Start-Windows.bat</code> / <code>start-linux.sh</code></td><td>ملفات التشغيل.</td></tr>
+<tr><td><code>contracts-system.service</code></td><td>نموذج خدمة للتشغيل التلقائي على Linux.</td></tr>
+<tr><td><code>data/</code></td><td>يُنشأ تلقائيًا عند أول تشغيل، وفيه كل البيانات. لا تحذفه.</td></tr>
+</table>
+</main>
+</body>
+</html>
