@@ -177,13 +177,44 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 .p-ok{background:var(--ok-soft);color:var(--ok)}.p-warn{background:var(--warn-soft);color:var(--warn)}.p-crit{background:var(--crit-soft);color:var(--crit)}.p-info{background:var(--info-soft);color:var(--info)}.p-neutral{background:var(--neutral-soft);color:var(--neutral)}.p-fl{background:var(--flame-soft);color:var(--flame)}
 .tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:5px;background:var(--line2);color:var(--muted)}
 .tag.link{background:var(--accent-soft);color:var(--accent)}
-.org details>summary{list-style:none;cursor:pointer}.org details>summary::-webkit-details-marker{display:none}
-.org-card{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);margin:4px 0}
-.org details>summary .org-card::before{content:'▸';color:var(--muted);font-size:12px}.org details[open]>summary .org-card::before{content:'▾'}
-.org details>summary:hover .org-card{border-color:var(--accent)}.org-head{color:var(--muted);font-size:13px}
 .org-kpis{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:14px}.org-kpis .kpi{padding:10px 12px}.org-kpis .kpi .v{font-size:22px}
-@media (max-width:600px){.org-kpis{grid-template-columns:repeat(3,1fr)!important}.org-kids{margin-inline-start:6px!important;padding-inline-start:8px!important}}
-.org-kids{margin-inline-start:18px;padding-inline-start:12px;border-inline-start:2px solid var(--line2)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;background:var(--surface);padding:0 14px;height:36px;cursor:pointer;color:var(--muted);font:inherit}.seg button[aria-selected="true"]{background:var(--accent);color:#fff}
+.org{--oc-line:var(--line);--c-gm:var(--side);--c-dept:var(--accent);--c-coord:var(--ok);--c-office:var(--warn);--c-section:var(--info);--c-unit:var(--neutral);--c-super:var(--neutral)}
+.org.chart{padding:12px 0 18px;background-color:var(--surface);background-image:radial-gradient(circle,var(--line2) 1px,transparent 1.2px);background-size:18px 18px}
+.oc-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:0 16px 8px;font-size:13px;color:var(--muted)}.oc-crumbs button{border:0;background:none;color:var(--accent);cursor:pointer;font:inherit;padding:0}.oc-crumbs button:hover{text-decoration:underline}.oc-crumbs b{color:var(--ink)}
+.oc-scroll{overflow-x:auto;padding:4px 12px 8px}
+.oc,.oc ul{display:flex;justify-content:center;margin:0;padding:0;list-style:none}
+.oc{min-width:max-content;margin-inline:auto}
+.oc ul{position:relative;padding-top:22px}
+.oc li{position:relative;display:flex;flex-direction:column;align-items:center;padding:22px 7px 0}
+.oc>li{padding-top:0}
+.oc li::before,.oc li::after{content:"";position:absolute;top:0;width:50%;height:22px;border-top:2px solid var(--oc-line)}
+.oc li::before{right:50%}.oc li::after{left:50%;border-left:2px solid var(--oc-line)}
+.oc li:last-child::before{border-top:0}.oc li:first-child::after{border-top:0}
+.oc>li::before,.oc>li::after{display:none}
+.oc ul::before{content:"";position:absolute;top:0;left:50%;height:22px;border-left:2px solid var(--oc-line)}
+.oc-card{position:relative;z-index:1;width:184px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c,var(--neutral));border-radius:10px;padding:9px 10px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;box-shadow:0 1px 2px rgba(15,23,42,.06);transition:box-shadow .15s,transform .15s}
+.oc-card.has{cursor:pointer}.oc-card.has:hover,.oc-card.has:focus-visible{box-shadow:0 6px 18px rgba(15,23,42,.14);transform:translateY(-1px);outline:none}
+.oc-type{font-size:10.5px;font-weight:600;letter-spacing:.2px;color:var(--c,var(--muted));background:color-mix(in srgb,var(--c,var(--muted)) 12%,transparent);border-radius:999px;padding:1px 8px}
+.oc-title{font-size:13px;line-height:1.45;font-weight:700;color:var(--ink)}
+.oc-name{font-size:12.5px;color:var(--ink);opacity:.85}.oc-no{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.oc-vac{color:var(--warn);font-weight:600}
+.oc-card.vac{border-style:dashed;border-top-style:solid;background:repeating-linear-gradient(135deg,var(--surface),var(--surface) 8px,var(--warn-soft) 8px,var(--warn-soft) 9px)}
+.oc-foot{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:3px}
+.oc-more{font-size:11px;color:var(--accent);font-weight:600}
+.oc-card.root{width:280px;background:var(--side);border-color:var(--side);border-top-color:var(--flame);padding:12px 14px}
+.oc-card.root .oc-title{font-size:15px;color:#fff}.oc-card.root .oc-name{color:#fff;opacity:.92;font-size:13.5px}.oc-card.root .oc-no{color:var(--side-muted)}.oc-card.root .oc-type{color:#fff;background:rgba(255,255,255,.14)}.oc-card.root .oc-more{color:var(--side-muted)}
+.oc-card.sm{width:170px;padding:6px 8px;border-top-width:3px;gap:1px}.oc-card.sm .oc-title{font-size:12px}.oc-card.sm .oc-name{font-size:11.5px}.oc-card.sm .oc-type{font-size:10px}
+.oc-stack{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:12px}
+.oc-stack::before{content:"";position:absolute;top:0;bottom:14px;left:50%;border-left:2px dashed var(--oc-line)}
+.t-board,.t-gm{--c:var(--c-gm)}.t-dept{--c:var(--c-dept)}.t-coord{--c:var(--c-coord)}.t-office{--c:var(--c-office)}.t-section{--c:var(--c-section)}.t-unit,.t-super{--c:var(--c-unit)}
+.oc-legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;font-size:12.5px;color:var(--muted);align-items:center}.oc-legend>span{display:inline-flex;align-items:center;gap:6px}
+.oc-dot{width:12px;height:12px;border-radius:3px;background:var(--c);display:inline-block}.oc-dot.vac{background:var(--warn-soft);border:1px dashed var(--warn)}
+.ol-row{display:flex;flex-direction:column;gap:6px}.ol-kids{margin-inline-start:22px;padding-inline-start:14px;border-inline-start:2px solid var(--line2);display:flex;flex-direction:column;gap:6px}
+.oc-card.line{width:auto;flex-direction:row;flex-wrap:wrap;justify-content:flex-start;text-align:start;gap:4px 12px;border-top-width:1px;border-inline-start:4px solid var(--c)}
+.oc-card.line .oc-foot{margin:0}
+@media (max-width:600px){.org-kpis{grid-template-columns:repeat(3,1fr)!important}.ol-kids{margin-inline-start:6px;padding-inline-start:8px}.oc-card{width:160px}.oc-card.root{width:220px}}
+@media print{body.print-org .side,body.print-org header.top,body.print-org .page-head .toolbar,body.print-org .org-kpis,body.print-org #o-q,body.print-org .toolbar,body.print-org #mnav,body.print-org .banner{display:none!important}body.print-org .oc-scroll{overflow:visible}body.print-org .org.chart{background:none;border:0}body.print-org .oc-card{box-shadow:none;break-inside:avoid}}
 .tag.dup{background:var(--crit-soft);color:var(--crit)}
 .count-line{font-size:12.5px;color:var(--muted)}
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
@@ -944,33 +975,53 @@ const ORG_PERMS={};
 function orgPath(id){const p=[];let o=ORG_BY.get(id);while(o){p.unshift(o);o=ORG_BY.get(o.parent)}return p}
 function orgDesc(id){return orgKids(id).reduce((n,k)=>n+1+orgDesc(k.id),0)}
 function viewOrg(){
-  const cnt=k=>ORG.filter(o=>o.type===k).length;
+  const cnt=k=>ORG.filter(o=>o.type===k).length,mode=S.ui.om||'chart';
   const kp=(l,v,c='')=>`<div class="kpi ${c}" style="cursor:default"><span class="l">${l}</span><span class="v">${v}</span></div>`;
-  return `<div class="page-head"><div><h2>الهيكل التنظيمي</h2><p>الإدارة العامة للمبيعات والشؤون التجارية وإداراتها وأقسامها ووحداتها، كما وردت في الهيكل المعتمد. الصلاحيات تُربط بكل جهة لاحقًا.</p></div>
-  <div class="toolbar"><button class="btn" data-act="org-x" data-open="1">فتح الكل</button><button class="btn" data-act="org-x" data-open="0">طي الكل</button><button class="btn" data-act="export-org">${I.down}تصدير Excel</button></div></div>
+  return `<div class="page-head"><div><h2>الهيكل التنظيمي</h2><p>الإدارة العامة للمبيعات والشؤون التجارية وإداراتها وأقسامها ووحداتها، كما وردت في الهيكل المعتمد. اضغط على أي جهة لعرض ما يتبعها.</p></div>
+  <div class="toolbar"><div class="seg" role="tablist"><button data-om="chart" aria-selected="${mode==='chart'}">مخطط</button><button data-om="list" aria-selected="${mode==='list'}">قائمة</button></div><button class="btn" data-act="org-print">طباعة</button><button class="btn" data-act="export-org">${I.down}تصدير Excel</button></div></div>
   <div class="kpis org-kpis">${kp('الإدارات',cnt('dept'))}${kp('المنسقون',cnt('coord'))}${kp('الأقسام',cnt('section'))}${kp('المكاتب',cnt('office'))}${kp('الوحدات والمشرفون',cnt('unit')+cnt('super'))}${kp('شواغر',ORG.filter(o=>o.vacant).length,'warn')}</div>
   <div class="toolbar"><div class="grow">${I.search}<input type="search" id="o-q" value="${esc(S.ui.oq||'')}" placeholder="بحث بالمسمى أو اسم المسؤول أو الرقم الوظيفي…"></div>
-  <select id="o-f"><option value="">كل الإدارات</option>${orgKids('gm').filter(o=>o.type==='dept').map(o=>`<option value="${o.id}" ${S.ui.of===o.id?'selected':''}>${esc(o.title)}</option>`).join('')}</select></div>
+  <select id="o-f"><option value="">الهيكل الكامل</option>${ORG.filter(o=>orgKids(o.id).length&&o.id!=='board').map(o=>`<option value="${o.id}" ${S.ui.of===o.id?'selected':''}>${'— '.repeat(Math.max(0,orgPath(o.id).length-2))}${esc(o.title)}</option>`).join('')}</select></div>
   <div id="o-tree" class="panel org"></div>
-  <p class="muted" style="font-size:12.5px;margin-top:10px">«تدقيق»: الاسم أو الرقم غير واضح في النسخة الممسوحة ويحتاج مراجعة. «م» كما وردت في الهيكل الأصلي.</p>`;
+  <div class="oc-legend">${ORG_TYPES.filter(t=>t.k!=='board'&&t.k!=='super').map(t=>`<span><i class="oc-dot t-${t.k}"></i>${t.l}</span>`).join('')}<span><i class="oc-dot vac"></i>شاغرة</span><span><span class="tag dup">تدقيق</span> الاسم أو الرقم غير واضح في النسخة الممسوحة</span></div>`;
 }
-function orgNode(o,d,all,hit){
-  const t=ORG_TYPES.find(x=>x.k===o.type),kids=orgKids(o.id).filter(k=>!hit||hit.has(k.id)),perms=ORG_PERMS[o.id];
-  const card=`<div class="org-card"><span class="pill ${t.p}">${t.l}</span><b>${esc(o.title)}</b>
-   <span class="org-head">${o.vacant?'<span class="pill p-warn">شاغرة</span>':`${esc(o.head)}${o.empNo?` <span class="num muted">${esc(o.empNo)}</span>`:''}`}</span>
-   ${o.uncertain?'<span class="tag dup">تدقيق</span>':''}<span class="tag">${perms&&perms.length?`${perms.length} صلاحية`:'الصلاحيات: لم تُحدَّد بعد'}</span>
-   ${kids.length?`<span class="tag">${orgDesc(o.id)} جهة تابعة</span>`:''}</div>`;
-  const open=all!=null?all:(hit||d<2);
-  return kids.length?`<details ${open?'open':''}><summary>${card}</summary><div class="org-kids">${kids.map(k=>orgNode(k,d+1,all,hit)).join('')}</div></details>`:`<div class="org-leaf">${card}</div>`;
+/* بطاقة جهة في المخطط */
+function ocCard(o,cls=''){
+  const t=ORG_TYPES.find(x=>x.k===o.type),n=orgKids(o.id).length,perms=ORG_PERMS[o.id];
+  return `<div class="oc-card t-${o.type}${o.vacant?' vac':''}${n?' has':''} ${cls}" ${n?`data-org-focus="${o.id}" role="button" tabindex="0"`:''} title="${esc(o.title)}">
+   <span class="oc-type">${t.l}</span><b class="oc-title">${esc(o.title)}</b>
+   ${o.vacant?'<span class="oc-name oc-vac">شاغرة</span>':`<span class="oc-name">${esc(o.head)}</span>${o.empNo?`<span class="oc-no num">${esc(o.empNo)}</span>`:''}`}
+   ${o.uncertain||n||perms&&perms.length?`<span class="oc-foot">${o.uncertain?'<span class="tag dup">تدقيق</span>':''}${perms&&perms.length?`<span class="tag">${perms.length} صلاحية</span>`:''}${n?`<span class="oc-more">${orgDesc(o.id)} جهة تابعة ‹</span>`:''}</span>`:''}</div>`;
 }
-function renderOrg(all){
-  const el=document.getElementById('o-tree');if(!el)return;const q=norm(S.ui.oq||''),root=S.ui.of||'board';let hit=null;
-  if(q){hit=new Set();ORG.filter(o=>norm([o.title,o.head,o.empNo].join(' ')).includes(q)).forEach(o=>orgPath(o.id).forEach(p=>hit.add(p.id)))}
-  el.innerHTML=hit&&!hit.has(root)?`<div class="empty"><b>لا نتائج</b>جرّب كلمة أخرى.</div>`:orgNode(ORG_BY.get(root),0,all,hit);
+/* المستوى الأخير يُعرض عموديًا تحت الجهة الأم كما في الهيكل الورقي */
+function ocStack(o){const k=orgKids(o.id);return k.length?`<div class="oc-stack">${k.map(c=>ocCard(c,'sm')).join('')}</div>`:''}
+function ocBranch(o,rows){const k=orgKids(o.id);
+  if(!rows||!k.length)return `<li>${ocCard(o)}${ocStack(o)}</li>`;
+  return `<li>${ocCard(o)}<ul>${k.map(c=>ocBranch(c,rows-1)).join('')}</ul></li>`}
+function renderOrgChart(el){
+  const f=ORG_BY.get(S.ui.of)||ORG_BY.get('board'),path=orgPath(f.id),rows=f.id==='board'?2:1,k=orgKids(f.id);
+  el.innerHTML=`<nav class="oc-crumbs">${path.map((p,i)=>i<path.length-1?`<button data-org-focus="${p.id==='board'?'':p.id}">${esc(p.id==='board'?'الهيكل الكامل':p.title)}</button><span>‹</span>`:`<b>${esc(p.id==='board'?'الهيكل الكامل':p.title)}</b>`).join('')}</nav>
+  <div class="oc-scroll"><ul class="oc"><li>${ocCard(f,'root')}${k.length?`<ul>${k.map(c=>ocBranch(c,rows-1)).join('')}</ul>`:''}</li></ul></div>`;
+  const sc=el.querySelector('.oc-scroll');sc.scrollLeft=(sc.scrollWidth-sc.clientWidth)/2*(getComputedStyle(sc).direction==='rtl'?-1:1);
+}
+function orgNode(o,hit){
+  const kids=orgKids(o.id).filter(k=>hit.has(k.id));
+  return `<div class="ol-row">${ocCard(o,'line')}${kids.length?`<div class="ol-kids">${kids.map(k=>orgNode(k,hit)).join('')}</div>`:''}</div>`;
+}
+function renderOrg(){
+  const el=document.getElementById('o-tree');if(!el)return;const q=norm(S.ui.oq||''),root=q?'board':S.ui.of||'board';
+  if(!q&&(S.ui.om||'chart')==='chart'){el.classList.add('chart');renderOrgChart(el);return}
+  el.classList.remove('chart');const hit=new Set();
+  ORG.filter(o=>!q||norm([o.title,o.head,o.empNo].join(' ')).includes(q)).forEach(o=>orgPath(o.id).forEach(p=>hit.add(p.id)));
+  el.innerHTML=hit.has(root)?`${q?`<div class="count-line">${ORG.filter(o=>norm([o.title,o.head,o.empNo].join(' ')).includes(q)).length} نتيجة</div>`:''}${orgNode(ORG_BY.get(root),hit)}`:`<div class="empty"><b>لا نتائج</b>جرّب كلمة أخرى.</div>`;
 }
 function exportOrg(){const r=ORG.map(o=>({'المسمى':o.title,'النوع':ORG_TYPES.find(t=>t.k===o.type).l,'المسؤول':o.vacant?'شاغرة':o.head,'الرقم الوظيفي':o.empNo,'الجهة الأعلى':o.parent?ORG_BY.get(o.parent).title:'','المسار':orgPath(o.id).map(p=>p.title).join(' / '),'تدقيق':o.uncertain?'نعم':''}));saveXlsx([['الهيكل التنظيمي',r]],'الهيكل-التنظيمي-'+TODAY_ISO+'.xlsx')}
 afterRender.org=()=>{renderOrg();const q=document.getElementById('o-q');q.addEventListener('input',debounce(()=>{S.ui.oq=q.value;renderOrg()},150));document.getElementById('o-f').addEventListener('change',e=>{S.ui.of=e.target.value;renderOrg()})};
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act="org-x"]');if(b)renderOrg(b.dataset.open==='1')});
+function orgFocus(id){S.ui.of=id;S.ui.oq='';const q=document.getElementById('o-q');if(q)q.value='';const f=document.getElementById('o-f');if(f)f.value=id;S.ui.om='chart';document.querySelectorAll('[data-om]').forEach(b=>b.setAttribute('aria-selected',b.dataset.om==='chart'));renderOrg();document.getElementById('o-tree').scrollIntoView({block:'start',behavior:'smooth'})}
+document.addEventListener('click',e=>{const f=e.target.closest('[data-org-focus]');if(f&&f.closest('#o-tree')){orgFocus(f.dataset.orgFocus);return}
+  const m=e.target.closest('[data-om]');if(m){S.ui.om=m.dataset.om;document.querySelectorAll('[data-om]').forEach(b=>b.setAttribute('aria-selected',b===m));renderOrg();return}
+  if(e.target.closest('[data-act="org-print"]')){S.ui.om='chart';render();document.body.classList.add('print-org');window.print();document.body.classList.remove('print-org')}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'){const f=e.target.closest&&e.target.closest('[data-org-focus]');if(f&&f.closest('#o-tree'))orgFocus(f.dataset.orgFocus)}});
 
 /* ============ Extensions & letters ============ */
 function viewExt(){
