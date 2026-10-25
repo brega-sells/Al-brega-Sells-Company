@@ -67,3 +67,10 @@ Batches (count matches the official letters): الأولى 166 (ref 220-17-158) 
 - Standalone HTML: no accounts, but data is per-device (exchange via JSON backup file).
 - Server: one shared internal link, own logins; needs IT to run Python on a LAN machine.
 - Web (GitHub Pages + Firebase): public link for any device, own logins; setup ~30–45 min via the PDF guide. The user has not yet connected GitHub to Claude, so publishing could not be done from the chat.
+
+## 7. Organizational structure (الهيكل التنظيمي) — added October 2026
+- Source: the user's 13-page scan «الإدارة العامة للمبيعات والشؤون التجارية» (board approval line still blank).
+- Static data in the page code (`ORG_ROWS` in both `index.html` and `source/index.html`): 101 entries `[id, parentId, title, head, empNo, flags]`, flags `v` = vacant (شاغرة), `u` = unclear in the scan (shown as «تدقيق»). Type (إدارة/منسق/قسم/مكتب/وحدة/مشرف) is inferred from the title.
+- Top-level ids: `board` → `gm` → `ca` (الشؤون التجارية والتحصيلات), `w` (المبيعات غ.ج), `e` (المبيعات و.ش), plus `gm-rep`, `gm-fo` directly under the GM.
+- Permissions per unit are NOT defined yet: the user will send them. Attach them in `ORG_PERMS` keyed by unit id (the view already shows "الصلاحيات: لم تُحدَّد بعد" / count).
+- Known doubts: emp. no. 507350 appears twice (عقيلة علي عقيلة and محمد فرج الترهوني); 40985 has 5 digits; page 8 of the scan is blurry (several names marked `u`).
