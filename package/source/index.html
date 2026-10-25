@@ -172,6 +172,9 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 .oc-vac{color:var(--warn);font-weight:600}
 .oc-card.vac{border-style:dashed;border-top-style:solid;background:repeating-linear-gradient(135deg,var(--surface),var(--surface) 8px,var(--warn-soft) 8px,var(--warn-soft) 9px)}
 .oc-foot{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:3px}
+.oc-tasks{display:flex;flex-direction:column;align-items:stretch;gap:3px;width:100%;margin-top:5px;padding-top:6px;border-top:1px dashed var(--line)}.oc-tasks-h{font-size:10.5px;font-weight:700;color:var(--c)}
+.oc-tasks button{display:flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surface2);border-radius:6px;padding:3px 7px;font:inherit;font-size:11.5px;color:var(--ink);cursor:pointer;text-align:start}.oc-tasks button:hover{border-color:var(--accent);color:var(--accent)}.oc-tasks svg{width:13px;height:13px;flex:none}
+.oc-card.root .oc-tasks button{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff}.oc-card.root .oc-tasks-h{color:var(--side-muted)}.oc-card.line .oc-tasks{flex-direction:row;flex-wrap:wrap;width:auto;border:0;margin:0;padding:0}
 .oc-more{font-size:11px;color:var(--accent);font-weight:600}
 .oc-card.root{width:280px;background:var(--side);border-color:var(--side);border-top-color:var(--flame);padding:12px 14px}
 .oc-card.root .oc-title{font-size:15px;color:#fff}.oc-card.root .oc-name{color:#fff;opacity:.92;font-size:13.5px}.oc-card.root .oc-no{color:var(--side-muted)}.oc-card.root .oc-type{color:#fff;background:rgba(255,255,255,.14)}.oc-card.root .oc-more{color:var(--side-muted)}
@@ -391,11 +394,11 @@ function batchesSorted(){return [...S.batches].sort((a,b)=>(a.order||0)-(b.order
 /* ============ Navigation ============ */
 const VIEWS=[
  {id:'dash',label:'لوحة المؤشرات',icon:'dash',group:'عام'},
- {id:'contracts',label:'عقود البريقة',icon:'contract',group:'شركة البريقة',count:()=>S.contracts.length},
- {id:'ext',label:'التمديدات والمراسلات',icon:'ext',group:'شركة البريقة',count:()=>S.extensions.length+S.letters.length},
- {id:'needs',label:'كشوفات الاحتياجات',icon:'factory',group:'وزارة الصناعة والمعادن',count:()=>S.needs.length},
- {id:'batches',label:'الدفعات والمراسلات',icon:'batch',group:'وزارة الصناعة والمعادن',count:()=>S.batches.length},
- {id:'dir',label:'دليل الجهات',icon:'people',group:'مشترك'},
+ {id:'contracts',label:'عقود البريقة',icon:'contract',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',count:()=>S.contracts.length},
+ {id:'ext',label:'التمديدات والمراسلات',icon:'ext',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',count:()=>S.extensions.length+S.letters.length},
+ {id:'needs',label:'كشوفات الاحتياجات',icon:'factory',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',count:()=>S.needs.length},
+ {id:'batches',label:'الدفعات والمراسلات',icon:'batch',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',count:()=>S.batches.length},
+ {id:'dir',label:'دليل الجهات',icon:'people',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات'},
  {id:'org',label:'الهيكل التنظيمي',icon:'org',group:'مشترك',count:()=>ORG.length-1},
  {id:'settings',label:'الإعدادات والاستيراد',icon:'gear',group:'مشترك'}];
 function renderNav(){
@@ -864,6 +867,8 @@ const ORG_BY=new Map(ORG.map(o=>[o.id,o]));
 const orgKids=id=>ORG.filter(o=>o.parent===id);
 /* صلاحيات كل جهة: { [معرّف الجهة]: [...] } — تُملأ عند وصول بيانات الصلاحيات */
 const ORG_PERMS={};
+/* مهام كل جهة: صفحات المنظومة التي تتولاها، بمفتاح معرّف الجهة */
+const ORG_TASKS={'gm-rep':['contracts','ext','needs','batches','dir']};
 function orgPath(id){const p=[];let o=ORG_BY.get(id);while(o){p.unshift(o);o=ORG_BY.get(o.parent)}return p}
 function orgDesc(id){return orgKids(id).reduce((n,k)=>n+1+orgDesc(k.id),0)}
 function viewOrg(){
@@ -879,10 +884,11 @@ function viewOrg(){
 }
 /* بطاقة جهة في المخطط */
 function ocCard(o,cls=''){
-  const t=ORG_TYPES.find(x=>x.k===o.type),n=orgKids(o.id).length,perms=ORG_PERMS[o.id];
+  const t=ORG_TYPES.find(x=>x.k===o.type),n=orgKids(o.id).length,perms=ORG_PERMS[o.id],tasks=(ORG_TASKS[o.id]||[]).map(v=>VIEWS.find(x=>x.id===v)).filter(Boolean);
   return `<div class="oc-card t-${o.type}${o.vacant?' vac':''}${n?' has':''} ${cls}" ${n?`data-org-focus="${o.id}" role="button" tabindex="0"`:''} title="${esc(o.title)}">
    <span class="oc-type">${t.l}</span><b class="oc-title">${esc(o.title)}</b>
    ${o.vacant?'<span class="oc-name oc-vac">شاغرة</span>':`<span class="oc-name">${esc(o.head)}</span>${o.empNo?`<span class="oc-no num">${esc(o.empNo)}</span>`:''}`}
+   ${tasks.length?`<span class="oc-tasks"><span class="oc-tasks-h">المهام</span>${tasks.map(v=>`<button type="button" data-org-go="${v.id}">${I[v.icon]}${esc(v.label)}</button>`).join('')}</span>`:''}
    ${o.uncertain||n||perms&&perms.length?`<span class="oc-foot">${o.uncertain?'<span class="tag dup">تدقيق</span>':''}${perms&&perms.length?`<span class="tag">${perms.length} صلاحية</span>`:''}${n?`<span class="oc-more">${orgDesc(o.id)} جهة تابعة ‹</span>`:''}</span>`:''}</div>`;
 }
 /* المستوى الأخير يُعرض عموديًا تحت الجهة الأم كما في الهيكل الورقي */
@@ -910,7 +916,7 @@ function renderOrg(){
 function exportOrg(){const r=ORG.map(o=>({'المسمى':o.title,'النوع':ORG_TYPES.find(t=>t.k===o.type).l,'المسؤول':o.vacant?'شاغرة':o.head,'الرقم الوظيفي':o.empNo,'الجهة الأعلى':o.parent?ORG_BY.get(o.parent).title:'','المسار':orgPath(o.id).map(p=>p.title).join(' / '),'تدقيق':o.uncertain?'نعم':''}));saveXlsx([['الهيكل التنظيمي',r]],'الهيكل-التنظيمي-'+TODAY_ISO+'.xlsx')}
 afterRender.org=()=>{renderOrg();const q=document.getElementById('o-q');q.addEventListener('input',debounce(()=>{S.ui.oq=q.value;renderOrg()},150));document.getElementById('o-f').addEventListener('change',e=>{S.ui.of=e.target.value;renderOrg()})};
 function orgFocus(id){S.ui.of=id;S.ui.oq='';const q=document.getElementById('o-q');if(q)q.value='';const f=document.getElementById('o-f');if(f)f.value=id;S.ui.om='chart';document.querySelectorAll('[data-om]').forEach(b=>b.setAttribute('aria-selected',b.dataset.om==='chart'));renderOrg();document.getElementById('o-tree').scrollIntoView({block:'start',behavior:'smooth'})}
-document.addEventListener('click',e=>{const f=e.target.closest('[data-org-focus]');if(f&&f.closest('#o-tree')){orgFocus(f.dataset.orgFocus);return}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-org-go]');if(g){go(g.dataset.orgGo);return}const f=e.target.closest('[data-org-focus]');if(f&&f.closest('#o-tree')){orgFocus(f.dataset.orgFocus);return}
   const m=e.target.closest('[data-om]');if(m){S.ui.om=m.dataset.om;document.querySelectorAll('[data-om]').forEach(b=>b.setAttribute('aria-selected',b===m));renderOrg();return}
   if(e.target.closest('[data-act="org-print"]')){S.ui.om='chart';render();document.body.classList.add('print-org');window.print();document.body.classList.remove('print-org')}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'){const f=e.target.closest&&e.target.closest('[data-org-focus]');if(f&&f.closest('#o-tree'))orgFocus(f.dataset.orgFocus)}});
