@@ -27,7 +27,7 @@ window.FIREBASE_CONFIG = {
 /* Layout: fixed ink sidebar (right, RTL) + working canvas; tables are the core surface, cards only for KPIs and record drawers */
 :root{
   --bg:#f2f4f6; --surface:#ffffff; --surface2:#f7f9fb; --ink:#13263a; --muted:#5d6d7e; --line:#dce3ea; --line2:#e9eef3;
-  --accent:#0b5c8a; --accent-soft:#e3eff7; --flame:#c4501f; --flame-soft:#fbeee7;
+  --ocf:#0b5c8a; --ocv:#a86a0c; --accent:#0b5c8a; --accent-soft:#e3eff7; --flame:#c4501f; --flame-soft:#fbeee7;
   --side:#0f2236; --side-ink:#d7e2ec; --side-muted:#8ea3b8; --side-hi:#18324d;
   --ok:#1d7a4c; --ok-soft:#e3f3ea; --warn:#a86a0c; --warn-soft:#fbf1dd; --crit:#b42318; --crit-soft:#fbe7e5; --info:#3a55c4; --info-soft:#e7ebfb; --neutral:#667585; --neutral-soft:#edf0f3;
   --shadow:0 1px 2px rgba(15,34,54,.06),0 4px 16px rgba(15,34,54,.06);
@@ -37,13 +37,13 @@ window.FIREBASE_CONFIG = {
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0c151e; --surface:#132130; --surface2:#172738; --ink:#e3eaf1; --muted:#97a8b9; --line:#24384c; --line2:#1d2f41;
-  --accent:#63b3e3; --accent-soft:#16344b; --flame:#f08350; --flame-soft:#3a2219;
+  --ocf:#3d8fc4; --ocv:#b8822a; --accent:#63b3e3; --accent-soft:#16344b; --flame:#f08350; --flame-soft:#3a2219;
   --side:#08111a; --side-ink:#d7e2ec; --side-muted:#7f94a9; --side-hi:#132538;
   --ok:#4fc58a; --ok-soft:#173527; --warn:#e2a948; --warn-soft:#3a2d14; --crit:#f2766b; --crit-soft:#3d1c1a; --info:#8ea2f5; --info-soft:#1e2647; --neutral:#9aa8b6; --neutral-soft:#1f2c3a;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0c151e; --surface:#132130; --surface2:#172738; --ink:#e3eaf1; --muted:#97a8b9; --line:#24384c; --line2:#1d2f41;
-  --accent:#63b3e3; --accent-soft:#16344b; --flame:#f08350; --flame-soft:#3a2219;
+  --ocf:#3d8fc4; --ocv:#b8822a; --accent:#63b3e3; --accent-soft:#16344b; --flame:#f08350; --flame-soft:#3a2219;
   --side:#08111a; --side-ink:#d7e2ec; --side-muted:#7f94a9; --side-hi:#132538;
   --ok:#4fc58a; --ok-soft:#173527; --warn:#e2a948; --warn-soft:#3a2d14; --crit:#f2766b; --crit-soft:#3d1c1a; --info:#8ea2f5; --info-soft:#1e2647; --neutral:#9aa8b6; --neutral-soft:#1f2c3a;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
@@ -204,6 +204,25 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 .oc-tasks{display:flex;flex-direction:column;align-items:stretch;gap:3px;width:100%;margin-top:5px;padding-top:6px;border-top:1px dashed var(--line)}.oc-tasks-h{font-size:10.5px;font-weight:700;color:var(--c)}
 .oc-tasks button{display:flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surface2);border-radius:6px;padding:3px 7px;font:inherit;font-size:11.5px;color:var(--ink);cursor:pointer;text-align:start}.oc-tasks button:hover{border-color:var(--accent);color:var(--accent)}.oc-tasks svg{width:13px;height:13px;flex:none}
 .oc-card.root .oc-tasks button{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff}.oc-card.root .oc-tasks-h{color:var(--side-muted)}.oc-card.line .oc-tasks{flex-direction:row;flex-wrap:wrap;width:auto;border:0;margin:0;padding:0}
+.ocd-scopes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}.ocd-scopes button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--ink)}.ocd-scopes button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.ocd-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line2)}.ocd-head h3{margin:0;font-family:var(--f-display);font-size:18px}.ocd-head p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.ocd-kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px}.ocd-kpis .kpi .v{font-size:24px}
+.ocd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ocd-wide{grid-column:1/-1}
+.ocd-grid .section-title small{font-weight:400;color:var(--muted);font-size:12px;margin-inline-start:6px}
+.ocd-bars{display:flex;flex-direction:column;gap:8px}
+.ocd-row{display:grid;grid-template-columns:minmax(110px,34%) 1fr 36px;gap:10px;align-items:center;font-size:12.5px;border-radius:6px;padding:2px 4px}
+.ocd-row.go{cursor:pointer}.ocd-row.go:hover,.ocd-row.go:focus-visible{background:var(--accent-soft);outline:none}
+.ocd-lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.ocd-track{display:flex;gap:2px;height:14px;align-items:stretch}
+.ocd-seg{display:block;height:100%;min-width:3px}.ocd-seg:first-child{border-start-start-radius:4px;border-end-start-radius:4px}.ocd-seg:last-child{border-start-end-radius:4px;border-end-end-radius:4px}
+.ocd-seg.f{background:var(--ocf)}.ocd-seg.v{background:var(--ocv);background-image:repeating-linear-gradient(135deg,transparent 0 3px,rgba(255,255,255,.35) 3px 5px)}
+.ocd-seg:hover{filter:brightness(1.12)}
+.ocd-val{text-align:end;color:var(--muted)}
+.ocd-legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:-4px 0 10px}.ocd-legend span{display:inline-flex;align-items:center;gap:6px}.ocd-legend i{width:12px;height:12px;border-radius:3px;display:inline-block}.ocd-legend i.f{background:var(--ocf)}.ocd-legend i.v{background:var(--ocv);background-image:repeating-linear-gradient(135deg,transparent 0 3px,rgba(255,255,255,.35) 3px 5px)}
+.ocd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}.ocd-list li{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:13px;padding:6px 8px;border:1px solid var(--line2);border-radius:6px}.ocd-list small{color:var(--muted);flex-basis:100%;font-size:11.5px}
+#oc-tip{position:absolute;z-index:200;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:5px 9px;border-radius:6px;box-shadow:var(--shadow);max-width:280px}
+@media (max-width:800px){.ocd-grid{grid-template-columns:minmax(0,1fr)}.ocd-kpis{grid-template-columns:repeat(2,1fr)}}
+.org.bare{background:none;border:0;padding:0}
 .oc-more{font-size:11px;color:var(--accent);font-weight:600}
 .oc-card.root{width:280px;background:var(--side);border-color:var(--side);border-top-color:var(--flame);padding:12px 14px}
 .oc-card.root .oc-title{font-size:15px;color:#fff}.oc-card.root .oc-name{color:#fff;opacity:.92;font-size:13.5px}.oc-card.root .oc-no{color:var(--side-muted)}.oc-card.root .oc-type{color:#fff;background:rgba(255,255,255,.14)}.oc-card.root .oc-more{color:var(--side-muted)}
@@ -983,7 +1002,7 @@ function viewOrg(){
   const cnt=k=>ORG.filter(o=>o.type===k).length,mode=S.ui.om||'chart';
   const kp=(l,v,c='')=>`<div class="kpi ${c}" style="cursor:default"><span class="l">${l}</span><span class="v">${v}</span></div>`;
   return `<div class="page-head"><div><h2>الهيكل التنظيمي</h2><p>الإدارة العامة للمبيعات والشؤون التجارية وإداراتها وأقسامها ووحداتها، كما وردت في الهيكل المعتمد. اضغط على أي جهة لعرض ما يتبعها.</p></div>
-  <div class="toolbar"><div class="seg" role="tablist"><button data-om="chart" aria-selected="${mode==='chart'}">مخطط</button><button data-om="list" aria-selected="${mode==='list'}">قائمة</button></div><button class="btn" data-act="org-print">طباعة</button><button class="btn" data-act="export-org">${I.down}تصدير Excel</button></div></div>
+  <div class="toolbar"><div class="seg" role="tablist"><button data-om="chart" aria-selected="${mode==='chart'}">مخطط</button><button data-om="list" aria-selected="${mode==='list'}">قائمة</button><button data-om="dash" aria-selected="${mode==='dash'}">لوحة المؤشرات</button></div><button class="btn" data-act="org-print">طباعة</button><button class="btn" data-act="export-org">${I.down}تصدير Excel</button></div></div>
   <div class="kpis org-kpis">${kp('الإدارات',cnt('dept'))}${kp('المنسقون',cnt('coord'))}${kp('الأقسام',cnt('section'))}${kp('المكاتب',cnt('office'))}${kp('الوحدات والمشرفون',cnt('unit')+cnt('super'))}${kp('شواغر',ORG.filter(o=>o.vacant).length,'warn')}</div>
   <div class="toolbar"><div class="grow">${I.search}<input type="search" id="o-q" value="${esc(S.ui.oq||'')}" placeholder="بحث بالمسمى أو اسم المسؤول أو الرقم الوظيفي…"></div>
   <select id="o-f"><option value="">الهيكل الكامل</option>${ORG.filter(o=>orgKids(o.id).length&&o.id!=='board').map(o=>`<option value="${o.id}" ${S.ui.of===o.id?'selected':''}>${'— '.repeat(Math.max(0,orgPath(o.id).length-2))}${esc(o.title)}</option>`).join('')}</select></div>
@@ -1016,6 +1035,7 @@ function orgNode(o,hit){
 }
 function renderOrg(){
   const el=document.getElementById('o-tree');if(!el)return;const q=norm(S.ui.oq||''),root=q?'board':S.ui.of||'board';
+  el.classList.toggle('bare',!q&&S.ui.om==='dash');const ok=document.querySelector('.org-kpis');if(ok)ok.hidden=!q&&S.ui.om==='dash';if(!q&&S.ui.om==='dash'){el.classList.remove('chart');viewOrgDash(el);return}
   if(!q&&(S.ui.om||'chart')==='chart'){el.classList.add('chart');renderOrgChart(el);return}
   el.classList.remove('chart');const hit=new Set();
   ORG.filter(o=>!q||norm([o.title,o.head,o.empNo].join(' ')).includes(q)).forEach(o=>orgPath(o.id).forEach(p=>hit.add(p.id)));
@@ -1023,6 +1043,55 @@ function renderOrg(){
 }
 function exportOrg(){const r=ORG.map(o=>({'المسمى':o.title,'النوع':ORG_TYPES.find(t=>t.k===o.type).l,'المسؤول':o.vacant?'شاغرة':o.head,'الرقم الوظيفي':o.empNo,'الجهة الأعلى':o.parent?ORG_BY.get(o.parent).title:'','المسار':orgPath(o.id).map(p=>p.title).join(' / '),'تدقيق':o.uncertain?'نعم':''}));saveXlsx([['الهيكل التنظيمي',r]],'الهيكل-التنظيمي-'+TODAY_ISO+'.xlsx')}
 afterRender.org=()=>{renderOrg();const q=document.getElementById('o-q');q.addEventListener('input',debounce(()=>{S.ui.oq=q.value;renderOrg()},150));document.getElementById('o-f').addEventListener('change',e=>{S.ui.of=e.target.value;renderOrg()})};
+/* ============ لوحة مؤشرات الهيكل التنظيمي ============ */
+function orgAll(id){const out=[];const walk=p=>orgKids(p).forEach(k=>{out.push(k);walk(k.id)});walk(id);return out}
+function orgDepth(id){const k=orgKids(id);return k.length?1+Math.max(...k.map(c=>orgDepth(c.id))):0}
+function ocPct(a,b){return b?Math.round(a*100/b):0}
+function ocBars(rows,max,opt={}){
+  return `<div class="ocd-bars">${rows.map(r=>`<div class="ocd-row${r.go?' go':''}" ${r.go?`data-org-dash="${r.go}" role="button" tabindex="0"`:''}>
+    <span class="ocd-lbl" title="${esc(r.full||r.l)}">${esc(r.l)}</span>
+    <span class="ocd-track">${(r.parts||[{v:r.v,c:'f'}]).filter(p=>p.v).map(p=>`<span class="ocd-seg ${p.c}" style="width:${p.v*100/max}%" data-tip="${esc((r.full||r.l)+' · '+(p.t||'')+' '+p.v)}"></span>`).join('')}</span>
+    <span class="ocd-val num">${r.vl??r.v}</span></div>`).join('')}</div>`;
+}
+function viewOrgDash(el){
+  const root=ORG_BY.get(S.ui.of)||ORG_BY.get('board'),sub=orgAll(root.id),pos=[root,...sub];
+  const filled=pos.filter(o=>!o.vacant).length,vac=pos.length-filled,unc=pos.filter(o=>o.uncertain).length,permd=pos.filter(o=>(ORG_PERMS[o.id]||[]).length).length;
+  const base=root.id==='board'?'gm':root.id,kids=orgKids(base),tasks=pos.reduce((n,o)=>n+(ORG_TASKS[o.id]||[]).length,0);
+  const kp=(l,v,s='',c='')=>`<div class="kpi ${c}" style="cursor:default"><span class="l">${l}</span><span class="v">${v}</span>${s?`<span class="s">${s}</span>`:''}</div>`;
+  // التوزيع حسب النوع
+  const types=ORG_TYPES.filter(t=>t.k!=='board').map(t=>({l:t.l,v:sub.filter(o=>o.type===t.k).length})).filter(r=>r.v);
+  const maxT=Math.max(1,...types.map(r=>r.v));
+  // مقارنة الجهات التابعة مباشرة
+  const cmp=kids.map(k=>{const a=[k,...orgAll(k.id)],v=a.filter(o=>o.vacant).length;return {l:k.title,full:k.title,go:orgKids(k.id).length?k.id:'',v:a.length,parts:[{v:a.length-v,c:'f',t:'مشغولة'},{v,c:'v',t:'شاغرة'}],vl:a.length}}).sort((a,b)=>b.v-a.v);
+  const maxC=Math.max(1,...cmp.map(r=>r.v));
+  // نطاق الإشراف
+  const span=pos.map(o=>({l:o.title,full:`${o.title} — ${o.vacant?'شاغرة':o.head}`,v:orgKids(o.id).length,go:orgKids(o.id).length&&o.id!==root.id?o.id:''})).filter(r=>r.v).sort((a,b)=>b.v-a.v).slice(0,8);
+  const maxS=Math.max(1,...span.map(r=>r.v));
+  const vacL=pos.filter(o=>o.vacant),uncL=pos.filter(o=>o.uncertain);
+  const path=orgPath(root.id);
+  const scopes=['board',...orgKids('gm').map(o=>o.id)];
+  el.innerHTML=`<div class="ocd-scopes">${scopes.map(id=>{const o=ORG_BY.get(id);return `<button data-org-dash="${id}" aria-pressed="${id===root.id}">${esc(id==='board'?'الهيكل الكامل':o.title)}</button>`}).join('')}</div>
+  <div class="ocd-head"><div><div class="oc-crumbs" style="padding:0 0 4px">${path.map((p,i)=>i<path.length-1?`<button data-org-dash="${p.id}">${esc(p.id==='board'?'الهيكل الكامل':p.title)}</button><span>‹</span>`:'').join('')}</div>
+   <h3>${esc(root.id==='board'?'لوحة مؤشرات الهيكل التنظيمي':'لوحة مؤشرات: '+root.title)}</h3><p>${root.vacant?'المسؤول: شاغرة':`المسؤول: <b>${esc(root.head)}</b>${root.empNo?` <span class="num">${esc(root.empNo)}</span>`:''}`}</p></div>
+   ${kids.length?`<button class="btn sm" data-org-focus="${root.id==='board'?'':root.id}">عرض في المخطط</button>`:''}</div>
+  <div class="kpis ocd-kpis">${kp('الجهات التابعة',sub.length,kids.length?`${kids.length} ${root.id==='board'?'تحت الإدارة العامة':'مباشرة'}`:'')}${kp('المناصب المشغولة',filled,`${ocPct(filled,pos.length)}% من ${pos.length}`,'ok')}${kp('الشواغر',vac,`${ocPct(vac,pos.length)}%`,vac?'warn':'')}${kp('بحاجة تدقيق',unc,'أسماء أو أرقام غير واضحة',unc?'warn':'')}${kp('المستويات الإدارية',orgDepth(root.id)+1)}${kp('الصلاحيات المحددة',`${permd}/${pos.length}`,permd?'':'بانتظار البيانات')}</div>
+  <div class="ocd-grid">
+   ${cmp.length>1?`<section class="panel ocd-wide"><h3 class="section-title">${root.id==='board'?'حجم الإدارات والجهات التابعة للإدارة العامة':'حجم الجهات التابعة مباشرة'} <small>عدد المناصب في كل جهة وما يتبعها · اضغط على جهة لعرض لوحتها</small></h3>
+     <div class="ocd-legend"><span><i class="f"></i>مشغولة</span><span><i class="v"></i>شاغرة</span></div>${ocBars(cmp,maxC)}</section>`:''}
+   ${types.length?`<section class="panel"><h3 class="section-title">التوزيع حسب النوع</h3>${ocBars(types,maxT)}</section>`:''}
+   ${span.length?`<section class="panel"><h3 class="section-title">نطاق الإشراف <small>عدد الجهات التابعة مباشرة لكل مسؤول</small></h3>${ocBars(span,maxS)}</section>`:''}
+   <section class="panel"><h3 class="section-title">الشواغر <small>${vacL.length}</small></h3>${vacL.length?`<ul class="ocd-list">${vacL.map(o=>`<li><b>${esc(o.title)}</b><small>${esc(orgPath(o.parent).slice(-1).map(p=>p.title).join(''))}</small></li>`).join('')}</ul>`:'<p class="muted" style="margin:0">لا توجد شواغر في هذا النطاق.</p>'}</section>
+   <section class="panel"><h3 class="section-title">بحاجة تدقيق <small>${uncL.length}</small></h3>${uncL.length?`<ul class="ocd-list">${uncL.map(o=>`<li><b>${esc(o.head||o.title)}</b> <span class="num muted">${esc(o.empNo||'بدون رقم')}</span><small>${esc(o.title)}</small></li>`).join('')}</ul>`:'<p class="muted" style="margin:0">لا توجد بنود بحاجة تدقيق.</p>'}</section>
+   ${kids.length?`<section class="panel ocd-wide"><h3 class="section-title">${root.id==='board'?'الجهات التابعة للإدارة العامة':'الجهات التابعة مباشرة'}</h3><div class="tablewrap"><table><thead><tr><th class="nosort">الجهة</th><th class="nosort">النوع</th><th class="nosort">المسؤول</th><th class="nosort">الرقم الوظيفي</th><th class="nosort">جهات تابعة</th><th class="nosort">شواغر</th><th class="nosort">المهام</th><th class="nosort">الصلاحيات</th></tr></thead><tbody>
+    ${kids.map(k=>{const a=orgAll(k.id);return `<tr ${a.length?`data-org-dash="${k.id}" style="cursor:pointer"`:''}><td class="t-strong">${esc(k.title)}</td><td>${ORG_TYPES.find(t=>t.k===k.type).l}</td><td>${k.vacant?'<span class="pill p-warn">شاغرة</span>':esc(k.head)}</td><td class="n">${esc(k.empNo||'—')}</td><td class="n">${a.length||'—'}</td><td class="n">${[k,...a].filter(o=>o.vacant).length||'—'}</td><td class="n">${(ORG_TASKS[k.id]||[]).length||'—'}</td><td>${(ORG_PERMS[k.id]||[]).length?`${ORG_PERMS[k.id].length} صلاحية`:'<span class="muted">لم تُحدَّد بعد</span>'}</td></tr>`}).join('')}</tbody></table></div></section>`:''}
+  </div>${tasks?`<p class="muted" style="font-size:12.5px;margin:10px 0 0">المهام المسندة في هذا النطاق: ${tasks}.</p>`:''}`;
+}
+function ocTip(e){let t=document.getElementById('oc-tip');const h=e.target.closest&&e.target.closest('[data-tip]');
+  if(!h){if(t)t.hidden=true;return}if(!t){t=document.createElement('div');t.id='oc-tip';t.setAttribute('role','tooltip');document.body.appendChild(t)}
+  t.textContent=h.dataset.tip;t.hidden=false;const r=h.getBoundingClientRect();t.style.top=(r.top+window.scrollY-t.offsetHeight-8)+'px';t.style.left=Math.max(8,Math.min(window.innerWidth-t.offsetWidth-8,r.left+r.width/2-t.offsetWidth/2))+'px'}
+document.addEventListener('mouseover',ocTip);
+document.addEventListener('click',e=>{const d=e.target.closest('[data-org-dash]');if(d&&d.closest('#o-tree')){S.ui.of=d.dataset.orgDash==='board'?'':d.dataset.orgDash;const f=document.getElementById('o-f');if(f)f.value=S.ui.of;renderOrg();document.getElementById('o-tree').scrollIntoView({block:'start',behavior:'smooth'})}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest&&e.target.closest('[data-org-dash]'))e.target.click()});
 function orgFocus(id){S.ui.of=id;S.ui.oq='';const q=document.getElementById('o-q');if(q)q.value='';const f=document.getElementById('o-f');if(f)f.value=id;S.ui.om='chart';document.querySelectorAll('[data-om]').forEach(b=>b.setAttribute('aria-selected',b.dataset.om==='chart'));renderOrg();document.getElementById('o-tree').scrollIntoView({block:'start',behavior:'smooth'})}
 document.addEventListener('click',e=>{const g=e.target.closest('[data-org-go]');if(g){go(g.dataset.orgGo);return}const f=e.target.closest('[data-org-focus]');if(f&&f.closest('#o-tree')){orgFocus(f.dataset.orgFocus);return}
   const m=e.target.closest('[data-om]');if(m){S.ui.om=m.dataset.om;document.querySelectorAll('[data-om]').forEach(b=>b.setAttribute('aria-selected',b===m));renderOrg();return}
