@@ -521,18 +521,18 @@ function batchesSorted(){return [...S.batches].sort((a,b)=>(a.order||0)-(b.order
 /* ============ Navigation ============ */
 const VIEWS=[
  {id:'dash',label:'لوحة المؤشرات',icon:'dash',group:'عام'},
- {id:'contracts',label:'عقود البريقة',icon:'contract',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',count:()=>S.contracts.length},
- {id:'ext',label:'التمديدات والمراسلات',icon:'ext',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',count:()=>S.extensions.length+S.letters.length},
- {id:'needs',label:'كشوفات الاحتياجات',icon:'factory',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',count:()=>S.needs.length},
- {id:'batches',label:'الدفعات والمراسلات',icon:'batch',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',count:()=>S.batches.length},
- {id:'dir',label:'دليل الجهات',icon:'people',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات'},
+ {id:'contracts',label:'عقود البريقة',icon:'contract',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',nav:false,count:()=>S.contracts.length},
+ {id:'ext',label:'التمديدات والمراسلات',icon:'ext',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',nav:false,count:()=>S.extensions.length+S.letters.length},
+ {id:'needs',label:'كشوفات الاحتياجات',icon:'factory',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',nav:false,count:()=>S.needs.length},
+ {id:'batches',label:'الدفعات والمراسلات',icon:'batch',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',nav:false,count:()=>S.batches.length},
+ {id:'dir',label:'دليل الجهات',icon:'people',group:'مهام قسم المتابعة والتقارير - العامة للمبيعات',nav:false},
  {id:'org',label:'الهيكل التنظيمي',icon:'org',group:'مشترك',count:()=>ORG.length-1},
  {id:'settings',label:'الإعدادات والاستيراد',icon:'gear',group:'مشترك'}];
 function renderNav(){
-  let g='',h='';VIEWS.forEach(v=>{if(v.group!==g){g=v.group;h+=`<div class="nav-label">${esc(g)}</div>`}
-    h+=`<button data-v="${v.id}" aria-current="${S.view===v.id}">${I[v.icon]}<span>${esc(v.label)}</span>${v.count?`<span class="cnt">${v.count()}</span>`:''}</button>`});
+  let g='',h='';VIEWS.filter(v=>v.nav!==false).forEach(v=>{if(v.group!==g){g=v.group;h+=`<div class="nav-label">${esc(g)}</div>`}
+    h+=`<button data-v="${v.id}" aria-current="${S.view===v.id||v.id==='org'&&VIEWS.some(x=>x.id===S.view&&x.nav===false)}">${I[v.icon]}<span>${esc(v.label)}</span>${v.count?`<span class="cnt">${v.count()}</span>`:''}</button>`});
   document.getElementById('nav').innerHTML=h;
-  document.getElementById('mnav').innerHTML=VIEWS.map(v=>`<button data-v="${v.id}" aria-current="${S.view===v.id}">${esc(v.label)}</button>`).join('');
+  document.getElementById('mnav').innerHTML=VIEWS.filter(v=>v.nav!==false).map(v=>`<button data-v="${v.id}" aria-current="${S.view===v.id}">${esc(v.label)}</button>`).join('');
 }
 function go(v,opts){S.view=v;if(opts)Object.assign(S.ui,opts);try{localStorage.setItem('cm_view',v)}catch(e){}renderNav();render();window.scrollTo(0,0)}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b&&(b.closest('#nav')||b.closest('#mnav')))go(b.dataset.v)});
