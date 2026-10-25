@@ -148,6 +148,13 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 .p-ok{background:var(--ok-soft);color:var(--ok)}.p-warn{background:var(--warn-soft);color:var(--warn)}.p-crit{background:var(--crit-soft);color:var(--crit)}.p-info{background:var(--info-soft);color:var(--info)}.p-neutral{background:var(--neutral-soft);color:var(--neutral)}.p-fl{background:var(--flame-soft);color:var(--flame)}
 .tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:5px;background:var(--line2);color:var(--muted)}
 .tag.link{background:var(--accent-soft);color:var(--accent)}
+.org details>summary{list-style:none;cursor:pointer}.org details>summary::-webkit-details-marker{display:none}
+.org-card{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);margin:4px 0}
+.org details>summary .org-card::before{content:'▸';color:var(--muted);font-size:12px}.org details[open]>summary .org-card::before{content:'▾'}
+.org details>summary:hover .org-card{border-color:var(--accent)}.org-head{color:var(--muted);font-size:13px}
+.org-kpis{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:14px}.org-kpis .kpi{padding:10px 12px}.org-kpis .kpi .v{font-size:22px}
+@media (max-width:600px){.org-kpis{grid-template-columns:repeat(3,1fr)!important}.org-kids{margin-inline-start:6px!important;padding-inline-start:8px!important}}
+.org-kids{margin-inline-start:18px;padding-inline-start:12px;border-inline-start:2px solid var(--line2)}
 .tag.dup{background:var(--crit-soft);color:var(--crit)}
 .count-line{font-size:12.5px;color:var(--muted)}
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
@@ -265,6 +272,7 @@ legend{font-family:var(--f-display);font-weight:600;font-size:13.5px;padding-inl
 "use strict";
 /* ============ Icons ============ */
 const I={
+ org:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="4" rx="1"/><rect x="3" y="17" width="6" height="4" rx="1"/><rect x="15" y="17" width="6" height="4" rx="1"/><path d="M12 7v5M6 17v-5h12v5"/></svg>',
  dash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
  contract:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
  factory:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V10l6 4V10l6 4V5h4v16z"/><path d="M7 18h2M12 18h2"/></svg>',
@@ -357,6 +365,7 @@ const VIEWS=[
  {id:'needs',label:'كشوفات الاحتياجات',icon:'factory',group:'وزارة الصناعة والمعادن',count:()=>S.needs.length},
  {id:'batches',label:'الدفعات والمراسلات',icon:'batch',group:'وزارة الصناعة والمعادن',count:()=>S.batches.length},
  {id:'dir',label:'دليل الجهات',icon:'people',group:'مشترك'},
+ {id:'org',label:'الهيكل التنظيمي',icon:'org',group:'مشترك',count:()=>ORG.length-1},
  {id:'settings',label:'الإعدادات والاستيراد',icon:'gear',group:'مشترك'}];
 function renderNav(){
   let g='',h='';VIEWS.forEach(v=>{if(v.group!==g){g=v.group;h+=`<div class="nav-label">${esc(g)}</div>`}
@@ -371,7 +380,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b&
 function render(){
   recompute();
   const v=document.getElementById('view');
-  const fn={dash:viewDash,contracts:viewContracts,needs:viewNeeds,batches:viewBatches,dir:viewDir,ext:viewExt,settings:viewSettings}[S.view]||viewDash;
+  const fn={dash:viewDash,contracts:viewContracts,needs:viewNeeds,batches:viewBatches,dir:viewDir,ext:viewExt,org:viewOrg,settings:viewSettings}[S.view]||viewDash;
   v.innerHTML=dbBanner()+fn();
   (afterRender[S.view]||(()=>{}))();
 }
@@ -699,6 +708,162 @@ function renderDir(){
 }
 afterRender.dir=()=>{renderDir();const q=document.getElementById('d-q');q.addEventListener('input',debounce(()=>{S.ui.dq=q.value;renderDir()},150));document.getElementById('d-f').addEventListener('change',e=>{S.ui.df=e.target.value;renderDir()})};
 
+/* ============ Organizational structure ============ */
+/* المصدر: ملف «الإدارة العامة للمبيعات والشؤون التجارية» (هيكل معتمد بانتظار اعتماد مجلس الإدارة).
+   كل عنصر: [المعرّف، معرّف الجهة الأعلى، المسمى، المسؤول، الرقم الوظيفي، علامات]
+   العلامات: v = شاغرة · u = تحتاج تدقيق (الاسم أو الرقم غير واضح في الصورة الممسوحة).
+   الصلاحيات تُضاف لاحقًا في ORG_PERMS بمفتاح معرّف الجهة، ولم تُحدَّد بعد. */
+const ORG_ROWS=[
+ ['board',null,'عضو مجلس الإدارة للتزويد والمبيعات والطاقات المتجددة','مصطفى محمد الشنطة','515486'],
+ ['gm','board','الإدارة العامة للمبيعات والشؤون التجارية','عصام عمر موسى','502844'],
+ // تتبع المدير العام مباشرة
+ ['gm-rep','gm','قسم المتابعة والتقارير - العامة للمبيعات','الصغيرة عمر عبد الدائم','512607'],
+ ['gm-rep-f','gm-rep','وحدة المتابعة العامة للمبيعات','عبد الباسط منصف الاجنف','40985','u'],
+ ['gm-rep-r','gm-rep','وحدة التقارير - العامة للمبيعات','فريدة حسن العودي','514945'],
+ ['gm-rep-a','gm-rep','وحدة تحليل البيانات والكميات','جمعة ساسي القادري','509933'],
+ ['gm-fo','gm','مكتب متابعة المبيعات','خالد حسن الطوير','501167'],
+ ['gm-fo-tr','gm-fo','مشرف متابعة المبيعات طرابلس','نصر الدين جمعة حكومة','507051'],
+ ['gm-fo-ms','gm-fo','مشرف متابعة المبيعات مصراتة','جبريل الجالي محمد أبو لوفة','517379'],
+ ['gm-fo-zw','gm-fo','مشرف متابعة المبيعات الزاوية','أبو القاسم احمد المحمودي','511463'],
+ ['gm-fo-sb','gm-fo','مشرف متابعة المبيعات سبها','معتز احمد سعد خليفة','511058'],
+ ['gm-fo-bn','gm-fo','مشرف متابعة المبيعات بنغازي','سراج سالم عبدالكريم عبدالله','507307'],
+ ['gm-fo-tb','gm-fo','مشرف متابعة المبيعات طبرق','محمد رحيل حسن الصابر','504105'],
+ ['gm-fo-br','gm-fo','مشرف متابعة المبيعات البريقة والسرير','عبدالعالي ابوبكر عقيلة','510055'],
+ ['gm-fo-is','gm-fo','وحدة نظم المعلومات والبيانات التجارية','علي مصطفى علي','514604'],
+ // إدارة الشؤون التجارية والتحصيلات
+ ['ca','gm','إدارة الشؤون التجارية والتحصيلات','محمد صالح الغول','500126'],
+ ['ca-acc','ca','منسق حسابات الزبائن م','عبد الفتاح دخيل الثابت','504375'],
+ ['ca-acc-big','ca-acc','قسم كبار المستهلكين م','علي عبد الله القريقني','504221'],
+ ['ca-acc-debt','ca-acc','قسم متابعة الديون م','محمد فتحي زريمق','509215'],
+ ['ca-acc-ctr','ca-acc','قسم العقود التجارية م','صلاح جمعة الفرجاني','502664'],
+ ['ca-acc-mkt','ca-acc','قسم التسويق م','أسامة رمضان عبد السلام الثابت','502401'],
+ ['ca-cr','ca','منسق الائتمان والتحصيلات م','حمزة عبد الناصر عبد السلام غزي','513006'],
+ ['ca-cr-cr','ca-cr','قسم الائتمان م','عبد الفتاح سليمان أبو عينة','500974'],
+ ['ca-cr-col','ca-cr','قسم التحصيلات م','محمد محمد منصور سويسي','501068'],
+ // إدارة المبيعات غ.ج
+ ['w','gm','إدارة المبيعات غ.ج','جلال سالم شنيبش','514539'],
+ ['w-svc','w','قسم خدمات المحطات والزبائن غ.ج','خالد خليفة الشامس','505323'],
+ ['w-fol','w','قسم المتابعة غ.ج','عائدة عياد الدويبي','503701'],
+ ['w-dat','w','قسم البيانات والتقارير غ.ج','أبوبكر النفاتي الجهاني','502692'],
+ ['w-dat-d','w-dat','مشرف وحدة البيانات غ.ج','نورالدين خالد سليمان','504817'],
+ ['w-dat-r','w-dat','مشرف وحدة التقارير غ.ج','مؤيد علي مقيلي','506339'],
+ ['w-st','w','منسق المحطات غ.ج','حسن الشارف الدعيكي','503152'],
+ ['w-st-tr','w-st','قسم مبيعات طرابلس','وليد الهادي ارطيل','514696'],
+ ['w-st-tr-s','w-st-tr','وحدة مبيعات المحطات طرابلس','عبد الحكيم محمد عبد الله','510052'],
+ ['w-st-tr-o','w-st-tr','وحدة طلبات محطات طرابلس','ناصر عبد العزيز السائح','514655'],
+ ['w-st-tr-f','w-st-tr','وحدة متابعة محطات طرابلس','خالد حسن سعد','509802','u'],
+ ['w-st-ev','w-st','قسم تقييم وقبول المحطات غ.ج','خالد عمار أبو قرين','500986'],
+ ['w-st-ev-u','w-st-ev','وحدة تقييم المحطات غ.ج','نورية مختار منصور','506028'],
+ ['w-st-jb','w-st','مكتب محطات الجبل الغربي','احمد علي المغربي','501308'],
+ ['w-st-jb-i','w-st-jb','وحدة التفتيش الجبل الغربي','ايمن عبد السلام عمر','509181'],
+ ['w-st-jb-s','w-st-jb','وحدة مبيعات الجبل الغربي','طارق محمد حمزة','501829'],
+ ['w-st-jb-p','w-st-jb','وحدة متابعة نقاط الجبل الغربي','حمزة العاشم احمد الحاج','509188'],
+ ['w-dc','w','منسق مبيعات شركات التوزيع غ.ج','محمد عمر المشري','503326','u'],
+ ['w-dc-po','w-dc','قسم متابعة وإدارة أوامر الشراء غ.ج','عبدالمالك جمعة الفروج','','u'],
+ ['w-dc-qt','w-dc','قسم حساب الكميات والمطابقة مع الشركات غ.ج','وسيم محمد السعداوي','','u'],
+ ['w-av','w','منسق مبيعات الطيران والسفن غ.ج','زكريا عيسى الباروني','505120','u'],
+ ['w-av-jf','w-av','قسم مبيعات وقود الطيران غ.ج','أيمن علي عبيسة','509114','u'],
+ ['w-av-jf-1','w-av-jf','وحدة مبيعات طيران معيتيقة، زوارة','عبدالحكيم عامر أبو صبع','503410'],
+ ['w-av-jf-2','w-av-jf','وحدة مبيعات طيران طرابلس، الزنتان، غدامس','احمد موسى دخيل','502373'],
+ ['w-av-mr','w-av','قسم المبيعات ووقود السفن غ.ج','رجب علي الفيتوري','509832'],
+ ['w-av-mr-1','w-av-mr','وحدة مبيعات السفن طرابلس','راشد محمد أبو لسين','502404'],
+ ['w-pc','w','منسق مبيعات القطاع العام والمستهلكين غ.ج','عبد المالك خالد القمودي','506728','u'],
+ ['w-pc-con','w-pc','قسم مبيعات المستهلكين غ.ج','أمال أبو بكر الرحماني','500920','u'],
+ ['w-pc-con-bk','w-pc-con','وحدة مبيعات المخابز غ.ج','نصر احمد أبو صلاح','514405'],
+ ['w-pc-pub','w-pc','قسم مبيعات القطاع العام غ.ج','عبد المهيمن سعد النهاس','509443','u'],
+ ['w-pc-oil','w-pc','وحدة مبيعات الزيوت والشحوم غ.ج','محمد عبد الرحمن نصيح','506806','u'],
+ ['w-pc-cash','w-pc','قسم المبيعات النقدية غ.ج','سيف الإسلام يوسف أبو هادي','511306'],
+ ['w-ord','w','قسم الطلبات غ.ج','أحمد المبروك احتيوش','510855','u'],
+ ['w-ord-tr','w-ord','وحدة طلبات مستودعات طرابلس','إسماعيل سعد النهامي','502766','u'],
+ // إدارة المبيعات و.ش
+ ['e','gm','إدارة المبيعات و.ش','رافع احميدة السعيطي','500739'],
+ ['e-fol','e','قسم المتابعة و.ش','سراج سالم عبدالكريم','507307'],
+ ['e-dat','e','قسم البيانات والتقارير و.ش','عبدالعزيز عبدالله عبد ربه','507324'],
+ ['e-po','e','قسم متابعة وإدارة أوامر الشراء و.ش','إبراهيم الناجي ادريس','511187'],
+ ['e-qt','e','قسم حساب الكميات والمطابقة مع الشركات و.ش','عقيلة علي عقيلة','507350','u'],
+ ['e-st','e','منسق المحطات و.ش','طارق سعد بوقرين','502090'],
+ ['e-st-ev','e-st','قسم تقييم وقبول المحطات و.ش','نور الهدى المافوري','511111'],
+ ['e-st-ev-u','e-st-ev','وحدة تقييم المحطات و.ش','محمد فرج الترهوني','507350','u'],
+ ['e-st-bn','e-st','قسم مبيعات بنغازي','محمد عبد الله الامام','504423'],
+ ['e-st-bn-s','e-st-bn','وحدة مبيعات المحطات بنغازي','اوريدة المهدي البزار','512711'],
+ ['e-st-bn-o','e-st-bn','وحدة الطلبات بنغازي','محمد جمال الجهاني','511296'],
+ ['e-st-bn-p','e-st-bn','وحدة القطاع العام والمستهلكين بنغازي','حسن مصطفى بوحنيك','510950'],
+ ['e-st-bn-g','e-st-bn','وحدة موزعي الغاز بنغازي','خالد عبد الرحيم الاطيوش','505205'],
+ ['e-st-dr','e-st','مكتب محطات درنه','محمد إبراهيم النعاس','510057'],
+ ['e-st-dr-i','e-st-dr','وحدة التفتيش درنه','شعبان امراجع المسوري','507602'],
+ ['e-st-dr-s','e-st-dr','وحدة مبيعات درنه','نزار احمد العصيبي','508489','u'],
+ ['e-st-dr-p','e-st-dr','وحدة متابعة نقاط درنه','الصديق موسى بوجازية','506436'],
+ ['e-st-bd','e-st','مكتب محطات البيضاء','','','v'],
+ ['e-st-bd-i','e-st-bd','وحدة التفتيش البيضاء','','','v'],
+ ['e-st-bd-s','e-st-bd','وحدة مبيعات البيضاء','','','v'],
+ ['e-st-bd-p','e-st-bd','وحدة متابعة نقاط البيضاء','','','v'],
+ ['e-st-aj','e-st','مكتب محطات اجدابيا','احمد محمود علي','507246'],
+ ['e-st-aj-i','e-st-aj','وحدة التفتيش اجدابيا','','','v'],
+ ['e-st-aj-s','e-st-aj','وحدة مبيعات اجدابيا','عثمان امهدي عقيلة','510730'],
+ ['e-st-aj-p','e-st-aj','وحدة متابعة نقاط اجدابيا','','','v'],
+ ['e-st-mj','e-st','مكتب محطات المرج','عماد علي اقدير','508675'],
+ ['e-st-mj-i','e-st-mj','وحدة التفتيش المرج','سعد خالد سعد','511239'],
+ ['e-st-mj-s','e-st-mj','وحدة مبيعات المرج','يزيد محمد سليمان','514843'],
+ ['e-st-mj-p','e-st-mj','وحدة متابعة نقاط المرج','احمد إبراهيم شعيب','507477'],
+ ['e-st-sj','e-st','مكتب محطات سرت الجفرة','ايمن محمد عامر','509935'],
+ ['e-st-sj-i','e-st-sj','وحدة التفتيش سرت الجفرة','بوبكر مفتاح إبراهيم','510486'],
+ ['e-st-sj-s','e-st-sj','وحدة مبيعات سرت الجفرة','حسام احمودة ادعابو','506182','u'],
+ ['e-st-sj-p','e-st-sj','وحدة متابعة نقاط سرت الجفرة','علي فرج السنة','512409','u'],
+ ['e-av','e','منسق مبيعات الطيران والسفن و.ش','احمد عبدالعزيز بن جفيلة','504580','u'],
+ ['e-av-jf','e-av','قسم مبيعات وقود الطيران و.ش','محسن جمعة الغرياني','505581'],
+ ['e-av-mr','e-av','قسم مبيعات وقود السفن و.ش','عبدالسلام محمد العشيبي','504260'],
+ ['e-dc','e','منسق مبيعات شركات التوزيع و.ش','اشرف المبروك محمد','507493'],
+ ['e-pc','e','منسق مبيعات القطاع العام والمستهلكين و.ش','احمد مصطفى المجذوب','503737'],
+ ['e-pc-pub','e-pc','قسم مبيعات القطاع العام و.ش','مصطفى عثمان فرحات','500234'],
+ ['e-pc-con','e-pc','قسم مبيعات المستهلكين و.ش','','','v'],
+ ['e-pc-oil','e-pc','وحدة مبيعات الزيوت والشحوم و.ش','محمد يحيى البناني','504177'],
+ ['e-ord','e','قسم الطلبات و.ش','زكريا عبدالرحمن المكي','507158'],
+ ['e-ord-x','e-ord','وحدة الطلبات المنفذ و.ش','هشام عثمان علي','510189','u']];
+const ORG_TYPES=[
+ {k:'board',re:/^عضو مجلس/,l:'مجلس الإدارة',p:'p-fl'},
+ {k:'gm',re:/^الإدارة العامة/,l:'إدارة عامة',p:'p-fl'},
+ {k:'dept',re:/^إدارة/,l:'إدارة',p:'p-info'},
+ {k:'coord',re:/^منسق/,l:'منسق',p:'p-ok'},
+ {k:'office',re:/^مكتب/,l:'مكتب',p:'p-warn'},
+ {k:'section',re:/^قسم/,l:'قسم',p:'p-neutral'},
+ {k:'super',re:/^مشرف/,l:'مشرف',p:'p-neutral'},
+ {k:'unit',re:/^وحدة/,l:'وحدة',p:'p-neutral'}];
+const ORG=ORG_ROWS.map(([id,parent,title,head,empNo,fl=''])=>({id,parent,title,head,empNo,type:(ORG_TYPES.find(t=>t.re.test(title))||ORG_TYPES[7]).k,vacant:fl.includes('v'),uncertain:fl.includes('u')}));
+const ORG_BY=new Map(ORG.map(o=>[o.id,o]));
+const orgKids=id=>ORG.filter(o=>o.parent===id);
+/* صلاحيات كل جهة: { [معرّف الجهة]: [...] } — تُملأ عند وصول بيانات الصلاحيات */
+const ORG_PERMS={};
+function orgPath(id){const p=[];let o=ORG_BY.get(id);while(o){p.unshift(o);o=ORG_BY.get(o.parent)}return p}
+function orgDesc(id){return orgKids(id).reduce((n,k)=>n+1+orgDesc(k.id),0)}
+function viewOrg(){
+  const cnt=k=>ORG.filter(o=>o.type===k).length;
+  const kp=(l,v,c='')=>`<div class="kpi ${c}" style="cursor:default"><span class="l">${l}</span><span class="v">${v}</span></div>`;
+  return `<div class="page-head"><div><h2>الهيكل التنظيمي</h2><p>الإدارة العامة للمبيعات والشؤون التجارية وإداراتها وأقسامها ووحداتها، كما وردت في الهيكل المعتمد. الصلاحيات تُربط بكل جهة لاحقًا.</p></div>
+  <div class="toolbar"><button class="btn" data-act="org-x" data-open="1">فتح الكل</button><button class="btn" data-act="org-x" data-open="0">طي الكل</button><button class="btn" data-act="export-org">${I.down}تصدير Excel</button></div></div>
+  <div class="kpis org-kpis">${kp('الإدارات',cnt('dept'))}${kp('المنسقون',cnt('coord'))}${kp('الأقسام',cnt('section'))}${kp('المكاتب',cnt('office'))}${kp('الوحدات والمشرفون',cnt('unit')+cnt('super'))}${kp('شواغر',ORG.filter(o=>o.vacant).length,'warn')}</div>
+  <div class="toolbar"><div class="grow">${I.search}<input type="search" id="o-q" value="${esc(S.ui.oq||'')}" placeholder="بحث بالمسمى أو اسم المسؤول أو الرقم الوظيفي…"></div>
+  <select id="o-f"><option value="">كل الإدارات</option>${orgKids('gm').filter(o=>o.type==='dept').map(o=>`<option value="${o.id}" ${S.ui.of===o.id?'selected':''}>${esc(o.title)}</option>`).join('')}</select></div>
+  <div id="o-tree" class="panel org"></div>
+  <p class="muted" style="font-size:12.5px;margin-top:10px">«تدقيق»: الاسم أو الرقم غير واضح في النسخة الممسوحة ويحتاج مراجعة. «م» كما وردت في الهيكل الأصلي.</p>`;
+}
+function orgNode(o,d,all,hit){
+  const t=ORG_TYPES.find(x=>x.k===o.type),kids=orgKids(o.id).filter(k=>!hit||hit.has(k.id)),perms=ORG_PERMS[o.id];
+  const card=`<div class="org-card"><span class="pill ${t.p}">${t.l}</span><b>${esc(o.title)}</b>
+   <span class="org-head">${o.vacant?'<span class="pill p-warn">شاغرة</span>':`${esc(o.head)}${o.empNo?` <span class="num muted">${esc(o.empNo)}</span>`:''}`}</span>
+   ${o.uncertain?'<span class="tag dup">تدقيق</span>':''}<span class="tag">${perms&&perms.length?`${perms.length} صلاحية`:'الصلاحيات: لم تُحدَّد بعد'}</span>
+   ${kids.length?`<span class="tag">${orgDesc(o.id)} جهة تابعة</span>`:''}</div>`;
+  const open=all!=null?all:(hit||d<2);
+  return kids.length?`<details ${open?'open':''}><summary>${card}</summary><div class="org-kids">${kids.map(k=>orgNode(k,d+1,all,hit)).join('')}</div></details>`:`<div class="org-leaf">${card}</div>`;
+}
+function renderOrg(all){
+  const el=document.getElementById('o-tree');if(!el)return;const q=norm(S.ui.oq||''),root=S.ui.of||'board';let hit=null;
+  if(q){hit=new Set();ORG.filter(o=>norm([o.title,o.head,o.empNo].join(' ')).includes(q)).forEach(o=>orgPath(o.id).forEach(p=>hit.add(p.id)))}
+  el.innerHTML=hit&&!hit.has(root)?`<div class="empty"><b>لا نتائج</b>جرّب كلمة أخرى.</div>`:orgNode(ORG_BY.get(root),0,all,hit);
+}
+function exportOrg(){const r=ORG.map(o=>({'المسمى':o.title,'النوع':ORG_TYPES.find(t=>t.k===o.type).l,'المسؤول':o.vacant?'شاغرة':o.head,'الرقم الوظيفي':o.empNo,'الجهة الأعلى':o.parent?ORG_BY.get(o.parent).title:'','المسار':orgPath(o.id).map(p=>p.title).join(' / '),'تدقيق':o.uncertain?'نعم':''}));saveXlsx([['الهيكل التنظيمي',r]],'الهيكل-التنظيمي-'+TODAY_ISO+'.xlsx')}
+afterRender.org=()=>{renderOrg();const q=document.getElementById('o-q');q.addEventListener('input',debounce(()=>{S.ui.oq=q.value;renderOrg()},150));document.getElementById('o-f').addEventListener('change',e=>{S.ui.of=e.target.value;renderOrg()})};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="org-x"]');if(b)renderOrg(b.dataset.open==='1')});
+
 /* ============ Extensions & letters ============ */
 function viewExt(){
   const tab=S.ui.et||'ext';
@@ -867,6 +1032,7 @@ document.addEventListener('click',async e=>{
    case 'export-contracts':exportContracts(filteredContracts());break;
    case 'export-needs':exportNeeds(filteredNeeds());break;
    case 'export-dir':exportDir();break;
+   case 'export-org':exportOrg();break;
    case 'export-all':exportAll();break;
    case 'do-import':doImport();break;
   }
