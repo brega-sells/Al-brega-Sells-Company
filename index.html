@@ -222,6 +222,20 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 .ocd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}.ocd-list li{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:13px;padding:6px 8px;border:1px solid var(--line2);border-radius:6px}.ocd-list small{color:var(--muted);flex-basis:100%;font-size:11.5px}
 #oc-tip{position:absolute;z-index:200;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:5px 9px;border-radius:6px;box-shadow:var(--shadow);max-width:280px}
 @media (max-width:800px){.ocd-grid{grid-template-columns:minmax(0,1fr)}.ocd-kpis{grid-template-columns:repeat(2,1fr)}}
+.ocd-sec{margin:4px 0 10px;font-size:14px;font-family:var(--f-display)}.ocd-sec small{font-weight:400;color:var(--muted);font-size:12px;margin-inline-start:6px}
+.ocd-gauges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.ocg{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 12px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;position:relative}
+.ocg.go,.kpi.go{cursor:pointer}.ocg.go:hover,.kpi.go:hover{border-color:var(--accent)}
+.ocg svg{width:150px;max-width:100%;height:auto;display:block}
+.ocg-track{fill:none;stroke:var(--line2);stroke-width:12;stroke-linecap:round}.ocg-val{fill:none;stroke:var(--ocf);stroke-width:12;stroke-linecap:round}
+.ocg>b{font-family:var(--f-display);font-size:26px;margin-top:-30px;line-height:1.2}.ocg-l{font-weight:600;font-size:13px}.ocg-s{color:var(--muted);font-size:12px}.ocg .pill{margin-top:4px}
+.ocd-row[data-set]{cursor:pointer}
+.ocd-cols{display:flex;align-items:flex-end;gap:10px;height:190px;padding-top:6px}
+.ocd-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;font-size:12px;color:var(--muted)}
+.ocd-col i{display:block;width:100%;max-width:44px;background:var(--ocf);border-radius:4px 4px 0 0}.ocd-col:hover i{filter:brightness(1.12)}
+.ocd-filters{margin-bottom:8px}.ocd-tw{max-height:460px!important;overflow:auto!important}
+.ocd-kpis{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
+@media (max-width:800px){.ocd-gauges{grid-template-columns:minmax(0,1fr)}}
 .org.bare{background:none;border:0;padding:0}
 .oc-more{font-size:11px;color:var(--accent);font-weight:600}
 .oc-card.root{width:280px;background:var(--side);border-color:var(--side);border-top-color:var(--flame);padding:12px 14px}
@@ -1048,44 +1062,70 @@ function orgAll(id){const out=[];const walk=p=>orgKids(p).forEach(k=>{out.push(k
 function orgDepth(id){const k=orgKids(id);return k.length?1+Math.max(...k.map(c=>orgDepth(c.id))):0}
 function ocPct(a,b){return b?Math.round(a*100/b):0}
 function ocBars(rows,max,opt={}){
-  return `<div class="ocd-bars">${rows.map(r=>`<div class="ocd-row${r.go?' go':''}" ${r.go?`data-org-dash="${r.go}" role="button" tabindex="0"`:''}>
+  return `<div class="ocd-bars">${rows.map(r=>`<div class="ocd-row${r.go||r.set?' go':''}" ${r.go?`data-org-dash="${r.go}" role="button" tabindex="0"`:r.set?`data-ocd-set="${r.set}" role="button" tabindex="0"`:''}>
     <span class="ocd-lbl" title="${esc(r.full||r.l)}">${esc(r.l)}</span>
     <span class="ocd-track">${(r.parts||[{v:r.v,c:'f'}]).filter(p=>p.v).map(p=>`<span class="ocd-seg ${p.c}" style="width:${p.v*100/max}%" data-tip="${esc((r.full||r.l)+' · '+(p.t||'')+' '+p.v)}"></span>`).join('')}</span>
     <span class="ocd-val num">${r.vl??r.v}</span></div>`).join('')}</div>`;
 }
+function ocGauge(pct,label,sub,act){const p=Math.max(0,Math.min(100,pct)),r=52,L=Math.PI*r,met=p>=100;
+  return `<div class="ocg${act?' go':''}" ${act?`data-ocd-set="${act}" role="button" tabindex="0"`:''} data-tip="${esc(label+': '+p+'% · الهدف 100%')}">
+   <svg viewBox="0 0 128 74" aria-hidden="true"><path d="M12 66a52 52 0 0 1 104 0" class="ocg-track"/>${p?`<path d="M12 66a52 52 0 0 1 104 0" class="ocg-val" style="stroke-dasharray:${L*p/100} ${L}"/>`:''}</svg>
+   <b class="num">${p}%</b><span class="ocg-l">${label}</span><span class="ocg-s">${sub}</span>
+   <span class="pill ${met?'p-ok':'p-warn'}">${met?'✓ محقق':'! دون الهدف'} · الهدف 100%</span></div>`}
 function viewOrgDash(el){
   const root=ORG_BY.get(S.ui.of)||ORG_BY.get('board'),sub=orgAll(root.id),pos=[root,...sub];
   const filled=pos.filter(o=>!o.vacant).length,vac=pos.length-filled,unc=pos.filter(o=>o.uncertain).length,permd=pos.filter(o=>(ORG_PERMS[o.id]||[]).length).length;
   const base=root.id==='board'?'gm':root.id,kids=orgKids(base),tasks=pos.reduce((n,o)=>n+(ORG_TASKS[o.id]||[]).length,0);
-  const kp=(l,v,s='',c='')=>`<div class="kpi ${c}" style="cursor:default"><span class="l">${l}</span><span class="v">${v}</span>${s?`<span class="s">${s}</span>`:''}</div>`;
-  // التوزيع حسب النوع
-  const types=ORG_TYPES.filter(t=>t.k!=='board').map(t=>({l:t.l,v:sub.filter(o=>o.type===t.k).length})).filter(r=>r.v);
+  const mgrs=pos.filter(o=>orgKids(o.id).length),avgSpan=mgrs.length?(mgrs.reduce((n,o)=>n+orgKids(o.id).length,0)/mgrs.length):0;
+  const kp=(l,v,s='',c='',act='')=>`<div class="kpi ${c}${act?' go':''}" ${act?`data-ocd-set="${act}" role="button" tabindex="0"`:'style="cursor:default"'}><span class="l">${l}</span><span class="v">${v}</span>${s?`<span class="s">${s}</span>`:''}</div>`;
+  const types=ORG_TYPES.filter(t=>t.k!=='board').map(t=>({l:t.l,v:sub.filter(o=>o.type===t.k).length,k:t.k})).filter(r=>r.v);
   const maxT=Math.max(1,...types.map(r=>r.v));
-  // مقارنة الجهات التابعة مباشرة
   const cmp=kids.map(k=>{const a=[k,...orgAll(k.id)],v=a.filter(o=>o.vacant).length;return {l:k.title,full:k.title,go:orgKids(k.id).length?k.id:'',v:a.length,parts:[{v:a.length-v,c:'f',t:'مشغولة'},{v,c:'v',t:'شاغرة'}],vl:a.length}}).sort((a,b)=>b.v-a.v);
   const maxC=Math.max(1,...cmp.map(r=>r.v));
-  // نطاق الإشراف
-  const span=pos.map(o=>({l:o.title,full:`${o.title} — ${o.vacant?'شاغرة':o.head}`,v:orgKids(o.id).length,go:orgKids(o.id).length&&o.id!==root.id?o.id:''})).filter(r=>r.v).sort((a,b)=>b.v-a.v).slice(0,8);
+  const span=mgrs.map(o=>({l:o.title,full:`${o.title} — ${o.vacant?'شاغرة':o.head}`,v:orgKids(o.id).length,go:o.id!==root.id?o.id:''})).sort((a,b)=>b.v-a.v).slice(0,8);
   const maxS=Math.max(1,...span.map(r=>r.v));
-  const vacL=pos.filter(o=>o.vacant),uncL=pos.filter(o=>o.uncertain);
-  const path=orgPath(root.id);
-  const scopes=['board',...orgKids('gm').map(o=>o.id)];
+  // عدد الجهات في كل مستوى إداري
+  const rd=orgPath(root.id).length,lv={};pos.forEach(o=>{const d=orgPath(o.id).length-rd+1;lv[d]=(lv[d]||0)+1});
+  const lvs=Object.entries(lv).map(([d,n])=>({d:+d,n})),maxL=Math.max(1,...lvs.map(x=>x.n));
+  const path=orgPath(root.id),scopes=['board',...orgKids('gm').map(o=>o.id)];
   el.innerHTML=`<div class="ocd-scopes">${scopes.map(id=>{const o=ORG_BY.get(id);return `<button data-org-dash="${id}" aria-pressed="${id===root.id}">${esc(id==='board'?'الهيكل الكامل':o.title)}</button>`}).join('')}</div>
   <div class="ocd-head"><div><div class="oc-crumbs" style="padding:0 0 4px">${path.map((p,i)=>i<path.length-1?`<button data-org-dash="${p.id}">${esc(p.id==='board'?'الهيكل الكامل':p.title)}</button><span>‹</span>`:'').join('')}</div>
    <h3>${esc(root.id==='board'?'لوحة مؤشرات الهيكل التنظيمي':'لوحة مؤشرات: '+root.title)}</h3><p>${root.vacant?'المسؤول: شاغرة':`المسؤول: <b>${esc(root.head)}</b>${root.empNo?` <span class="num">${esc(root.empNo)}</span>`:''}`}</p></div>
    ${kids.length?`<button class="btn sm" data-org-focus="${root.id==='board'?'':root.id}">عرض في المخطط</button>`:''}</div>
-  <div class="kpis ocd-kpis">${kp('الجهات التابعة',sub.length,kids.length?`${kids.length} ${root.id==='board'?'تحت الإدارة العامة':'مباشرة'}`:'')}${kp('المناصب المشغولة',filled,`${ocPct(filled,pos.length)}% من ${pos.length}`,'ok')}${kp('الشواغر',vac,`${ocPct(vac,pos.length)}%`,vac?'warn':'')}${kp('بحاجة تدقيق',unc,'أسماء أو أرقام غير واضحة',unc?'warn':'')}${kp('المستويات الإدارية',orgDepth(root.id)+1)}${kp('الصلاحيات المحددة',`${permd}/${pos.length}`,permd?'':'بانتظار البيانات')}</div>
+  <h4 class="ocd-sec">مؤشرات الأداء الرئيسية <small>مقارنة بالهدف</small></h4>
+  <div class="ocd-gauges">${ocGauge(ocPct(filled,pos.length),'نسبة إشغال المناصب',`${filled} مشغولة من ${pos.length}`,'st:v')}${ocGauge(ocPct(pos.length-unc,pos.length),'دقة بيانات الهيكل',`${unc} بند بحاجة تدقيق`,'st:u')}${ocGauge(ocPct(permd,pos.length),'اكتمال الصلاحيات',permd?`${permd} جهة محددة`:'بانتظار بيانات الصلاحيات')}</div>
+  <h4 class="ocd-sec">بطاقات ملخصة <small>اضغط على البطاقة لتصفية الجدول</small></h4>
+  <div class="kpis ocd-kpis">${kp('الجهات التابعة',sub.length,kids.length?`${kids.length} ${root.id==='board'?'تحت الإدارة العامة':'مباشرة'}`:'','','st:')}${kp('المناصب المشغولة',filled,`${ocPct(filled,pos.length)}%`,'ok','st:f')}${kp('الشواغر',vac,`${ocPct(vac,pos.length)}%`,vac?'warn':'','st:v')}${kp('بحاجة تدقيق',unc,'أسماء أو أرقام غير واضحة',unc?'warn':'','st:u')}${kp('المستويات الإدارية',orgDepth(root.id)+1)}${kp('متوسط نطاق الإشراف',avgSpan.toFixed(1),`${mgrs.length} مسؤول له جهات تابعة`)}${kp('المهام المسندة',tasks,tasks?'صفحات في المنظومة':'')}</div>
   <div class="ocd-grid">
-   ${cmp.length>1?`<section class="panel ocd-wide"><h3 class="section-title">${root.id==='board'?'حجم الإدارات والجهات التابعة للإدارة العامة':'حجم الجهات التابعة مباشرة'} <small>عدد المناصب في كل جهة وما يتبعها · اضغط على جهة لعرض لوحتها</small></h3>
+   ${cmp.length>1?`<section class="panel ocd-wide"><h3 class="section-title">${root.id==='board'?'حجم الإدارات والجهات التابعة للإدارة العامة':'حجم الجهات التابعة مباشرة'} <small>اضغط على جهة لعرض لوحتها</small></h3>
      <div class="ocd-legend"><span><i class="f"></i>مشغولة</span><span><i class="v"></i>شاغرة</span></div>${ocBars(cmp,maxC)}</section>`:''}
-   ${types.length?`<section class="panel"><h3 class="section-title">التوزيع حسب النوع</h3>${ocBars(types,maxT)}</section>`:''}
-   ${span.length?`<section class="panel"><h3 class="section-title">نطاق الإشراف <small>عدد الجهات التابعة مباشرة لكل مسؤول</small></h3>${ocBars(span,maxS)}</section>`:''}
-   <section class="panel"><h3 class="section-title">الشواغر <small>${vacL.length}</small></h3>${vacL.length?`<ul class="ocd-list">${vacL.map(o=>`<li><b>${esc(o.title)}</b><small>${esc(orgPath(o.parent).slice(-1).map(p=>p.title).join(''))}</small></li>`).join('')}</ul>`:'<p class="muted" style="margin:0">لا توجد شواغر في هذا النطاق.</p>'}</section>
-   <section class="panel"><h3 class="section-title">بحاجة تدقيق <small>${uncL.length}</small></h3>${uncL.length?`<ul class="ocd-list">${uncL.map(o=>`<li><b>${esc(o.head||o.title)}</b> <span class="num muted">${esc(o.empNo||'بدون رقم')}</span><small>${esc(o.title)}</small></li>`).join('')}</ul>`:'<p class="muted" style="margin:0">لا توجد بنود بحاجة تدقيق.</p>'}</section>
-   ${kids.length?`<section class="panel ocd-wide"><h3 class="section-title">${root.id==='board'?'الجهات التابعة للإدارة العامة':'الجهات التابعة مباشرة'}</h3><div class="tablewrap"><table><thead><tr><th class="nosort">الجهة</th><th class="nosort">النوع</th><th class="nosort">المسؤول</th><th class="nosort">الرقم الوظيفي</th><th class="nosort">جهات تابعة</th><th class="nosort">شواغر</th><th class="nosort">المهام</th><th class="nosort">الصلاحيات</th></tr></thead><tbody>
-    ${kids.map(k=>{const a=orgAll(k.id);return `<tr ${a.length?`data-org-dash="${k.id}" style="cursor:pointer"`:''}><td class="t-strong">${esc(k.title)}</td><td>${ORG_TYPES.find(t=>t.k===k.type).l}</td><td>${k.vacant?'<span class="pill p-warn">شاغرة</span>':esc(k.head)}</td><td class="n">${esc(k.empNo||'—')}</td><td class="n">${a.length||'—'}</td><td class="n">${[k,...a].filter(o=>o.vacant).length||'—'}</td><td class="n">${(ORG_TASKS[k.id]||[]).length||'—'}</td><td>${(ORG_PERMS[k.id]||[]).length?`${ORG_PERMS[k.id].length} صلاحية`:'<span class="muted">لم تُحدَّد بعد</span>'}</td></tr>`}).join('')}</tbody></table></div></section>`:''}
-  </div>${tasks?`<p class="muted" style="font-size:12.5px;margin:10px 0 0">المهام المسندة في هذا النطاق: ${tasks}.</p>`:''}`;
+   ${types.length?`<section class="panel"><h3 class="section-title">التوزيع حسب النوع <small>اضغط للتصفية</small></h3>${ocBars(types.map(t=>({...t,set:'ty:'+t.k})),maxT)}</section>`:''}
+   <section class="panel"><h3 class="section-title">عدد الجهات في كل مستوى إداري</h3><div class="ocd-cols">${lvs.map(x=>`<div class="ocd-col" data-tip="${esc('المستوى '+x.d+': '+x.n+' جهة')}"><span class="num">${x.n}</span><i style="height:${Math.max(4,x.n*100/maxL)}%"></i><small>م${x.d}</small></div>`).join('')}</div></section>
+   ${span.length?`<section class="panel ocd-wide"><h3 class="section-title">نطاق الإشراف <small>عدد الجهات التابعة مباشرة لكل مسؤول · اضغط لعرض لوحتها</small></h3>${ocBars(span,maxS)}</section>`:''}
+   <section class="panel ocd-wide"><h3 class="section-title">جميع الجهات في النطاق</h3>
+    <div class="toolbar ocd-filters"><div class="grow">${I.search}<input type="search" id="ocd-q" value="${esc(S.ui.odq||'')}" placeholder="بحث بالمسمى أو الاسم أو الرقم الوظيفي…"></div>
+     <select id="ocd-t"><option value="">كل الأنواع</option>${ORG_TYPES.filter(t=>t.k!=='board').map(t=>`<option value="${t.k}" ${S.ui.odt===t.k?'selected':''}>${t.l}</option>`).join('')}</select>
+     <select id="ocd-s"><option value="">كل الحالات</option><option value="f" ${S.ui.ods==='f'?'selected':''}>مشغولة</option><option value="v" ${S.ui.ods==='v'?'selected':''}>شاغرة</option><option value="u" ${S.ui.ods==='u'?'selected':''}>بحاجة تدقيق</option></select>
+     <button class="btn sm ghost" data-ocd-set="clear">مسح التصفية</button></div>
+    <div id="ocd-table"></div></section>
+  </div>`;
+  const tb=()=>renderOcdTable(pos,root);tb();
+  const q=el.querySelector('#ocd-q');q.addEventListener('input',debounce(()=>{S.ui.odq=q.value;tb()},150));
+  el.querySelector('#ocd-t').addEventListener('change',e=>{S.ui.odt=e.target.value;tb()});
+  el.querySelector('#ocd-s').addEventListener('change',e=>{S.ui.ods=e.target.value;tb()});
 }
+function renderOcdTable(pos,root){const el=document.getElementById('ocd-table');if(!el)return;const q=norm(S.ui.odq||'');
+  let r=pos.filter(o=>o.id!=='board');
+  if(S.ui.odt)r=r.filter(o=>o.type===S.ui.odt);
+  if(S.ui.ods==='f')r=r.filter(o=>!o.vacant);if(S.ui.ods==='v')r=r.filter(o=>o.vacant);if(S.ui.ods==='u')r=r.filter(o=>o.uncertain);
+  if(q)r=r.filter(o=>norm([o.title,o.head,o.empNo].join(' ')).includes(q));
+  el.innerHTML=`<div class="count-line">${r.length} جهة</div>${r.length?`<div class="tablewrap ocd-tw"><table><thead><tr><th class="nosort">الجهة</th><th class="nosort">النوع</th><th class="nosort">المسؤول</th><th class="nosort">الرقم الوظيفي</th><th class="nosort">تتبع</th><th class="nosort">جهات تابعة</th><th class="nosort">الحالة</th><th class="nosort">الصلاحيات</th></tr></thead><tbody>
+  ${r.map(o=>{const a=orgAll(o.id).length;return `<tr ${a?`data-org-dash="${o.id}" style="cursor:pointer"`:''}><td class="t-strong">${esc(o.title)}</td><td>${ORG_TYPES.find(t=>t.k===o.type).l}</td><td>${o.vacant?'—':esc(o.head)}</td><td class="n">${esc(o.empNo||'—')}</td><td>${esc(o.parent?ORG_BY.get(o.parent).title:'—')}</td><td class="n">${a||'—'}</td><td>${o.vacant?'<span class="pill p-warn">شاغرة</span>':o.uncertain?'<span class="tag dup">تدقيق</span>':'<span class="pill p-ok">مشغولة</span>'}</td><td>${(ORG_PERMS[o.id]||[]).length?`${ORG_PERMS[o.id].length} صلاحية`:'<span class="muted">لم تُحدَّد بعد</span>'}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty"><b>لا نتائج</b>غيّر التصفية أو البحث.</div>'}`;
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-ocd-set]');if(!b||!b.closest('#o-tree'))return;const v=b.dataset.ocdSet;
+  if(v==='clear'){S.ui.odq='';S.ui.odt='';S.ui.ods=''}else{const [k,x]=v.split(':');if(k==='st'){S.ui.ods=x;S.ui.odt=''}if(k==='ty'){S.ui.odt=x;S.ui.ods=''}S.ui.odq=''}
+  ['ocd-q','ocd-t','ocd-s'].forEach((id,i)=>{const f=document.getElementById(id);if(f)f.value=[S.ui.odq,S.ui.odt,S.ui.ods][i]||''});
+  const root=ORG_BY.get(S.ui.of)||ORG_BY.get('board');renderOcdTable([root,...orgAll(root.id)],root);document.getElementById('ocd-table').scrollIntoView({block:'nearest',behavior:'smooth'})});
 function ocTip(e){let t=document.getElementById('oc-tip');const h=e.target.closest&&e.target.closest('[data-tip]');
   if(!h){if(t)t.hidden=true;return}if(!t){t=document.createElement('div');t.id='oc-tip';t.setAttribute('role','tooltip');document.body.appendChild(t)}
   t.textContent=h.dataset.tip;t.hidden=false;const r=h.getBoundingClientRect();t.style.top=(r.top+window.scrollY-t.offsetHeight-8)+'px';t.style.left=Math.max(8,Math.min(window.innerWidth-t.offsetWidth-8,r.left+r.width/2-t.offsetWidth/2))+'px'}
