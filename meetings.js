@@ -17,6 +17,7 @@ const stPill=s=>{const x=STATUS[s]||STATUS.scheduled;return `<span class="pill $
 const RSVP={yes:['سيحضر','Attending','p-ok'],maybe:['ربما','Maybe','p-warn'],no:['معتذر','Declined','p-crit']};
 const MI={meet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="6" width="13" height="12" rx="2"/><path d="m15.5 10.5 6-3.5v10l-6-3.5"/></svg>',
  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+ wa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.4z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.6-2-1-1 .8a5 5 0 0 1-2.7-2.7l.8-1-1-2z"/></svg>',
  print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>'};
 I.meet=MI.meet;
 if(window.I18N&&I18N.add)I18N.add({'الاجتماعات المغلقة':'Closed meetings'});
@@ -37,6 +38,21 @@ function canManage(m){const e=(me()||{}).email;return isAdmin()||m.createdBy===e
 function canContribute(m){return canManage(m)||(canWrite()&&M.unit&&(m.units||[]).includes(M.unit))}
 const fdt=m=>`${fd(m.date)} · <span dir="ltr">${esc(m.time||'')}</span>`;
 function genLink(){const a='abcdefghjkmnpqrstuvwxyz23456789';let s='';const r=crypto.getRandomValues(new Uint8Array(18));r.forEach(b=>s+=a[b%a.length]);return 'https://meet.jit.si/BregaSales-'+s}
+const PLAT={zoom:{l:'Zoom',re:/^https:\/\/([\w-]+\.)?zoom\.(us|com)\//i,start:'https://zoom.us/meeting/schedule'},
+ meet:{l:'Google Meet',re:/^https:\/\/meet\.google\.com\//i,start:'https://meet.google.com/new'},
+ teams:{l:'Microsoft Teams',re:/^https:\/\/teams\.(microsoft|live)\.com\//i,start:'https://teams.microsoft.com/'},
+ whatsapp:{l:'WhatsApp',re:/^https:\/\/(chat\.whatsapp\.com|wa\.me|call\.whatsapp\.com)\//i,start:'https://web.whatsapp.com/'},
+ jitsi:{l:'Jitsi',re:/^https:\/\/meet\.jit\.si\//i}};
+function platOf(m){if(m.platform&&PLAT[m.platform])return m.platform;const k=Object.keys(PLAT).find(k=>PLAT[k].re.test(m.link||''));return k||''}
+const WA={};
+function waNum(n){return String(n||'').replace(/[^\d]/g,'').replace(/^00/,'')}
+function inviteText(m){const p=platOf(m);return [tr('دعوة لاجتماع مغلق','Closed meeting invitation')+': '+m.title,
+  tr('الجهة الداعية','Organizer')+': '+uFull(m.organizer),
+  tr('الموعد','When')+': '+fd(m.date)+' '+tr('الساعة','at')+' '+(m.time||'')+' ('+(m.duration||60)+' '+tr('دقيقة','min')+')',
+  (m.agenda||[]).length?tr('جدول الأعمال','Agenda')+':\n'+m.agenda.map((a,i)=>(i+1)+'. '+a.t).join('\n'):'',
+  m.link?(p?PLAT[p].l+': ':'')+m.link:'',m.meetingId?tr('رقم الاجتماع','Meeting ID')+': '+m.meetingId:'',m.passcode?tr('رمز الدخول','Passcode')+': '+m.passcode:'',
+  tr('الدعوة خاصة بالإدارات المدعوة، يُرجى عدم إعادة إرسالها.','This invitation is for the invited departments only; please do not forward it.')].filter(Boolean).join('\n')}
+function waLink(m,num){return 'https://wa.me/'+(num?waNum(num):'')+'?text='+encodeURIComponent(inviteText(m))}
 function safeUrl(u){u=(u||'').trim();return /^https:\/\/[^\s"'<>]+$/i.test(u)?u:''}
 async function logM(action,id,summary){try{if(canWrite())await FS().collection('log').add({ts:nowISO(),user:me().email,name:me().name||'',action,col:'meetings',id,summary:summary||''})}catch(e){}}
 function errMsg(e){return e&&e.code==='permission-denied'?tr('لا تملك صلاحية هذا الإجراء على الاجتماع','You do not have permission for this action'):((e&&e.message)||tr('تعذّر الحفظ','Could not save'))}
@@ -50,6 +66,7 @@ async function start(){
   await window.claude.use('db');const m=me();if(!m||!FS())return;
   try{const r=await FS().collection('roles').doc(m.email).get();M.unit=(r.exists&&r.data().unit)||''}catch(e){}
   M.subs.forEach(u=>u());M.subs=[];
+  M.subs.push(FS().collection('config').doc('meetings').onSnapshot(d=>{Object.keys(WA).forEach(k=>delete WA[k]);Object.assign(WA,(d.exists&&d.data().whatsapp)||{});refresh()},()=>{}));
   const col=FS().collection('meetings');const onErr=e=>{console.warn('meetings',e);M.loaded=true;M.err=e.code||e.message;refresh()};
   if(isAdmin())M.subs.push(col.onSnapshot(qs=>apply(qs,'all'),onErr));
   else{M.subs.push(col.where('createdBy','==',m.email).onSnapshot(qs=>apply(qs,'own'),onErr));
@@ -111,6 +128,9 @@ function viewMeetings(){
    <select id="mt-u"><option value="">${tr('كل الإدارات','All departments')}</option>${MT_UNITS.map(u=>`<option value="${u}" ${M.ui.u===u?'selected':''}>${esc(uName(u))}</option>`).join('')}</select></div>
   <div class="chips" id="mt-chips">${chips.map(([k,l])=>`<button class="chip" data-mt-f="${k}" aria-pressed="${M.ui.f===k}">${l}</button>`).join('')}</div>
   <div id="mt-list">${listHTML()}</div>
+  ${isAdmin()?`<div class="panel"><h3 class="section-title">${MI.wa.replace('<svg','<svg style="width:18px;height:18px;flex:none"')} ${tr('أرقام واتساب الإدارات','Department WhatsApp numbers')} <small>${tr('لإرسال دعوات الاجتماعات مباشرة','Used to send meeting invitations directly')}</small></h3>
+   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px">${MT_UNITS.map(u=>`<div class="field"><label for="mt-wa-${u}">${esc(uName(u))}</label><input id="mt-wa-${u}" dir="ltr" inputmode="tel" placeholder="2189XXXXXXXX" value="${esc(WA[u]||'')}"></div>`).join('')}</div>
+   <div style="margin-top:10px;display:flex;gap:10px;align-items:center"><button class="btn" data-mt="save-wa">${tr('حفظ الأرقام','Save numbers')}</button><span class="muted" style="font-size:12px">${tr('بالصيغة الدولية بدون + (مثال ليبيا: 218912345678).','International format without + (Libya e.g. 218912345678).')}</span></div></div>`:''}
   ${isAdmin()?`<div class="panel"><h3 class="section-title">${tr('ربط المستخدمين بالإدارات','Link users to departments')} <small>${tr('يحدد الاجتماعات التي يراها كل مستخدم','Decides which meetings each user can see')}</small></h3><div id="mt-roles"><div class="muted">${tr('جارٍ التحميل…','Loading…')}</div></div></div>`:''}`;
 }
 function listHTML(){
@@ -139,7 +159,8 @@ async function loadRoles(){
 /* ---------- create / edit ---------- */
 function meetingForm(m){
   const isNew=!m;const d=new Date(Date.now()+86400000);
-  m=m||{date:iso(d),time:'10:00',duration:60,organizer:M.unit||'gm',units:[],agenda:[],link:genLink()};
+  m=m||{date:iso(d),time:'10:00',duration:60,organizer:M.unit||'gm',units:[],agenda:[],platform:'zoom',link:''};
+  const plat=platOf(m)||'zoom';
   const unitBox=MT_UNITS.map(u=>`<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)"><input type="checkbox" name="mt-inv" value="${u}" ${(m.units||[]).includes(u)?'checked':''} style="margin-top:3px"><span><b>${esc(uName(u))}</b><br><span class="muted" style="font-size:12px">${esc(uHead(u))}</span></span></label>`).join('');
   modal(isNew?tr('اجتماع مغلق جديد','New closed meeting'):tr('تعديل الاجتماع','Edit meeting'),`
    <fieldset><legend>${tr('الاجتماع','Meeting')}</legend>
@@ -153,25 +174,42 @@ function meetingForm(m){
     <span class="hint field full" style="font-size:12px;color:var(--muted)">${tr('الاجتماع مغلق: لا يظهر إلا للجهة الداعية والإدارات المحددة هنا ومدير النظام.','Closed: visible only to the organizer, the departments ticked here, and the administrator.')}</span></fieldset>
    <fieldset><legend>${tr('جدول الأعمال','Agenda')}</legend>
     <div class="field full"><label for="mt-agenda">${tr('بند في كل سطر','One item per line')}</label><textarea id="mt-agenda" rows="5">${esc((m.agenda||[]).map(a=>a.t).join('\n'))}</textarea></div></fieldset>
-   <fieldset><legend>${tr('رابط الانضمام عن بُعد','Online join link')}</legend>
-    <div class="field full"><label for="mt-link">${tr('الرابط','Link')}</label><input id="mt-link" dir="ltr" value="${esc(m.link||'')}"><span class="hint">${tr('أُنشئ رابط غرفة Jitsi خاصة تلقائيًا (مجانية، تعمل من المتصفح والهاتف). يمكنك لصق رابط Google Meet أو Teams أو Zoom بدلًا منه.','A private Jitsi room link was generated (free, works in browser and phone). You may paste a Google Meet, Teams or Zoom link instead.')} <button type="button" class="btn sm ghost" data-mt="regen">${tr('رابط جديد','New link')}</button></span></div>
-    ${F('mt-pass',tr('رمز الدخول (اختياري)','Passcode (optional)'),m.passcode)}
+   <fieldset><legend>${tr('منصة الاجتماع عن بُعد','Online meeting platform')}</legend>
+    <div class="field"><label for="mt-plat">${tr('المنصة','Platform')}</label><select id="mt-plat">${Object.entries(PLAT).map(([k,v])=>`<option value="${k}" ${plat===k?'selected':''}>${v.l}${k==='jitsi'?' '+tr('(رابط تلقائي مجاني)','(free auto link)'):''}</option>`).join('')}</select></div>
+    <div class="field" style="justify-content:flex-end"><button type="button" class="btn" data-mt="plat-start" id="mt-start">${tr('إنشاء الاجتماع في المنصة','Create it on the platform')}</button></div>
+    <div class="field full"><label for="mt-link">${tr('رابط الانضمام','Join link')}</label><input id="mt-link" dir="ltr" value="${esc(m.link||'')}" placeholder="https://zoom.us/j/..."><span class="hint" id="mt-plat-hint"></span></div>
+    ${F('mt-mid',tr('رقم الاجتماع (Meeting ID)','Meeting ID'),m.meetingId)}
+    ${F('mt-pass',tr('رمز الدخول (Passcode)','Passcode'),m.passcode)}
    </fieldset>
    <div class="lg-msg" id="mt-msg" role="alert" style="color:var(--crit);font-size:13px"></div>`,
    `<button type="button" class="btn primary" data-mt="save" data-id="${esc(m.id||'')}">${tr('حفظ الاجتماع','Save meeting')}</button><button type="button" class="btn" data-act="close-dlg">${tr('إلغاء','Cancel')}</button>`);
+  platUI();
 }
+function platUI(){const p=val('mt-plat'),h=document.getElementById('mt-plat-hint'),st=document.getElementById('mt-start'),li=document.getElementById('mt-link');if(!h)return;
+  const H={zoom:tr('اضغط «إنشاء الاجتماع في المنصة» لفتح Zoom بحساب الشركة وجدولة الاجتماع، ثم الصق هنا رابط الدعوة (Invite Link) ورقم الاجتماع ورمز الدخول. يكفي رقم الاجتماع وحده وسيُكوَّن الرابط تلقائيًا.','Click “Create it on the platform” to schedule in Zoom with the company account, then paste the invite link, meeting ID and passcode. The meeting ID alone is enough.'),
+   meet:tr('أنشئ اجتماعًا في Google Meet ثم الصق رابطه هنا.','Create a Google Meet and paste its link.'),
+   teams:tr('أنشئ اجتماعًا في Teams ثم الصق رابط الانضمام هنا.','Create a Teams meeting and paste its join link.'),
+   whatsapp:tr('أنشئ مجموعة واتساب للاجتماع أو رابط مكالمة واتساب، ثم الصق رابط الدعوة هنا (chat.whatsapp.com أو call.whatsapp.com).','Create a WhatsApp group or call link and paste it here.'),
+   jitsi:tr('أُنشئ رابط غرفة Jitsi خاصة تلقائيًا (مجانية، بلا حساب).','A private Jitsi room link was generated (free, no account).')};
+  h.textContent=H[p]||'';st.hidden=p==='jitsi';
+  if(p==='jitsi'&&!PLAT.jitsi.re.test(li.value))li.value=genLink();else if(p!=='jitsi'&&PLAT.jitsi.re.test(li.value))li.value='';
+  li.placeholder={zoom:'https://zoom.us/j/...',meet:'https://meet.google.com/...',teams:'https://teams.microsoft.com/l/meetup-join/...',whatsapp:'https://chat.whatsapp.com/...',jitsi:''}[p]||'';
+  document.getElementById('mt-mid').closest('.field').hidden=p!=='zoom'&&p!=='teams'}
+document.addEventListener('change',e=>{if(e.target.id==='mt-plat')platUI()});
 async function saveForm(id){
   const msg=document.getElementById('mt-msg');const old=id?M.list.get(id):null;
   const organizer=isAdmin()?val('mt-org'):(old?old.organizer:M.unit);
   const inv=[...document.querySelectorAll('input[name=mt-inv]:checked')].map(x=>x.value);
   const units=[organizer,...inv.filter(u=>u!==organizer)];
-  const link=safeUrl(val('mt-link'));
+  const platform=val('mt-plat')||'zoom',mid=val('mt-mid').replace(/[^\d]/g,'');
+  let link=safeUrl(val('mt-link'));if(!link&&platform==='zoom'&&mid)link='https://zoom.us/j/'+mid;
   if(!val('mt-title')||!val('mt-date')||!val('mt-time')){msg.textContent=tr('أكمل الموضوع والتاريخ والساعة','Fill subject, date and time');return}
   if(units.length<2){msg.textContent=tr('اختر إدارة واحدة على الأقل لدعوتها','Invite at least one department');return}
   if(val('mt-link')&&!link){msg.textContent=tr('الرابط يجب أن يبدأ بـ https://','The link must start with https://');return}
+  if(link&&!PLAT[platform].re.test(link)){msg.textContent=tr(`الرابط لا يبدو رابط ${PLAT[platform].l}. غيّر المنصة أو صحّح الرابط.`,`This does not look like a ${PLAT[platform].l} link.`);return}
   const oldAgenda=new Map(((old&&old.agenda)||[]).map(a=>[a.t,a]));
   const o=Object.assign({},old||{},{title:val('mt-title'),date:val('mt-date'),time:val('mt-time'),duration:Number(val('mt-dur'))||60,organizer,units,
-    agenda:val('mt-agenda').split('\n').map(s=>s.trim()).filter(Boolean).map(t=>oldAgenda.get(t)||{t}),link,passcode:val('mt-pass'),updatedAt:nowISO()});
+    agenda:val('mt-agenda').split('\n').map(s=>s.trim()).filter(Boolean).map(t=>oldAgenda.get(t)||{t}),link,platform,meetingId:(platform==='zoom'||platform==='teams')?val('mt-mid'):'',passcode:val('mt-pass'),updatedAt:nowISO()});
   delete o.id;delete o._t;
   if(!old){Object.assign(o,{status:'scheduled',createdBy:me().email,createdByName:me().name||'',createdAt:nowISO(),rsvp:{},decisions:[],minutes:''})}
   const ref=old?FS().collection('meetings').doc(id):FS().collection('meetings').doc();
@@ -194,9 +232,16 @@ function openMeeting(id,keepScroll){
    <button class="iconbtn" data-mt="print" data-id="${esc(id)}" aria-label="${tr('طباعة المحضر','Print minutes')}" title="${tr('طباعة المحضر','Print minutes')}">${MI.print}</button>
    ${man&&!closed?`<button class="iconbtn" data-mt="edit" data-id="${esc(id)}" aria-label="${tr('تعديل','Edit')}">${I.edit}</button>`:''}
    <button class="iconbtn" data-act="close-drawer" aria-label="${tr('إغلاق','Close')}">${I.close}</button>`;
+  const pk=platOf(m),pl=pk?PLAT[pk].l:'';
+  const waUnits=(m.units||[]).filter(u=>u!==M.unit&&WA[u]);
+  const wa=!closed?`<div class="panel"><h3 class="section-title">${MI.wa.replace('<svg','<svg style="width:18px;height:18px;flex:none"')} ${tr('إرسال الدعوة عبر واتساب','Send invitation on WhatsApp')}</h3><div class="toolbar">
+     <a class="btn" href="${esc(waLink(m))}" target="_blank" rel="noopener" data-mt="join">${MI.wa}${tr('اختيار جهة أو مجموعة','Choose chat or group')}</a>
+     ${waUnits.map(u=>`<a class="btn sm" href="${esc(waLink(m,WA[u]))}" target="_blank" rel="noopener" data-mt="join">${esc(uName(u))}</a>`).join('')}</div>
+     ${!waUnits.length?`<p class="muted" style="font-size:12px;margin:8px 0 0">${tr('لإرسال الدعوة مباشرة لكل إدارة، يضيف مدير النظام أرقام واتساب الإدارات أسفل صفحة الاجتماعات.','To send directly to each department, the administrator adds department WhatsApp numbers at the bottom of the meetings page.')}</p>`:''}</div>`:'';
   const join=!closed&&link?`<div class="panel" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-     <a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener" data-mt="join" data-id="${esc(id)}">${MI.meet}${tr('انضمام إلى الاجتماع','Join meeting')}</a>
-     <button class="btn" data-mt="copy" data-id="${esc(id)}">${I.link}${tr('نسخ الرابط','Copy link')}</button>
+     <a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener" data-mt="join" data-id="${esc(id)}">${pk==='whatsapp'?MI.wa:MI.meet}${pl?tr('انضمام عبر ','Join on ')+pl:tr('انضمام إلى الاجتماع','Join meeting')}</a>
+     <button class="btn" data-mt="copy" data-id="${esc(id)}">${I.link}${tr('نسخ الدعوة','Copy invitation')}</button>
+     ${m.meetingId?`<span class="muted" style="font-size:13px">${tr('رقم الاجتماع','Meeting ID')}: <b dir="ltr">${esc(m.meetingId)}</b></span>`:''}
      ${m.passcode?`<span class="muted" style="font-size:13px">${tr('رمز الدخول','Passcode')}: <b dir="ltr">${esc(m.passcode)}</b></span>`:''}
      <span class="muted" style="font-size:12px;flex-basis:100%">${tr('لا تشارك الرابط خارج الإدارات المدعوة.','Do not share this link outside the invited departments.')}</span></div>`:'';
   const actions=man?`<div class="toolbar">
@@ -220,7 +265,7 @@ function openMeeting(id,keepScroll){
      ${ds.map((d,i)=>{const late=!d.done&&d.due&&d.due<td;const can=canWrite()&&(man||M.unit===d.unit);return `<tr style="cursor:default"><td class="wrap">${esc(d.t)}</td><td>${esc(uName(d.unit))}</td><td>${d.due?`<span class="${late?'pill p-crit':''}">${fd(d.due)}</span>`:'—'}</td><td><input type="checkbox" data-mt="done" data-id="${esc(id)}" data-i="${i}" ${d.done?'checked':''} ${can?'':'disabled'} aria-label="${tr('منفّذ','Done')}"></td>${man&&!closed?`<td><button class="btn sm ghost" data-mt="del-dec" data-id="${esc(id)}" data-i="${i}">${tr('حذف','Remove')}</button></td>`:''}</tr>`}).join('')}</tbody></table></div>`:`<div class="muted">${tr('لا توجد قرارات بعد.','No decisions yet.')}</div>`}
     ${con&&!closed?`<div class="toolbar" style="margin-top:10px"><div class="grow" style="min-width:180px"><input id="mt-dt" style="width:100%;height:36px;border:1px solid var(--line);border-radius:8px;padding-inline:10px;background:var(--surface);color:inherit" placeholder="${tr('نص القرار أو التكليف','Decision or task')}"></div>
       <select id="mt-du">${(m.units||[]).map(u=>`<option value="${u}">${esc(uName(u))}</option>`).join('')}</select><input type="date" id="mt-dd" style="height:36px;border:1px solid var(--line);border-radius:8px;padding-inline:8px;background:var(--surface);color:inherit"><button class="btn" data-mt="add-dec" data-id="${esc(id)}">${I.plus}${tr('إضافة قرار','Add')}</button></div>`:''}</div>`;
-  drawer(head,join+actions+myR+agenda+unitsT+minutes+decisions);
+  drawer(head,join+wa+actions+myR+agenda+unitsT+minutes+decisions);
   const dr=document.querySelector('#drawer-root .drawer');if(dr){dr.dataset.mt=id;if(keepScroll)dr.querySelector('.drawer-body').scrollTop=prevScroll}
 }
 
@@ -232,6 +277,7 @@ function printMinutes(id){
    <h1>محضر اجتماع: ${esc(m.title)}</h1><div class="m">${fd(m.date)} · الساعة ${esc(m.time)} · ${esc(m.duration||60)} دقيقة · الحالة: ${esc(STATUS[effStatus(m)][0])}</div>
    <h2>الجهة الداعية والإدارات المدعوة</h2><table><tr><th>الجهة</th><th>المسؤول</th><th>الحضور</th></tr><tr><td>${esc(uFull(m.organizer))} (الداعية)</td><td>${esc(uHead(m.organizer))}</td><td>—</td></tr>${inv.map(u=>`<tr><td>${esc(uFull(u))}</td><td>${esc(uHead(u))}</td><td>${r[u]?esc(RSVP[r[u].s][0]):'لم ترد'}</td></tr>`).join('')}</table>
    <h2>جدول الأعمال</h2>${(m.agenda||[]).length?`<ol>${m.agenda.map(a=>`<li>${esc(a.t)}</li>`).join('')}</ol>`:'<p>—</p>'}
+   ${m.link?`<p class="m">${esc(PLAT[platOf(m)]?PLAT[platOf(m)].l:'')} ${esc(m.link)}${m.meetingId?' · رقم الاجتماع '+esc(m.meetingId):''}</p>`:''}
    <h2>المحضر</h2><div style="white-space:pre-wrap">${esc(m.minutes||'—')}</div>
    <h2>القرارات والتكليفات</h2>${(m.decisions||[]).length?`<table><tr><th>#</th><th>القرار</th><th>الجهة المكلفة</th><th>الموعد</th><th>الحالة</th></tr>${m.decisions.map((d,i)=>`<tr><td>${i+1}</td><td>${esc(d.t)}</td><td>${esc(uFull(d.unit))}</td><td>${d.due?fd(d.due):'—'}</td><td>${d.done?'منفّذ':'قيد التنفيذ'}</td></tr>`).join('')}</table>`:'<p>—</p>'}
    <div class="sig"><div>مقرر الاجتماع: ................</div><div>رئيس الاجتماع: ................</div></div>
@@ -247,11 +293,12 @@ document.addEventListener('click',async e=>{
   if(a==='join')return;
   if(a!=='done')e.preventDefault();
   if(a==='new')return meetingForm();
-  if(a==='regen'){document.getElementById('mt-link').value=genLink();return}
+  if(a==='save-wa'){const o={};MT_UNITS.forEach(u=>{const v=waNum(val('mt-wa-'+u));if(v)o[u]=v});try{await FS().collection('config').doc('meetings').set({whatsapp:o},{merge:false});toast(tr('حُفظت أرقام واتساب','WhatsApp numbers saved'))}catch(err){toast(errMsg(err))}return}
+  if(a==='plat-start'){const p=PLAT[val('mt-plat')];if(p&&p.start)window.open(p.start,'_blank','noopener');return}
   if(a==='save')return saveForm(id);
   if(!m)return;
   if(a==='edit')return meetingForm(m);
-  if(a==='copy'){try{await navigator.clipboard.writeText(m.link+(m.passcode?`\n${tr('رمز الدخول','Passcode')}: ${m.passcode}`:''));toast(tr('نُسخ الرابط','Link copied'))}catch(err){toast(m.link)}return}
+  if(a==='copy'){try{await navigator.clipboard.writeText(inviteText(m));toast(tr('نُسخ الرابط','Link copied'))}catch(err){toast(m.link)}return}
   if(a==='print')return printMinutes(id);
   if(a==='live')return patch(id,{status:'live',startedAt:nowISO()},tr('بدأ الاجتماع','Meeting started'),'بدء اجتماع');
   if(a==='rsvp'){const o={s:b.dataset.s,by:me().email,name:me().name||'',at:nowISO()};return patch(id,{['rsvp.'+M.unit]:o},tr('تم تسجيل ردّكم','Reply saved'))}
