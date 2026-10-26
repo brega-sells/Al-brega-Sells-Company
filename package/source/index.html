@@ -240,6 +240,12 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 @media (max-width:640px){.page-head .seg{display:flex;flex-wrap:wrap;width:100%}.page-head .seg button{flex:1 1 40%;height:auto;min-height:36px;padding:6px 10px}}
 @media (max-width:760px){.od-decree{grid-template-columns:1fr;padding:18px}.od-seal{display:none}.od-big{flex-direction:row;gap:8px;justify-content:center}.od-list{grid-template-columns:1fr}.od-arts li{grid-template-columns:1fr;gap:2px}.od-stats span{min-width:0;flex:1}}
 @media print{.od-search,.od-acts,.od-bar{display:none}.od-decree{-webkit-print-color-adjust:exact;print-color-adjust:exact}.od-list{grid-template-columns:1fr}}
+.rec-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start;justify-content:space-between;margin-bottom:10px}.rec-head .section-title{margin-bottom:4px}
+.rec-stats{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);align-items:center}.rec-stats b{color:var(--ink);font-family:var(--f-display)}
+.rec-filters{margin-bottom:8px}.rec-tw{max-height:520px!important;overflow:auto!important}
+.rec td.wrap{white-space:normal;min-width:200px;max-width:380px}.rec-att{max-width:260px;white-space:normal}.rec-acts{white-space:nowrap}.rec-acts .btn+.btn{margin-inline-start:4px}
+.btn.sm.ghost.danger{color:var(--crit)}.btn.sm.ghost.danger.armed{background:var(--crit);color:#fff;border-color:var(--crit)}
+.od-stats span.go{cursor:pointer}.od-stats span.go:hover{border-color:var(--accent)}
 .oc-duty{margin-top:5px;border:1px solid var(--line);background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}.oc-duty:hover{border-color:var(--accent)}
 .xd-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:22px;align-items:stretch;padding:24px;border-radius:14px;color:#eaf2f8;background:radial-gradient(120% 140% at 0% 0%,#1d4a6e 0%,rgba(29,74,110,0) 55%),linear-gradient(135deg,#0f2236 0%,#13304b 60%,#0b1b2b 100%);box-shadow:var(--shadow)}
 .xd-hero::after{content:"";position:absolute;inset-inline-end:-60px;top:-60px;width:220px;height:220px;border-radius:50%;border:28px solid rgba(124,196,236,.06);pointer-events:none}
@@ -486,8 +492,8 @@ const I={
 };
 
 /* ============ State ============ */
-const COLS=['contracts','needs','batches','extensions','letters','companies','tickets','notices'];
-const S={contracts:[],needs:[],batches:[],extensions:[],letters:[],companies:[],tickets:[],notices:[],nm:null,
+const COLS=['contracts','needs','batches','extensions','letters','companies','tickets','notices','records'];
+const S={contracts:[],needs:[],batches:[],extensions:[],letters:[],companies:[],tickets:[],notices:[],records:[],nm:null,
   settings:{t1:90,t2:60,t3:30,types:['بيع وقود الديزل','بيع منتج الزيت الثقيل','بيع منتج غاز مسال','بيع وقود السفن','بيع البنزين','توريد منتجات نفطية','تقديم خدمات','صيانة','نقل وتشغيل'],depts:['إدارة المبيعات','الإدارة التجارية','الإدارة الفنية','الشؤون القانونية','إدارة العقود والتوثيق'],specials:['معلق','منتهٍ قبل موعده'],currencies:['دينار ليبي','دولار أمريكي','يورو']},
   settingsVersion:null, loaded:{}, db:null, user:null, canWrite:true, assets:null, downloads:null, dbState:'wait',
   view:'dash', ui:{} };
@@ -734,7 +740,7 @@ function xdExec(){
     <header ${xd({org:d.o.id})}><div class="xd-ct"><span class="xd-type">${esc((ORG_TYPES.find(t=>t.k===d.o.type)||{}).l||'')}</span><h4>${esc(d.o.title)}</h4><p>${d.o.vacant?'شاغرة':esc(d.o.head)}</p></div>
      <div class="xd-cg" data-tip="${esc('إشغال المناصب: '+d.fillPct+'%')}">${xdRing(d.fillPct,62)}<b class="num">${d.fillPct}%</b></div></header>
     <div class="xd-core">${d.core.map(c=>`<div class="xd-m ${c[2]}" ${xd(c[3])}><b class="num">${typeof c[1]==='number'?fn(c[1]):esc(c[1])}</b><span>${esc(c[0])}</span></div>`).join('')}</div>
-    <div class="xd-foot"><span>${I.org||''}<b class="num">${d.pos}</b> منصب</span><span ${xd({v:'cs',st:'open'})}><b class="num">${d.open.length}</b> طلب مفتوح</span><span ${xd({v:'meetings'})}><b class="num">${d.mt}</b> اجتماع قادم</span>${ORG_DUTIES[d.o.id]?`<span ${xd({od:d.o.id})}><b class="num">${ORG_DUTIES[d.o.id].items.length}</b> مهام</span>`:''}<span class="pill p-${st[0]==='ok'?'ok':st[0]==='warn'?'warn':'crit'}">${st[1]}</span></div>
+    <div class="xd-foot"><span>${I.org||''}<b class="num">${d.pos}</b> منصب</span><span ${xd({v:'cs',st:'open'})}><b class="num">${d.open.length}</b> طلب مفتوح</span><span ${xd({v:'meetings'})}><b class="num">${d.mt}</b> اجتماع قادم</span>${ORG_DUTIES[d.o.id]?`<span ${xd({od:d.o.id})}><b class="num">${ORG_DUTIES[d.o.id].items.length}</b> مهام</span>`:''}<span ${xd({org:d.o.id})}><b class="num">${(S.records||[]).filter(x=>x.unit===d.o.id).length}</b> سجل</span><span class="pill p-${st[0]==='ok'?'ok':st[0]==='warn'?'warn':'crit'}">${st[1]}</span></div>
    </article>`}).join('')}<div class="empty xd-none" hidden><b>لا توجد إدارة مطابقة</b>جرّب كلمة بحث أخرى.</div></div>
   <div class="grid2 xd-grid">
    <section class="panel"><div class="xd-ph"><h3 class="section-title">مقارنة بين الإدارات <small>${esc(mLbl)} · الإجمالي <span class="num">${fn(tot)}</span></small></h3>
@@ -1178,7 +1184,7 @@ function viewOrgDuties(el){
     return `<section class="od-sec t-${o.type}" id="od-${id}">
      <header class="od-h"><div class="od-hm"><span class="od-type">${esc(t.l||'')}</span><h3>${esc(o.title)}</h3>
       <p>${o.vacant?'شاغرة':`<b>${esc(o.head)}</b>${ORG_ROLE[id]?` · ${esc(ORG_ROLE[id])}`:''}`}</p></div>
-      <div class="od-stats"><span><b class="num">${d.items.length}</b>مهام</span><span><b class="num">${orgAll(id).length}</b>جهة تابعة</span><span><b class="num">${tags.length}</b>مجال عمل</span></div>
+      <div class="od-stats"><span><b class="num">${d.items.length}</b>مهام</span><span><b class="num">${orgAll(id).length}</b>جهة تابعة</span><span><b class="num">${tags.length}</b>مجال عمل</span><span class="go" data-od-dash="${id}" role="button" tabindex="0" data-tip="${esc('فتح سجل الإدارة')}"><b class="num">${(S.records||[]).filter(x=>x.unit===id).length}</b>سجل</span></div>
       <div class="od-acts"><button class="btn sm" data-od-dash="${id}">لوحة المؤشرات</button><button class="btn sm ghost" data-org-focus="${id}">عرض في المخطط</button></div></header>
      <p class="od-lead">${esc(d.lead)}</p>
      <ol class="od-list">${items.map(x=>`<li><span class="od-n num">${x.n}</span><div><span class="od-tag">${esc(x.tag)}</span><p>${esc(x.txt)}</p></div></li>`).join('')}</ol>
@@ -1258,6 +1264,72 @@ function orgPdf(){const w=window.open('','_blank');if(!w){toast(window.I18N?I18N
   w.document.open();w.document.write(orgPdfHtml());w.document.close();
   const run=()=>{try{w.focus();w.print()}catch(e){}};if(w.document.readyState==='complete')setTimeout(run,300);else w.addEventListener('load',()=>setTimeout(run,300));
   toast(window.I18N?I18N.t('اختر «حفظ كـ PDF» في نافذة الطباعة'):'اختر «حفظ كـ PDF» في نافذة الطباعة')}
+/* ============ سجلات الإدارات: إضافة وحذف وإرفاق وتصدير، كلٌّ في نطاق مهامه ============ */
+const REC_TYPES=['مراسلة','تقرير','عقد / اتفاقية','كشف','محضر','مذكرة','ضمان مصرفي','أخرى'];
+const REC_ST=['جارٍ','منجز','مؤجل'];const REC_STC={'جارٍ':'p-info','منجز':'p-ok','مؤجل':'p-warn'};
+const REC_UNITS=['gm','w','e','ca','gm-rep','gm-fo'];
+let REC_UNIT=null;
+async function recMyUnit(){if(REC_UNIT!=null)return REC_UNIT;const me=window.__me&&window.__me();if(!me||!window.__fs){REC_UNIT='';return ''}
+  if(typeof M!=='undefined'&&M.unit!==undefined&&M.loaded){REC_UNIT=M.unit||'';return REC_UNIT}
+  try{const r=await window.__fs().collection('roles').doc(me.email).get();REC_UNIT=(r.exists&&r.data().unit)||''}catch(e){REC_UNIT=''}return REC_UNIT}
+function recCan(unit){const me=window.__me&&window.__me();if(!me)return S.canWrite;if(me.role==='admin')return true;if(!S.canWrite||me.role==='viewer')return false;const u=REC_UNIT||'';return u===unit||u==='gm'}
+function recDuties(unit){const d=ORG_DUTIES[unit];if(d)return d.items.map((x,i)=>({n:i+1,l:x[0]+' — '+x[1].slice(0,70)+(x[1].length>70?'…':''),full:x[1],tag:x[0]}));
+  const tk=(ORG_TASKS[unit]||[]).map(v=>VIEWS.find(x=>x.id===v)).filter(Boolean);return tk.map((v,i)=>({n:i+1,l:v.label,full:v.label,tag:v.label}))}
+function recUI(){return S.ui.rc||(S.ui.rc={q:'',duty:'',st:'',type:''})}
+function recRows(unit){const u=recUI(),q=norm(u.q);let r=(S.records||[]).filter(x=>x.unit===unit);
+  if(u.duty)r=r.filter(x=>String(x.duty||'')===u.duty);if(u.st)r=r.filter(x=>x.status===u.st);if(u.type)r=r.filter(x=>x.type===u.type);
+  if(q)r=r.filter(x=>norm([x.title,x.ref,x.notes,x.type,(x.attachments||[]).map(a=>a.name).join(' ')].join(' ')).includes(q));
+  return r.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||''))}
+function recDutyLabel(unit,n){const d=recDuties(unit).find(x=>String(x.n)===String(n));return d?d.tag:''}
+function recPanel(unit){const o=ORG_BY.get(unit);if(!o)return '';const all=(S.records||[]).filter(x=>x.unit===unit),u=recUI(),duties=recDuties(unit),can=recCan(unit);
+  const open=all.filter(x=>x.status!=='منجز').length,files=all.reduce((n,x)=>n+(x.attachments||[]).length,0);
+  return `<section class="panel ocd-wide rec" id="rec-panel" data-unit="${unit}"><div class="rec-head"><div><h3 class="section-title">سجل الإدارة <small>إضافة وحذف وإرفاق وتصدير، كلٌّ في نطاق مهامه</small></h3>
+    <div class="rec-stats"><span><b class="num">${all.length}</b> سجل</span><span><b class="num">${open}</b> جارٍ</span><span><b class="num">${files}</b> مرفق</span>${can?'':'<span class="pill p-neutral">اطلاع فقط</span>'}</div></div>
+   <div class="toolbar">${can?`<button class="btn primary sm" data-act="rec-new" data-unit="${unit}">${I.plus}إضافة سجل</button>`:''}<button class="btn sm" data-act="rec-export" data-unit="${unit}">${I.down}تصدير Excel</button><button class="btn sm" data-act="rec-pdf" data-unit="${unit}">${I.down}تصدير PDF</button></div></div>
+   <div class="toolbar rec-filters"><div class="grow">${I.search}<input type="search" id="rc-q" value="${esc(u.q)}" placeholder="بحث في السجلات والمرفقات…"></div>
+    <select id="rc-duty"><option value="">كل المهام</option>${duties.map(d=>`<option value="${d.n}" ${u.duty===String(d.n)?'selected':''}>${d.n}. ${esc(d.tag)}</option>`).join('')}</select>
+    <select id="rc-type"><option value="">كل الأنواع</option>${REC_TYPES.map(t=>`<option ${u.type===t?'selected':''}>${t}</option>`).join('')}</select>
+    <select id="rc-st"><option value="">كل الحالات</option>${REC_ST.map(t=>`<option ${u.st===t?'selected':''}>${t}</option>`).join('')}</select></div>
+   <div id="rec-table"></div></section>`}
+function renderRecTable(unit){const el=document.getElementById('rec-table');if(!el)return;const r=recRows(unit),can=recCan(unit),duties=recDuties(unit);
+  const att=l=>window.ATT&&ATT.view?ATT.view(l,{compact:1}):l.map(a=>`<span class="tag">${esc(a.name)}</span>`).join(' ');
+  el.innerHTML=r.length?`<div class="count-line">${r.length} سجل</div><div class="tablewrap rec-tw"><table><thead><tr><th class="nosort">التاريخ</th><th class="nosort">الموضوع</th><th class="nosort">المهمة</th><th class="nosort">النوع</th><th class="nosort">الإشارة</th><th class="nosort">المرفقات</th><th class="nosort">الحالة</th><th class="nosort">بواسطة</th>${can?'<th class="nosort"></th>':''}</tr></thead><tbody>
+   ${r.map(x=>{const d=duties.find(y=>String(y.n)===String(x.duty));return `<tr data-rec="${x.id}"><td class="n">${fd(x.date)}</td><td class="t-strong wrap">${esc(x.title||'—')}${x.notes?`<small class="muted" style="display:block;font-weight:400">${esc(x.notes.slice(0,90))}${x.notes.length>90?'…':''}</small>`:''}</td><td>${d?`<span class="tag link" data-tip="${esc(d.full)}">${d.n}. ${esc(d.tag)}</span>`:'<span class="muted">—</span>'}</td><td>${esc(x.type||'—')}</td><td class="n">${esc(x.ref||'—')}</td><td class="rec-att">${(x.attachments||[]).length?att(x.attachments):'<span class="muted">—</span>'}</td><td><span class="pill ${REC_STC[x.status]||'p-neutral'}">${esc(x.status||'جارٍ')}</span></td><td><small>${esc(x.by||'')}</small></td>${can?`<td class="rec-acts"><button class="btn sm ghost" data-act="rec-edit" data-id="${x.id}" data-unit="${unit}">تعديل</button><button class="btn sm ghost danger" data-act="rec-del" data-id="${x.id}" data-unit="${unit}">حذف</button></td>`:''}</tr>`}).join('')}</tbody></table></div>`
+   :`<div class="empty"><b>${(S.records||[]).some(x=>x.unit===unit)?'لا توجد سجلات مطابقة':'لا توجد سجلات بعد'}</b>${can?'اضغط «إضافة سجل» لتسجيل مراسلة أو تقرير أو مرفق ضمن مهام هذه الإدارة.':'سيظهر هنا ما تسجله الإدارة ضمن مهامها.'}</div>`}
+function recBind(unit){const p=document.getElementById('rec-panel');if(!p)return;recMyUnit().then(()=>{renderRecTable(unit);const h=p.querySelector('[data-act="rec-new"]');if(!h&&recCan(unit)){const tb=p.querySelector('.rec-head .toolbar');tb.insertAdjacentHTML('afterbegin',`<button class="btn primary sm" data-act="rec-new" data-unit="${unit}">${I.plus}إضافة سجل</button>`);const ro=p.querySelector('.rec-stats .pill');if(ro)ro.remove()}});
+  const u=recUI();const q=p.querySelector('#rc-q');q.addEventListener('input',debounce(()=>{u.q=q.value;renderRecTable(unit)},150));
+  ['duty','type','st'].forEach(k=>p.querySelector('#rc-'+k).addEventListener('change',e=>{u[k]=e.target.value;renderRecTable(unit)}))}
+function recForm(unit,rec){const isNew=!rec;const o=ORG_BY.get(unit);rec=rec||{date:TODAY_ISO,status:'جارٍ',type:'مراسلة',duty:recUI().duty||''};const duties=recDuties(unit);
+  const attField=window.ATT&&ATT.formField?ATT.formField('dlg',rec.attachments||[],{name:rec.title||o.title}):`<div class="field full"><label>المرفقات</label><span class="hint">ميزة إرفاق الملفات والمسح الضوئي قيد التفعيل؛ أعد تحميل الصفحة لاحقًا.</span></div>`;
+  modal(isNew?'إضافة سجل — '+o.title:'تعديل السجل',`<fieldset><legend>السجل</legend>
+    <div class="field full"><label for="r-duty">المهمة / الاختصاص<span class="req">*</span></label><select id="r-duty"><option value="">— اختر المهمة التي يندرج تحتها السجل —</option>${duties.map(d=>`<option value="${d.n}" ${String(rec.duty)===String(d.n)?'selected':''}>${d.n}. ${esc(d.l)}</option>`).join('')}${duties.length?'':'<option value="0">عام</option>'}</select></div>
+    ${F('r-title','الموضوع',rec.title,{req:1,full:1})}${F('r-type','النوع',rec.type,{type:'select',options:uniq([...REC_TYPES,rec.type])})}${F('r-date','التاريخ',rec.date,{type:'date',req:1})}
+    ${F('r-ref','رقم الإشارة / المرجع',rec.ref)}${F('r-st','الحالة',rec.status,{type:'select',options:REC_ST})}${F('r-notes','ملاحظات',rec.notes,{type:'textarea',full:1})}</fieldset>
+   <fieldset><legend>المرفقات</legend>${attField}</fieldset>`,
+  `<button type="submit" class="btn primary" data-act="rec-save" data-id="${rec.id||''}" data-unit="${unit}">حفظ</button><button type="button" class="btn" data-act="close-dlg">إلغاء</button>${!isNew?`<button type="button" class="btn danger" data-act="del" data-col="records" data-id="${rec.id}" style="margin-inline-start:auto">حذف</button>`:''}<span id="f-err" style="color:var(--crit);font-size:12.5px;margin-inline-start:8px"></span>`)}
+async function recSave(unit,id){const old=id?(S.records||[]).find(x=>x.id===id):null;
+  const o={unit,duty:val('r-duty'),title:val('r-title'),type:val('r-type'),date:val('r-date'),ref:val('r-ref'),status:val('r-st')||'جارٍ',notes:val('r-notes')};
+  if(!o.title||!o.date||o.duty===''){document.getElementById('f-err').textContent='المهمة والموضوع والتاريخ مطلوبة.';return}
+  o.attachments=window.ATT&&ATT.val?await ATT.val('dlg','f-err'):(old&&old.attachments)||[];
+  const me=window.__me&&window.__me();if(old){o.by=old.by||'';o.createdBy=old.createdBy||''}else{o.by=(me&&(me.name||me.email))||await csMe();o.createdBy=(me&&me.email)||''}
+  await write('records',id||uid('r'),o,!id);dlg.close();toast(old?'تم حفظ التعديل':'تم إضافة السجل')}
+function recExportRows(unit){return recRows(unit).map((x,i)=>({'م':i+1,'التاريخ':x.date||'','الموضوع':x.title||'','المهمة':x.duty?x.duty+'. '+recDutyLabel(unit,x.duty):'','النوع':x.type||'','رقم الإشارة':x.ref||'','الحالة':x.status||'','المرفقات':(x.attachments||[]).map(a=>a.name).join('، '),'ملاحظات':x.notes||'','بواسطة':x.by||'','آخر تحديث':x.updatedAt?x.updatedAt.slice(0,10):''}))}
+function recExport(unit){const o=ORG_BY.get(unit);saveXlsx([['سجل الإدارة',recExportRows(unit)]],'سجل-'+o.title.replace(/[\/\\:*?"<>|]/g,' ')+'-'+TODAY_ISO+'.xlsx')}
+function recPdf(unit){const o=ORG_BY.get(unit),en=!!(window.I18N&&I18N.lang==='en'),T=s=>en?I18N.t(s):s,rows=recExportRows(unit),keys=rows.length?Object.keys(rows[0]).filter(k=>k!=='ملاحظات'):[];
+  const w=window.open('','_blank');if(!w){toast(T('اسمح بفتح النوافذ المنبثقة لتصدير PDF'));return}
+  w.document.open();w.document.write(`<!doctype html><html lang="${en?'en':'ar'}" dir="${en?'ltr':'rtl'}"><head><meta charset="utf-8"><title>${esc(T('سجل الإدارة'))} — ${esc(o.title)}</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,Arimo,"Noto Sans Arabic",Tahoma,sans-serif;font-weight:700;color:#13263a;font-size:11px;margin:0}h1{font-size:18px;margin:0 0 2px}p{margin:0 0 12px;color:#5d6d7e}table{width:100%;border-collapse:collapse}th{background:#0f2236;color:#fff;padding:6px 8px;text-align:start}td{padding:5px 8px;border-bottom:1px solid #e9eef3;vertical-align:top}tr{break-inside:avoid}tbody tr:nth-child(even) td{background:#f7f9fb}.ft{margin-top:10px;color:#8ea3b8;font-size:10px}</style></head><body>
+   <h1>${esc(T('سجل الإدارة'))}: ${esc(o.title)}</h1><p>${o.vacant?T('شاغرة'):esc(o.head)} · ${rows.length} ${esc(T('سجل'))} · ${fd(TODAY_ISO)}</p>
+   ${rows.length?`<table><thead><tr>${keys.map(k=>`<th>${esc(T(k))}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td>${esc(String(r[k]))}</td>`).join('')}</tr>`).join('')}</tbody></table>`:`<p>${esc(T('لا توجد سجلات بعد'))}</p>`}
+   <div class="ft">${esc(T('صادر من منظومة الإدارة العامة للمبيعات والشؤون التجارية'))}</div></body></html>`);w.document.close();
+  const run=()=>{try{w.focus();w.print()}catch(e){}};setTimeout(run,400)}
+document.addEventListener('click',async e=>{const a=e.target.closest('[data-act^="rec-"]');if(!a)return;const act=a.dataset.act,unit=a.dataset.unit,id=a.dataset.id;
+  if(act==='rec-new'){if(!recCan(unit)){toast('لا تملك صلاحية الإضافة في هذه الإدارة');return}if(dlg.open)dlg.close();recForm(unit,null);return}
+  if(act==='rec-edit'){e.stopPropagation();const r=(S.records||[]).find(x=>x.id===id);if(r)recForm(unit,r);return}
+  if(act==='rec-save'){e.preventDefault();a.disabled=true;try{await recSave(unit,id||null)}catch(err){document.getElementById('f-err').textContent=writeErr(err)}finally{a.disabled=false}return}
+  if(act==='rec-del'){e.stopPropagation();if(!a.classList.contains('armed')){a.classList.add('armed');a.textContent='تأكيد الحذف';setTimeout(()=>{a.classList.remove('armed');a.textContent='حذف'},4000);return}
+    try{await S.db.collection('records').doc(id).delete();toast('تم حذف السجل')}catch(err){toast(writeErr(err))}return}
+  if(act==='rec-export'){recExport(unit);return}
+  if(act==='rec-pdf'){recPdf(unit);return}},true);
 function orgDutiesPanel(id){const d=ORG_DUTIES[id];if(!d)return '';
   return `<section class="panel ocd-wide"><h3 class="section-title">المهام والاختصاصات <small>قرار مجلس الإدارة رقم (${ORG_DECREE.no}) لسنة ${ORG_DECREE.year}م</small></h3>
    <ol class="od-list od-compact">${d.items.map((x,i)=>`<li><span class="od-n num">${i+1}</span><div><span class="od-tag">${esc(x[0])}</span><p>${esc(x[1])}</p></div></li>`).join('')}</ol>
@@ -1355,6 +1427,7 @@ function viewOrgDash(el){
   <div class="kpis ocd-kpis">${kp('الجهات التابعة',sub.length,kids.length?`${kids.length} ${root.id==='board'?'تحت الإدارة العامة':'مباشرة'}`:'','','st:')}${kp('المناصب المشغولة',filled,`${ocPct(filled,pos.length)}%`,'ok','st:f')}${kp('الشواغر',vac,`${ocPct(vac,pos.length)}%`,vac?'warn':'','st:v')}${kp('بحاجة تدقيق',unc,'أسماء أو أرقام غير واضحة',unc?'warn':'','st:u')}${kp('المستويات الإدارية',orgDepth(root.id)+1)}${kp('متوسط نطاق الإشراف',avgSpan.toFixed(1),`${mgrs.length} مسؤول له جهات تابعة`)}${kp('المهام المسندة',tasks,tasks?'صفحات في المنظومة':'')}</div>
   <div class="ocd-grid">
    ${orgDutiesPanel(root.id)}
+   ${root.id!=='board'?recPanel(root.id):''}
    ${cmp.length>1?`<section class="panel ocd-wide"><h3 class="section-title">${root.id==='board'?'حجم الإدارات والجهات التابعة للإدارة العامة':'حجم الجهات التابعة مباشرة'} <small>اضغط على جهة لعرض لوحتها</small></h3>
      <div class="ocd-legend"><span><i class="f"></i>مشغولة</span><span><i class="v"></i>شاغرة</span></div>${ocBars(cmp,maxC)}</section>`:''}
    ${types.length?`<section class="panel"><h3 class="section-title">التوزيع حسب النوع <small>اضغط للتصفية</small></h3>${ocBars(types.map(t=>({...t,set:'ty:'+t.k})),maxT)}</section>`:''}
@@ -1371,6 +1444,7 @@ function viewOrgDash(el){
   const q=el.querySelector('#ocd-q');q.addEventListener('input',debounce(()=>{S.ui.odq=q.value;tb()},150));
   el.querySelector('#ocd-t').addEventListener('change',e=>{S.ui.odt=e.target.value;tb()});
   el.querySelector('#ocd-s').addEventListener('change',e=>{S.ui.ods=e.target.value;tb()});
+  if(root.id!=='board')recBind(root.id);
 }
 function renderOcdTable(pos,root){const el=document.getElementById('ocd-table');if(!el)return;const q=norm(S.ui.odq||'');
   let r=pos.filter(o=>o.id!=='board');
@@ -2144,8 +2218,8 @@ async function saveSettings(){
   const s={t1:num(val('s-t1'))||90,t2:num(val('s-t2'))||60,t3:num(val('s-t3'))||30,types:val('s-types').split('\n').map(x=>x.trim()).filter(Boolean),depts:val('s-depts').split('\n').map(x=>x.trim()).filter(Boolean),specials:val('s-specials').split('\n').map(x=>x.trim()).filter(Boolean),currencies:S.settings.currencies};
   try{await S.db.doc('config/main').set(s);toast('تم حفظ الإعدادات')}catch(err){toast(writeErr(err))}
 }
-const rerender=debounce(()=>{renderNav();const ae=document.activeElement;const keep=ae&&ae.id&&/^(c-q|n-q|d-q|gq|tk-q|cu-q|nt-q)$/.test(ae.id);
-  if(keep&&S.view==='cs'){recompute();renderTk();renderCu();renderNt()}else if(keep&&S.view==='contracts'){recompute();renderContractsTable()}else if(keep&&S.view==='needs'){recompute();renderNeedsTable()}else if(keep&&S.view==='dir'){recompute();renderDir()}else if(!dlg.open)render()},120);
+const rerender=debounce(()=>{renderNav();const ae=document.activeElement;const keep=ae&&ae.id&&/^(c-q|n-q|d-q|gq|tk-q|cu-q|nt-q|rc-q)$/.test(ae.id);
+  if(keep&&S.view==='cs'){recompute();renderTk();renderCu();renderNt()}else if(keep&&S.view==='contracts'){recompute();renderContractsTable()}else if(keep&&S.view==='needs'){recompute();renderNeedsTable()}else if(keep&&S.view==='dir'){recompute();renderDir()}else if(keep&&S.view==='org'){const p=document.getElementById('rec-panel');if(p)renderRecTable(p.dataset.unit)}else if(!dlg.open)render()},120);
 (async function init(){
   try{const t=localStorage.getItem('cm_theme');if(t)document.documentElement.dataset.theme=t;const v=localStorage.getItem('cm_view');if(v&&VIEWS.some(x=>x.id===v))S.view=v}catch(e){}
   document.getElementById('today-line').textContent='اليوم: '+fd(TODAY_ISO);
