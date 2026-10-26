@@ -72,6 +72,7 @@ Batches (count matches the official letters): الأولى 166 (ref 220-17-158) 
 - Source: the user's 13-page scan «الإدارة العامة للمبيعات والشؤون التجارية» (board approval line still blank).
 - Static data in the page code (`ORG_ROWS` in both `index.html` and `source/index.html`): 101 entries `[id, parentId, title, head, empNo, flags]`, flags `v` = vacant (شاغرة), `u` = unclear in the scan (shown as «تدقيق»). Type (إدارة/منسق/قسم/مكتب/وحدة/مشرف) is inferred from the title.
 - Top-level ids: `board` → `gm` → `ca` (الشؤون التجارية والتحصيلات), `w` (المبيعات غ.ج), `e` (المبيعات و.ش), plus `gm-rep`, `gm-fo` directly under the GM.
+- Duties per unit come from Board decision No. (160) of 2026 (dated 2026-08-03, effective 2026-08-01; Board Affairs Office referral 265): `ORG_DECREE` (articles) and `ORG_DUTIES` (gm 8, w 9, e 9 shared list, ca 6; each item is [area tag, text]). Shown in the org page mode «المهام والاختصاصات» (`S.ui.om='duties'`, unit filter `S.ui.od`), in each unit's dashboard, on chart cards, in the executive dashboard cards, and as a second sheet in the Excel export. The decision does not define duties for gm-rep or gm-fo.
 - Permissions per unit are NOT defined yet: the user will send them. Attach them in `ORG_PERMS` keyed by unit id (the view already shows "الصلاحيات: لم تُحدَّد بعد" / count).
 - Known doubts: emp. no. 507350 appears twice (عقيلة علي عقيلة and محمد فرج الترهوني); 40985 has 5 digits; page 8 of the scan is blurry (several names marked `u`).
 
