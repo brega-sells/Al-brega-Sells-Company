@@ -36,9 +36,14 @@ service cloud.firestore {
         || (canWrite() && invited() && myUnit() == resource.data.organizer && sameCore())
         || (invited() && changed().hasOnly(['rsvp', 'updatedAt']))
         || (canWrite() && invited() && resource.data.status != 'closed' && resource.data.status != 'cancelled'
-            && changed().hasOnly(['minutes', 'decisions', 'updatedAt']))
+            && changed().hasOnly(['minutes', 'decisions', 'attachments', 'updatedAt']))
         || (canWrite() && invited() && changed().hasOnly(['decisions', 'updatedAt']));
       allow delete: if isAdmin() || owner();
+    }
+    // المرفقات والمستندات الممسوحة ضوئيًا: files/<id> بيانات الملف، و files/<id>_<n> أجزاء محتواه (حد المستند 1 ميغابايت)
+    match /files/{id} {
+      allow read: if hasRole();
+      allow create, delete: if canWrite();
     }
     match /{col}/{id} {
       allow read: if hasRole() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices','config'];
