@@ -40,6 +40,14 @@ service cloud.firestore {
         || (canWrite() && invited() && changed().hasOnly(['decisions', 'updatedAt']));
       allow delete: if isAdmin() || owner();
     }
+    // سجلات الإدارات: يقرؤها كل من له صلاحية، ويضيف ويعدل ويحذف فيها مدير النظام أو محرر من الإدارة نفسها أو من الإدارة العامة
+    match /records/{id} {
+      function unitOk(u) { return isAdmin() || (canWrite() && (myUnit() == u || myUnit() == 'gm')); }
+      allow read: if hasRole();
+      allow create: if unitOk(request.resource.data.unit) && request.resource.data.createdBy == request.auth.token.email;
+      allow update: if unitOk(resource.data.unit) && request.resource.data.unit == resource.data.unit;
+      allow delete: if unitOk(resource.data.unit);
+    }
     // المرفقات والمستندات الممسوحة ضوئيًا: files/<id> بيانات الملف، و files/<id>_<n> أجزاء محتواه (حد المستند 1 ميغابايت)
     match /files/{id} {
       allow read: if hasRole();
