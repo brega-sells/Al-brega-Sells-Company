@@ -207,6 +207,40 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 .ocd-col i{display:block;width:100%;max-width:44px;background:var(--ocf);border-radius:4px 4px 0 0}.ocd-col:hover i{filter:brightness(1.12)}
 .ocd-filters{margin-bottom:8px}.ocd-tw{max-height:460px!important;overflow:auto!important}
 .ocd-kpis{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
+.org.bare.duties{background:transparent;border:0;padding:0}
+.od-decree{position:relative;overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;padding:22px 24px;border-radius:14px;color:#eaf2f8;background:radial-gradient(120% 140% at 100% 0%,#1d4a6e 0%,rgba(29,74,110,0) 55%),linear-gradient(135deg,#0f2236 0%,#13304b 60%,#0b1b2b 100%);box-shadow:var(--shadow)}
+.od-seal{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;border:2px solid rgba(124,196,236,.5);background:rgba(255,255,255,.06);color:#9fc6e2}.od-seal svg{width:28px;height:28px}
+.od-eyebrow{font-size:12px;color:#9fc6e2;font-weight:700}.od-dm h3{margin:2px 0;font-family:var(--f-display);font-size:20px;color:#fff}.od-dm>p{margin:0;color:#d3e2ee;font-size:14px}
+.od-meta{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12px;color:#8ea9c1}.od-meta b{color:#fff;margin-inline-start:4px}
+.od-big{display:flex;flex-direction:column;align-items:center;padding:10px 18px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);text-align:center}
+.od-big b{font-family:var(--f-display);font-size:34px;color:#fff;line-height:1.1}.od-big span{font-size:12.5px;color:#d3e2ee;font-weight:700}.od-big small{font-size:11.5px;color:#8ea9c1}
+.od-arts{margin:12px 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0 16px}
+.od-arts summary{cursor:pointer;padding:12px 0;font-weight:700;font-family:var(--f-display);font-size:14px}.od-arts summary small{font-weight:400;color:var(--muted);font-size:12px;margin-inline-start:6px}
+.od-arts ol{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px}.od-arts li{display:grid;grid-template-columns:90px 1fr;gap:10px;font-size:13px;line-height:1.7;padding-top:8px;border-top:1px dashed var(--line2)}.od-arts li b{color:var(--accent)}
+.od-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:4px 0 14px}
+.od-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:0 10px;flex:0 1 300px;min-width:min(240px,100%)}
+.od-search svg{width:16px;height:16px;color:var(--muted);flex:none}.od-search input{border:0;background:transparent;font:inherit;font-size:13px;color:var(--ink);padding:8px 0;width:100%;outline:none}
+.od-sec{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;border-inline-start:4px solid var(--c,var(--ocf))}
+.od-h{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding:16px 18px;background:var(--surface2);border-bottom:1px solid var(--line2)}
+.od-hm{min-width:0;flex:1 1 260px}.od-type{font-size:11px;color:var(--accent);font-weight:700;background:var(--accent-soft);border-radius:999px;padding:2px 8px}
+.od-hm h3{margin:6px 0 2px;font-family:var(--f-display);font-size:17px}.od-hm p{margin:0;font-size:13px;color:var(--muted)}.od-hm p b{color:var(--ink)}
+.od-stats{display:flex;gap:8px}.od-stats span{display:flex;flex-direction:column;align-items:center;min-width:72px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:11.5px;color:var(--muted)}.od-stats b{font-family:var(--f-display);font-size:20px;color:var(--ink);line-height:1.2}
+.od-acts{display:flex;gap:6px;flex-wrap:wrap}
+.od-lead{margin:14px 18px 4px;font-size:13.5px;color:var(--muted);line-height:1.8}
+.od-list{list-style:none;margin:0;padding:10px 18px 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.od-list li{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;padding:12px;border:1px solid var(--line2);border-radius:10px;background:var(--surface);transition:border-color .15s}
+.od-list li:hover{border-color:var(--accent)}
+.od-n{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:14px}
+.od-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-bottom:4px}
+.od-list p{margin:0;font-size:13.5px;line-height:1.8;color:var(--ink)}
+.od-compact{padding:0}
+.od-note{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:14px 18px}.od-note h4{margin:0 0 8px;font-size:14px;font-family:var(--f-display)}
+.od-note ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13px}.od-note li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.od-tk{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;color:var(--muted);font-size:12px}.od-tk button{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer;color:var(--ink)}.od-tk button:hover{border-color:var(--accent)}
+@media (max-width:640px){.page-head .seg{display:flex;flex-wrap:wrap;width:100%}.page-head .seg button{flex:1 1 40%;height:auto;min-height:36px;padding:6px 10px}}
+@media (max-width:760px){.od-decree{grid-template-columns:1fr;padding:18px}.od-seal{display:none}.od-big{flex-direction:row;gap:8px;justify-content:center}.od-list{grid-template-columns:1fr}.od-arts li{grid-template-columns:1fr;gap:2px}.od-stats span{min-width:0;flex:1}}
+@media print{.od-search,.od-acts,.od-bar{display:none}.od-decree{-webkit-print-color-adjust:exact;print-color-adjust:exact}.od-list{grid-template-columns:1fr}}
+.oc-duty{margin-top:5px;border:1px solid var(--line);background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}.oc-duty:hover{border-color:var(--accent)}
 .xd-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:22px;align-items:stretch;padding:24px;border-radius:14px;color:#eaf2f8;background:radial-gradient(120% 140% at 0% 0%,#1d4a6e 0%,rgba(29,74,110,0) 55%),linear-gradient(135deg,#0f2236 0%,#13304b 60%,#0b1b2b 100%);box-shadow:var(--shadow)}
 .xd-hero::after{content:"";position:absolute;inset-inline-end:-60px;top:-60px;width:220px;height:220px;border-radius:50%;border:28px solid rgba(124,196,236,.06);pointer-events:none}
 .xd-hero-main{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -700,7 +734,7 @@ function xdExec(){
     <header ${xd({org:d.o.id})}><div class="xd-ct"><span class="xd-type">${esc((ORG_TYPES.find(t=>t.k===d.o.type)||{}).l||'')}</span><h4>${esc(d.o.title)}</h4><p>${d.o.vacant?'شاغرة':esc(d.o.head)}</p></div>
      <div class="xd-cg" data-tip="${esc('إشغال المناصب: '+d.fillPct+'%')}">${xdRing(d.fillPct,62)}<b class="num">${d.fillPct}%</b></div></header>
     <div class="xd-core">${d.core.map(c=>`<div class="xd-m ${c[2]}" ${xd(c[3])}><b class="num">${typeof c[1]==='number'?fn(c[1]):esc(c[1])}</b><span>${esc(c[0])}</span></div>`).join('')}</div>
-    <div class="xd-foot"><span>${I.org||''}<b class="num">${d.pos}</b> منصب</span><span ${xd({v:'cs',st:'open'})}><b class="num">${d.open.length}</b> طلب مفتوح</span><span ${xd({v:'meetings'})}><b class="num">${d.mt}</b> اجتماع قادم</span><span class="pill p-${st[0]==='ok'?'ok':st[0]==='warn'?'warn':'crit'}">${st[1]}</span></div>
+    <div class="xd-foot"><span>${I.org||''}<b class="num">${d.pos}</b> منصب</span><span ${xd({v:'cs',st:'open'})}><b class="num">${d.open.length}</b> طلب مفتوح</span><span ${xd({v:'meetings'})}><b class="num">${d.mt}</b> اجتماع قادم</span>${ORG_DUTIES[d.o.id]?`<span ${xd({od:d.o.id})}><b class="num">${ORG_DUTIES[d.o.id].items.length}</b> مهام</span>`:''}<span class="pill p-${st[0]==='ok'?'ok':st[0]==='warn'?'warn':'crit'}">${st[1]}</span></div>
    </article>`}).join('')}<div class="empty xd-none" hidden><b>لا توجد إدارة مطابقة</b>جرّب كلمة بحث أخرى.</div></div>
   <div class="grid2 xd-grid">
    <section class="panel"><div class="xd-ph"><h3 class="section-title">مقارنة بين الإدارات <small>${esc(mLbl)} · الإجمالي <span class="num">${fn(tot)}</span></small></h3>
@@ -723,6 +757,7 @@ document.addEventListener('click',e=>{if(S.view!=='dash')return;
   const mb=e.target.closest('[data-xd-m]');if(mb){S.ui.xm=mb.dataset.xdM;const y=window.scrollY;render();window.scrollTo(0,y);return}
   const g=e.target.closest('[data-xd]');if(!g)return;e.stopPropagation();const o=JSON.parse(g.dataset.xd);
   if(o.org){go('org',{om:'dash',of:o.org==='board'?'':o.org});return}
+  if(o.od){go('org',{om:'duties',od:o.od});return}
   if(o.v==='contracts'){S.ui.c={q:'',st:o.st||'all',type:'',dept:'',sort:'remain',dir:'asc'};go('contracts');return}
   if(o.v==='needs'){S.ui.n={q:'',batch:'',region:'',fuel:'',link:'',act:'',sec:'',sort:'seq',dir:'asc'};go('needs');return}
   if(o.v==='cs'){S.ui.cs=Object.assign(csUI(),{tab:'tk',q:'',st:o.st||'',type:o.type||'',pri:'',as:''});go('cs');return}
@@ -1095,13 +1130,89 @@ const ORG_PERMS={};
 const ORG_ROLE={'gm':'مكلف بمهام مدير عام المبيعات والشؤون التجارية'};
 /* مهام كل جهة: صفحات المنظومة التي تتولاها، بمفتاح معرّف الجهة */
 const ORG_TASKS={'gm-rep':['contracts','ext','needs','batches','dir']};
+/* اختصاصات الإدارات كما وردت في قرار مجلس الإدارة رقم (160) لسنة 2026م (إحالة مكتب شؤون مجلس الإدارة رقم 265) */
+const ORG_DECREE={no:'160',year:'2026',date:'2026-08-03',eff:'2026-08-01',ref:'265',title:'بشأن استحداث الإدارة العامة للمبيعات والشؤون التجارية',
+ arts:[['المادة (1)','يُستحدث بموجب هذا القرار إنشاء إدارة عامة جديدة تسمى الإدارة العامة للمبيعات والشؤون التجارية.'],
+  ['المادة (2)','يتكون الهيكل التنظيمي للإدارة الجديدة من: إدارة المبيعات غ.ج، وإدارة المبيعات و.ش، وإدارة الشؤون التجارية والتحصيلات.'],
+  ['المادة (3)','تتولى الإدارة العامة للمبيعات والشؤون التجارية المستحدثة القيام بالمهام والاختصاصات المبيّنة لها ولإداراتها.'],
+  ['المادة (4)','يُنقل العاملون بإدارتي المبيعات غ.ج و و.ش والعاملون بإدارة الشؤون التجارية والتحصيلات بالإدارة العامة للشؤون التجارية السابقة إلى الإدارة العامة للمبيعات والشؤون التجارية وفقًا لهذا القرار.'],
+  ['المادة (5)','تتولى الإدارة العامة للموارد البشرية اتخاذ الإجراءات اللازمة لوضع هذا القرار موضع التنفيذ.'],
+  ['المادة (6)','يُعمل بهذا القرار اعتبارًا من 2026/08/01 وعلى الإدارات ذات العلاقة تنفيذه.']]};
+const ORG_SALES_DUTIES=[
+ ['التخطيط','تنفيذ سياسات وخطط البيع المعتمدة بالشركة.'],
+ ['الزبائن','استلام ودراسة طلبات الزبائن ومحطات الوقود والجهات العامة والخاصة، واستكمال إجراءات البيع وفقًا للنظم المعمول بها.'],
+ ['التوزيع والإمداد','متابعة انسياب توزيع المحروقات والغاز والمنتجات النفطية إلى شركات التوزيع ومحطات الوقود بالمناطق الخاضعة لإشرافها، بالتنسيق مع إدارات المناطق.'],
+ ['المالية والتحصيل','متابعة أرصدة الزبائن والمبيعات الآجلة بالتنسيق مع إدارة الشؤون التجارية والتحصيلات.'],
+ ['البيانات','حصر وتوثيق بيانات الزبائن ومحطات الوقود العاملة وتحديثها بصفة دورية.'],
+ ['التخطيط','رصد احتياجات المناطق والزبائن وكبار المستهلكين من المنتجات النفطية، واقتراح البرامج التنفيذية.'],
+ ['الشكاوى','معالجة شكاوى الزبائن والمشاكل التشغيلية في نطاقها، ورفع ما يتجاوز صلاحياتها إلى الإدارة العامة.'],
+ ['التقارير','إعداد تقارير المبيعات الشهرية والدورية عن نشاط الإدارة ورفعها إلى الإدارة العامة للمبيعات والشؤون التجارية.'],
+ ['مهام أخرى','أية مهام أخرى تكلف بها من الإدارة العامة في نطاق اختصاصها.']];
+const ORG_DUTIES={
+ gm:{lead:'تتولى الإدارة العامة للمبيعات والشؤون التجارية الإشراف العام على نشاط المبيعات والشؤون التجارية على مستوى الشركة، وتختص بما يلي:',items:[
+  ['السياسات','رسم السياسات العامة للمبيعات وتسويق المنتجات النفطية والغاز والزيوت، والإشراف على تنفيذها بعد اعتمادها من مجلس الإدارة.'],
+  ['الإشراف','الإشراف الفني والإداري على الإدارات والمكاتب التابعة لها، وتنسيق العمل فيما بينها، وتوزيع الاختصاصات بما يضمن تسيير العمل بمرافقها بصورة منتظمة.'],
+  ['التخطيط','إعداد الخطط والبرامج التقديرية لاحتياجات المناطق من المحروقات والمنتجات النفطية بالتنسيق مع الإدارات المختصة، ومتابعة تنفيذها.'],
+  ['التوزيع والإمداد','متابعة انتظام عمليات التوزيع والإمداد لكافة الزبائن، ومعالجة الاختناقات والصعوبات التي تعترض سير العمل.'],
+  ['العقود','اعتماد ومتابعة العقود والاتفاقيات التجارية المبرمة مع الزبائن والموزعين والجهات العامة، بالتنسيق مع الإدارات ذات العلاقة.'],
+  ['المالية والتحصيل','متابعة الموقف المالي للمبيعات الآجلة والمديونيات والتحصيلات، واتخاذ الإجراءات اللازمة بشأنها بالتنسيق مع الإدارة العامة للشؤون المالية.'],
+  ['التطوير والرقمنة','اقتراح تطوير منظومات العمل وإجراءات البيع والتوزيع، والعمل على رقمنة العمليات التجارية.'],
+  ['التقارير','إعداد التقارير الدورية والسنوية عن نشاط المبيعات والشؤون التجارية ورفعها إلى مجلس الإدارة.']]},
+ w:{lead:'مهام إدارة المبيعات غ.ج، وتتولى القيام بما يلي:',items:ORG_SALES_DUTIES},
+ e:{lead:'مهام إدارة المبيعات و.ش، وتتولى القيام بما يلي:',items:ORG_SALES_DUTIES},
+ ca:{lead:'إدارة الشؤون التجارية والتحصيلات، وتختص بالآتي:',items:[
+  ['العقود','متابعة العقود والاتفاقيات التجارية المبرمة مع الزبائن والموزعين، والتحقق من الالتزام ببنودها ومدد سريانها، والتنبيه إلى مواعيد تجديدها.'],
+  ['الضمانات','متابعة الضمانات المصرفية وخطابات الاعتماد المقدمة من الزبائن، والتحقق من صلاحيتها وكفايتها بالتنسيق مع الإدارة العامة للشؤون المالية.'],
+  ['المالية والتحصيل','حصر ومتابعة المديونيات والمبيعات الآجلة على مستوى إدارتي المبيعات، وإعداد كشوفات دورية بالمواقف والتحصيلات.'],
+  ['المالية والتحصيل','التنسيق مع الإدارة العامة للشؤون المالية بشأن التسويات المالية والمطابقات الدورية لأرصدة الزبائن.'],
+  ['المالية والتحصيل','اقتراح الإجراءات اللازمة حيال الزبائن المتأخرين عن السداد، وإعداد المذكرات اللازمة بشأنها.'],
+  ['التقارير','إعداد تقرير دوري شامل عن الموقف التجاري والتحصيلات ورفعه إلى مدير عام الإدارة.']]}};
+const ORG_DUTY_ORDER=['gm','w','e','ca'];
+function viewOrgDuties(el){
+  const sel=ORG_DUTIES[S.ui.od]?S.ui.od:'',q=norm(S.ui.odq2||''),D0=ORG_DECREE;
+  const ids=sel?[sel]:ORG_DUTY_ORDER,tot=ORG_DUTY_ORDER.reduce((n,id)=>n+ORG_DUTIES[id].items.length,0);
+  let hits=0;
+  const secs=ids.map(id=>{const o=ORG_BY.get(id),d=ORG_DUTIES[id],t=ORG_TYPES.find(x=>x.k===o.type)||{};
+    const items=d.items.map((x,i)=>({tag:x[0],txt:x[1],n:i+1})).filter(x=>!q||norm(x.tag+' '+x.txt).includes(q));hits+=items.length;if(q&&!items.length)return '';
+    const tags=uniq(d.items.map(x=>x[0]));
+    return `<section class="od-sec t-${o.type}" id="od-${id}">
+     <header class="od-h"><div class="od-hm"><span class="od-type">${esc(t.l||'')}</span><h3>${esc(o.title)}</h3>
+      <p>${o.vacant?'شاغرة':`<b>${esc(o.head)}</b>${ORG_ROLE[id]?` · ${esc(ORG_ROLE[id])}`:''}`}</p></div>
+      <div class="od-stats"><span><b class="num">${d.items.length}</b>مهام</span><span><b class="num">${orgAll(id).length}</b>جهة تابعة</span><span><b class="num">${tags.length}</b>مجال عمل</span></div>
+      <div class="od-acts"><button class="btn sm" data-od-dash="${id}">لوحة المؤشرات</button><button class="btn sm ghost" data-org-focus="${id}">عرض في المخطط</button></div></header>
+     <p class="od-lead">${esc(d.lead)}</p>
+     <ol class="od-list">${items.map(x=>`<li><span class="od-n num">${x.n}</span><div><span class="od-tag">${esc(x.tag)}</span><p>${esc(x.txt)}</p></div></li>`).join('')}</ol>
+    </section>`}).join('');
+  const other=orgKids('gm').filter(o=>!ORG_DUTIES[o.id]);
+  el.innerHTML=`<div class="od-decree">
+    <div class="od-seal">${I.org||''}</div>
+    <div class="od-dm"><span class="od-eyebrow">قرار مجلس الإدارة</span><h3>القرار رقم (${D0.no}) لسنة ${D0.year}م</h3><p>${esc(D0.title)}</p>
+     <div class="od-meta"><span>تاريخ القرار <b class="num">${fd(D0.date)}</b></span><span>نافذ اعتبارًا من <b class="num">${fd(D0.eff)}</b></span><span>إحالة مكتب شؤون مجلس الإدارة رقم <b class="num">${D0.ref}</b></span></div></div>
+    <div class="od-big"><b class="num">${tot}</b><span>مهمة واختصاصًا</span><small>لـ ${ORG_DUTY_ORDER.length} جهات</small></div>
+   </div>
+   <details class="od-arts"><summary>مواد القرار <small>${D0.arts.length} مواد</small></summary><ol>${D0.arts.map(a=>`<li><b>${esc(a[0])}</b><span>${esc(a[1])}</span></li>`).join('')}</ol></details>
+   <div class="od-bar"><div class="ocd-scopes" style="margin:0"><button data-od="" aria-pressed="${!sel}">كل الجهات</button>${ORG_DUTY_ORDER.map(id=>`<button data-od="${id}" aria-pressed="${sel===id}">${esc(ORG_BY.get(id).title)} <span class="num">${ORG_DUTIES[id].items.length}</span></button>`).join('')}</div>
+    <div class="grow od-search">${I.search}<input type="search" id="od-q" value="${esc(S.ui.odq2||'')}" placeholder="بحث في المهام والاختصاصات…" aria-label="بحث في المهام"></div></div>
+   ${q?`<div class="count-line">${hits} نتيجة</div>`:''}
+   ${secs||`<div class="empty"><b>لا نتائج</b>جرّب كلمة أخرى.</div>`}
+   ${!sel&&!q&&other.length?`<section class="od-note"><h4>جهات تابعة للإدارة العامة لم يحدد القرار اختصاصاتها</h4><ul>${other.map(o=>{const tk=(ORG_TASKS[o.id]||[]).map(v=>VIEWS.find(x=>x.id===v)).filter(Boolean);return `<li><b>${esc(o.title)}</b> <span class="muted">${o.vacant?'شاغرة':esc(o.head)}</span>${tk.length?`<span class="od-tk">مهامها في المنظومة: ${tk.map(v=>`<button type="button" data-org-go="${v.id}">${esc(v.label)}</button>`).join('')}</span>`:''}</li>`}).join('')}</ul></section>`:''}`;
+  const qi=el.querySelector('#od-q');qi.addEventListener('input',debounce(()=>{S.ui.odq2=qi.value;const p=qi.selectionStart;viewOrgDuties(el);const n=el.querySelector('#od-q');n.focus();try{n.setSelectionRange(p,p)}catch(e){}},200));
+}
+function orgDutiesPanel(id){const d=ORG_DUTIES[id];if(!d)return '';
+  return `<section class="panel ocd-wide"><h3 class="section-title">المهام والاختصاصات <small>قرار مجلس الإدارة رقم (${ORG_DECREE.no}) لسنة ${ORG_DECREE.year}م</small></h3>
+   <ol class="od-list od-compact">${d.items.map((x,i)=>`<li><span class="od-n num">${i+1}</span><div><span class="od-tag">${esc(x[0])}</span><p>${esc(x[1])}</p></div></li>`).join('')}</ol>
+   <button class="btn sm" data-od-open="${id}" style="margin-top:10px">عرض كل الاختصاصات</button></section>`}
+document.addEventListener('click',e=>{if(!e.target.closest('#o-tree'))return;
+  const b=e.target.closest('[data-od]');if(b){S.ui.od=b.dataset.od;S.ui.odq2='';renderOrg();return}
+  const d=e.target.closest('[data-od-dash]');if(d){S.ui.of=d.dataset.odDash;S.ui.om='dash';document.querySelectorAll('[data-om]').forEach(x=>x.setAttribute('aria-selected',x.dataset.om==='dash'));renderOrg();return}
+  const o=e.target.closest('[data-od-open]');if(o){e.stopPropagation();S.ui.od=o.dataset.odOpen;S.ui.om='duties';S.ui.odq2='';document.querySelectorAll('[data-om]').forEach(x=>x.setAttribute('aria-selected',x.dataset.om==='duties'));renderOrg();document.getElementById('o-tree').scrollIntoView({block:'start',behavior:'smooth'})}},true);
 function orgPath(id){const p=[];let o=ORG_BY.get(id);while(o){p.unshift(o);o=ORG_BY.get(o.parent)}return p}
 function orgDesc(id){return orgKids(id).reduce((n,k)=>n+1+orgDesc(k.id),0)}
 function viewOrg(){
   const cnt=k=>ORG.filter(o=>o.type===k).length,mode=S.ui.om||'chart';
   const kp=(l,v,c='')=>`<div class="kpi ${c}" style="cursor:default"><span class="l">${l}</span><span class="v">${v}</span></div>`;
   return `<div class="page-head"><div><h2>الهيكل التنظيمي</h2><p>الإدارة العامة للمبيعات والشؤون التجارية وإداراتها وأقسامها ووحداتها، كما وردت في الهيكل المعتمد. اضغط على أي جهة لعرض ما يتبعها.</p></div>
-  <div class="toolbar"><div class="seg" role="tablist"><button data-om="chart" aria-selected="${mode==='chart'}">مخطط</button><button data-om="list" aria-selected="${mode==='list'}">قائمة</button><button data-om="dash" aria-selected="${mode==='dash'}">لوحة المؤشرات</button></div><button class="btn" data-act="org-print">طباعة</button><button class="btn" data-act="export-org">${I.down}تصدير Excel</button></div></div>
+  <div class="toolbar"><div class="seg" role="tablist"><button data-om="chart" aria-selected="${mode==='chart'}">مخطط</button><button data-om="list" aria-selected="${mode==='list'}">قائمة</button><button data-om="dash" aria-selected="${mode==='dash'}">لوحة المؤشرات</button><button data-om="duties" aria-selected="${mode==='duties'}">المهام والاختصاصات</button></div><button class="btn" data-act="org-print">طباعة</button><button class="btn" data-act="export-org">${I.down}تصدير Excel</button></div></div>
   <div class="kpis org-kpis">${kp('الإدارات',cnt('dept'))}${kp('المنسقون',cnt('coord'))}${kp('الأقسام',cnt('section'))}${kp('المكاتب',cnt('office'))}${kp('الوحدات والمشرفون',cnt('unit')+cnt('super'))}${kp('شواغر',ORG.filter(o=>o.vacant).length,'warn')}</div>
   <div class="toolbar"><div class="grow">${I.search}<input type="search" id="o-q" value="${esc(S.ui.oq||'')}" placeholder="بحث بالمسمى أو اسم المسؤول أو الرقم الوظيفي…"></div>
   <select id="o-f"><option value="">الهيكل الكامل</option>${ORG.filter(o=>orgKids(o.id).length&&o.id!=='board').map(o=>`<option value="${o.id}" ${S.ui.of===o.id?'selected':''}>${'— '.repeat(Math.max(0,orgPath(o.id).length-2))}${esc(o.title)}</option>`).join('')}</select></div>
@@ -1115,6 +1226,7 @@ function ocCard(o,cls=''){
    <span class="oc-type">${t.l}</span><b class="oc-title">${esc(o.title)}</b>
    ${o.vacant?'<span class="oc-name oc-vac">شاغرة</span>':`<span class="oc-name">${esc(o.head)}</span>${ORG_ROLE[o.id]?`<span class="oc-role">${esc(ORG_ROLE[o.id])}</span>`:''}${o.empNo?`<span class="oc-no num">${esc(o.empNo)}</span>`:''}`}
    ${tasks.length?`<span class="oc-tasks"><span class="oc-tasks-h">المهام</span>${tasks.map(v=>`<button type="button" data-org-go="${v.id}">${I[v.icon]}${esc(v.label)}</button>`).join('')}</span>`:''}
+   ${ORG_DUTIES[o.id]?`<button type="button" class="oc-duty" data-od-open="${o.id}">${ORG_DUTIES[o.id].items.length} مهام واختصاصات</button>`:''}
    ${o.uncertain||n||perms&&perms.length?`<span class="oc-foot">${o.uncertain?'<span class="tag dup">تدقيق</span>':''}${perms&&perms.length?`<span class="tag">${perms.length} صلاحية</span>`:''}${n?`<span class="oc-more">${orgDesc(o.id)} جهة تابعة ‹</span>`:''}</span>`:''}</div>`;
 }
 /* المستوى الأخير يُعرض عموديًا تحت الجهة الأم كما في الهيكل الورقي */
@@ -1134,13 +1246,13 @@ function orgNode(o,hit){
 }
 function renderOrg(){
   const el=document.getElementById('o-tree');if(!el)return;const q=norm(S.ui.oq||''),root=q?'board':S.ui.of||'board';
-  el.classList.toggle('bare',!q&&S.ui.om==='dash');const ok=document.querySelector('.org-kpis');if(ok)ok.hidden=!q&&S.ui.om==='dash';if(!q&&S.ui.om==='dash'){el.classList.remove('chart');viewOrgDash(el);return}
+  const bare=!q&&(S.ui.om==='dash'||S.ui.om==='duties');el.classList.toggle('bare',bare);el.classList.toggle('duties',!q&&S.ui.om==='duties');const ok=document.querySelector('.org-kpis');if(ok)ok.hidden=bare;if(!q&&S.ui.om==='duties'){el.classList.remove('chart');viewOrgDuties(el);return}if(!q&&S.ui.om==='dash'){el.classList.remove('chart');viewOrgDash(el);return}
   if(!q&&(S.ui.om||'chart')==='chart'){el.classList.add('chart');renderOrgChart(el);return}
   el.classList.remove('chart');const hit=new Set();
   ORG.filter(o=>!q||norm([o.title,o.head,o.empNo].join(' ')).includes(q)).forEach(o=>orgPath(o.id).forEach(p=>hit.add(p.id)));
   el.innerHTML=hit.has(root)?`${q?`<div class="count-line">${ORG.filter(o=>norm([o.title,o.head,o.empNo].join(' ')).includes(q)).length} نتيجة</div>`:''}${orgNode(ORG_BY.get(root),hit)}`:`<div class="empty"><b>لا نتائج</b>جرّب كلمة أخرى.</div>`;
 }
-function exportOrg(){const r=ORG.map(o=>({'المسمى':o.title,'النوع':ORG_TYPES.find(t=>t.k===o.type).l,'المسؤول':o.vacant?'شاغرة':o.head,'الرقم الوظيفي':o.empNo,'الجهة الأعلى':o.parent?ORG_BY.get(o.parent).title:'','المسار':orgPath(o.id).map(p=>p.title).join(' / '),'تدقيق':o.uncertain?'نعم':''}));saveXlsx([['الهيكل التنظيمي',r]],'الهيكل-التنظيمي-'+TODAY_ISO+'.xlsx')}
+function exportOrg(){const r=ORG.map(o=>({'المسمى':o.title,'النوع':ORG_TYPES.find(t=>t.k===o.type).l,'المسؤول':o.vacant?'شاغرة':o.head,'الرقم الوظيفي':o.empNo,'الجهة الأعلى':o.parent?ORG_BY.get(o.parent).title:'','المسار':orgPath(o.id).map(p=>p.title).join(' / '),'تدقيق':o.uncertain?'نعم':''}));const du=[];ORG_DUTY_ORDER.forEach(id=>ORG_DUTIES[id].items.forEach((x,i)=>du.push({'الجهة':ORG_BY.get(id).title,'م':i+1,'المجال':x[0],'المهمة':x[1],'المرجع':'قرار مجلس الإدارة رقم ('+ORG_DECREE.no+') لسنة '+ORG_DECREE.year})));saveXlsx([['الهيكل التنظيمي',r],['المهام والاختصاصات',du]],'الهيكل-التنظيمي-'+TODAY_ISO+'.xlsx')}
 afterRender.org=()=>{renderOrg();const q=document.getElementById('o-q');q.addEventListener('input',debounce(()=>{S.ui.oq=q.value;renderOrg()},150));document.getElementById('o-f').addEventListener('change',e=>{S.ui.of=e.target.value;renderOrg()})};
 /* ============ لوحة مؤشرات الهيكل التنظيمي ============ */
 function orgAll(id){const out=[];const walk=p=>orgKids(p).forEach(k=>{out.push(k);walk(k.id)});walk(id);return out}
@@ -1182,6 +1294,7 @@ function viewOrgDash(el){
   <h4 class="ocd-sec">بطاقات ملخصة <small>اضغط على البطاقة لتصفية الجدول</small></h4>
   <div class="kpis ocd-kpis">${kp('الجهات التابعة',sub.length,kids.length?`${kids.length} ${root.id==='board'?'تحت الإدارة العامة':'مباشرة'}`:'','','st:')}${kp('المناصب المشغولة',filled,`${ocPct(filled,pos.length)}%`,'ok','st:f')}${kp('الشواغر',vac,`${ocPct(vac,pos.length)}%`,vac?'warn':'','st:v')}${kp('بحاجة تدقيق',unc,'أسماء أو أرقام غير واضحة',unc?'warn':'','st:u')}${kp('المستويات الإدارية',orgDepth(root.id)+1)}${kp('متوسط نطاق الإشراف',avgSpan.toFixed(1),`${mgrs.length} مسؤول له جهات تابعة`)}${kp('المهام المسندة',tasks,tasks?'صفحات في المنظومة':'')}</div>
   <div class="ocd-grid">
+   ${orgDutiesPanel(root.id)}
    ${cmp.length>1?`<section class="panel ocd-wide"><h3 class="section-title">${root.id==='board'?'حجم الإدارات والجهات التابعة للإدارة العامة':'حجم الجهات التابعة مباشرة'} <small>اضغط على جهة لعرض لوحتها</small></h3>
      <div class="ocd-legend"><span><i class="f"></i>مشغولة</span><span><i class="v"></i>شاغرة</span></div>${ocBars(cmp,maxC)}</section>`:''}
    ${types.length?`<section class="panel"><h3 class="section-title">التوزيع حسب النوع <small>اضغط للتصفية</small></h3>${ocBars(types.map(t=>({...t,set:'ty:'+t.k})),maxT)}</section>`:''}
