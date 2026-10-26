@@ -207,6 +207,51 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 .ocd-col i{display:block;width:100%;max-width:44px;background:var(--ocf);border-radius:4px 4px 0 0}.ocd-col:hover i{filter:brightness(1.12)}
 .ocd-filters{margin-bottom:8px}.ocd-tw{max-height:460px!important;overflow:auto!important}
 .ocd-kpis{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
+.xd-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:22px;align-items:stretch;padding:24px;border-radius:14px;color:#eaf2f8;background:radial-gradient(120% 140% at 0% 0%,#1d4a6e 0%,rgba(29,74,110,0) 55%),linear-gradient(135deg,#0f2236 0%,#13304b 60%,#0b1b2b 100%);box-shadow:var(--shadow)}
+.xd-hero::after{content:"";position:absolute;inset-inline-end:-60px;top:-60px;width:220px;height:220px;border-radius:50%;border:28px solid rgba(124,196,236,.06);pointer-events:none}
+.xd-hero-main{display:flex;flex-direction:column;gap:4px;min-width:0}
+.xd-eyebrow{font-size:12px;letter-spacing:.02em;color:#9fc6e2;font-weight:700}
+.xd-hero h2{margin:2px 0 0;font-family:var(--f-display);font-size:22px;line-height:1.35;text-wrap:balance;color:#fff}
+.xd-sub{margin:4px 0 0;font-size:13.5px;color:#d3e2ee}.xd-sub span{color:#9fc6e2}
+.xd-date{margin:2px 0 0;font-size:12px;color:#8ea9c1}
+.xd-hero-gauge{margin-top:auto;padding-top:14px;display:flex;align-items:center;gap:12px;position:relative;cursor:pointer;width:max-content;max-width:100%}
+.xd-hero-gauge>b{position:absolute;inset-inline-start:0;width:84px;text-align:center;font-size:18px;color:#fff}
+.xd-hero-gauge>span{display:flex;flex-direction:column;font-weight:700;font-size:13px}.xd-hero-gauge small{font-weight:400;color:#9fc6e2;font-size:12px}
+.xd-ring-t{fill:none;stroke:var(--line2);stroke-width:8}.xd-ring-v{fill:none;stroke:var(--ocf);stroke-width:8;stroke-linecap:round}
+.xd-hero .xd-ring-t{stroke:rgba(255,255,255,.14)}.xd-hero .xd-ring-v{stroke:#7cc4ec}
+.xd-hks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;position:relative;z-index:1}
+.xd-hk{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:background .15s,border-color .15s;min-width:0}
+.xd-hk:hover,.xd-hk:focus-visible{background:rgba(255,255,255,.11);border-color:rgba(124,196,236,.55);outline:none}
+.xd-hk .l{font-size:12.5px;color:#b9cfe0}.xd-hk b{font-family:var(--f-display);font-size:28px;line-height:1.15;color:#fff}.xd-hk .s{font-size:11.5px;color:#8ea9c1}
+.xd-hk.crit b{color:#ff9d93}.xd-hk.warn b{color:#f2c46d}
+.xd-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}.xd-head .section-title{margin:0}
+.xd-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:0 10px;min-width:min(280px,100%);flex:0 1 320px}
+.xd-search svg{width:16px;height:16px;color:var(--muted);flex:none}.xd-search input{border:0;background:transparent;font:inherit;font-size:13px;color:var(--ink);padding:8px 0;width:100%;outline:none}
+.xd-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.xd-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,border-color .15s;border-top:3px solid var(--ocf)}
+.xd-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.xd-card header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:14px 16px 10px;cursor:pointer}
+.xd-ct{min-width:0}.xd-type{font-size:11px;color:var(--accent);font-weight:700;background:var(--accent-soft);border-radius:999px;padding:2px 8px}
+.xd-ct h4{margin:6px 0 2px;font-size:15px;font-family:var(--f-display);line-height:1.35}.xd-ct p{margin:0;font-size:12.5px;color:var(--muted)}
+.xd-cg{position:relative;flex:none;width:62px;height:62px}.xd-cg b{position:absolute;inset:0;display:grid;place-items:center;font-size:13px}
+.xd-core{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.xd-m{padding:10px 8px;text-align:center;display:flex;flex-direction:column;gap:2px;cursor:pointer;min-width:0}.xd-m+.xd-m{border-inline-start:1px solid var(--line2)}
+.xd-m:hover,.xd-m:focus-visible{background:var(--accent-soft);outline:none}
+.xd-m b{font-family:var(--f-display);font-size:20px;line-height:1.2}.xd-m span{font-size:11.5px;color:var(--muted)}
+.xd-m.ok b{color:var(--ok)}.xd-m.warn b{color:var(--warn)}.xd-m.crit b{color:var(--crit)}
+.xd-foot{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:10px 16px;font-size:12px;color:var(--muted);margin-top:auto}
+.xd-foot>span{display:inline-flex;align-items:center;gap:4px}.xd-foot>span[data-xd]{cursor:pointer}.xd-foot>span[data-xd]:hover{color:var(--accent)}
+.xd-foot svg{width:14px;height:14px}.xd-foot b{color:var(--ink)}.xd-foot .pill{margin-inline-start:auto}
+.xd-grid{align-items:start}
+.xd-ph{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;justify-content:space-between;margin-bottom:10px}.xd-ph .section-title{margin:0}
+.xd-seg{display:inline-flex;flex-wrap:wrap;gap:2px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:2px}
+.xd-seg button{border:0;background:transparent;font:inherit;font-size:12px;color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer}
+.xd-seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.xd-attn .alert-row{cursor:pointer}
+.xd-ops{margin:10px 0 -4px;padding-top:14px;border-top:1px solid var(--line);font-family:var(--f-display);font-size:17px}.xd-ops small{font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:12.5px;margin-inline-start:6px}
+@media (max-width:1100px){.xd-hero{grid-template-columns:1fr}}
+@media (max-width:640px){.xd-hero{padding:18px}.xd-hks{grid-template-columns:repeat(2,minmax(0,1fr))}.xd-hk b{font-size:22px}.xd-cards{grid-template-columns:1fr}.xd-search{flex:1 1 100%}}
+@media print{.xd-hero{background:#0f2236!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.xd-search,.xd-seg{display:none}}
 @media (max-width:800px){.ocd-gauges{grid-template-columns:minmax(0,1fr)}}
 .org.bare{background:none;border:0;padding:0}
 .oc-more{font-size:11px;color:var(--accent);font-weight:600}
@@ -537,7 +582,7 @@ function viewDash(){
   const soon=active.filter(x=>x.d.remain<=S.settings.t1).sort((a,b)=>a.d.remain-b.d.remain).slice(0,8);
   const upcoming=cs.filter(x=>x.d.status==='لم يبدأ بعد').sort((a,b)=>(a.c.startDate||'').localeCompare(b.c.startDate||'')).slice(0,6);
   return `
-  <div class="page-head"><div><h2>لوحة المؤشرات</h2><p>صورة فورية لعقود شركة البريقة واحتياجات المصانع المعتمدة من وزارة الصناعة والمعادن، محسوبة حتى ${fd(TODAY_ISO)}.</p></div></div>
+  ${xdExec()}
   <div>
    <h3 class="section-title">عقود البريقة</h3>
    <div class="kpis">
@@ -589,7 +634,102 @@ function viewDash(){
   </div>`;
 }
 function kpi(l,v,cls,s,view,f){return `<button class="kpi ${cls}" data-kpi='${esc(JSON.stringify({view,f}))}'><span class="l">${esc(l)}</span><span class="v">${typeof v==='number'?fn(v):v}</span><span class="s">${esc(s)}</span></button>`}
-afterRender.dash=()=>{};
+afterRender.dash=()=>{const q=document.getElementById('xd-q');if(q){xdFilter();q.addEventListener('input',debounce(()=>{S.ui.xq=q.value;xdFilter()},120))}};
+/* ============ Executive overview: all departments ============ */
+const XD_ORDER=['e','w','ca','gm-fo','gm-rep'];
+const XD_REG={'المنطقتان الوسطى والشرقية':'e','المنطقتان الغربية والجنوبية':'w'};
+const XD_METRICS=[['pos','المناصب'],['tk','طلبات الزبائن المفتوحة'],['nt','إشعارات البيع الجارية'],['mt','الاجتماعات القادمة']];
+function xdDept(id){const p=orgPath(id),i=p.findIndex(o=>o.id==='gm');return i<0?'':p[i+1]?p[i+1].id:'gm'}
+function xdRing(pct,sz=64){const p=Math.max(0,Math.min(100,pct)),r=(sz-10)/2,C=2*Math.PI*r;
+  return `<svg class="xd-ring" viewBox="0 0 ${sz} ${sz}" width="${sz}" height="${sz}" aria-hidden="true"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" class="xd-ring-t"/>${p?`<circle cx="${sz/2}" cy="${sz/2}" r="${r}" class="xd-ring-v" style="stroke-dasharray:${C*p/100} ${C}" transform="rotate(-90 ${sz/2} ${sz/2})"/>`:''}</svg>`}
+function xdData(){
+  const byT=new Map();ORG.forEach(o=>byT.set(norm(o.title),o.id));
+  const tk=S.tickets.map(t=>({t,dp:(()=>{const id=byT.get(norm(t.assignee||''));return id?xdDept(id):''})()}));
+  const mts=(typeof M!=='undefined'&&M.list)?[...M.list.values()]:[];const up=typeof isUpcoming==='function'?mts.filter(m=>{try{return isUpcoming(m)}catch(e){return false}}):[];
+  const cs=S.contracts.map(c=>({c,d:D.get(c.id)})),act=cs.filter(x=>x.d.status==='ساري'||x.d.status==='قريب الانتهاء');
+  const N=S.notices,run=N.filter(n=>n.status==='جارٍ'),unpaid=N.filter(n=>n.status!=='موقوف'&&n.payment!=='تم السداد');
+  const deps=XD_ORDER.map(id=>ORG_BY.get(id)).filter(Boolean).map(o=>{
+    const pos=[o,...orgAll(o.id)],vac=pos.filter(x=>x.vacant).length,unc=pos.filter(x=>x.uncertain).length;
+    const T=tk.filter(x=>x.dp===o.id).map(x=>x.t),open=T.filter(t=>t.status!=='مغلق'),late=open.filter(tkLate);
+    const myM=up.filter(m=>(m.units||[]).includes(o.id)||m.organizer===o.id);
+    const myN=N.filter(n=>XD_REG[n.region]===o.id),myRun=myN.filter(n=>n.status==='جارٍ');
+    let core=[];
+    if(o.id==='e'||o.id==='w')core=[['إشعارات بيع جارية',myRun.length,'',{v:'nt',nst:'جارٍ'}],['إشعارات مكتملة',myN.filter(n=>n.status==='مكتمل').length,'ok',{v:'nt',nst:'مكتمل'}],['مشرفون ووحدات',orgAll(o.id).length,'',{org:o.id}]];
+    if(o.id==='ca'){const cl=S.tickets.filter(t=>t.status!=='مغلق'&&t.type==='مطالبة مالية أو فواتير').length,val=sumBy(act,x=>x.c.value||0);
+      core=[['إشعارات بانتظار السداد',unpaid.length,unpaid.length?'warn':'',{v:'nt'}],['مطالبات مالية مفتوحة',cl,cl?'warn':'',{v:'cs',type:'مطالبة مالية أو فواتير'}],['قيمة العقود السارية',val?anShort(val):'—','',{v:'contracts',st:'active'}]]}
+    if(o.id==='gm-fo'){const rg=uniq(S.needs.map(n=>cleanRegion(n.region)).filter(Boolean)).length;
+      core=[['منشآت في الكشوفات',S.needs.length,'',{v:'needs'}],['مناطق مغطاة',rg,'',{v:'needs'}],['مشرفو المتابعة',orgKids(o.id).filter(x=>x.type==='super').length||orgKids(o.id).length,'',{org:o.id}]]}
+    if(o.id==='gm-rep'){const w1=act.filter(x=>x.d.remain<=S.settings.t1).length;
+      core=[['عقود سارية',act.length,'ok',{v:'contracts',st:'active'}],[`تنتهي خلال ${S.settings.t1} يومًا`,w1,w1?'warn':'',{v:'contracts',st:'a90'}],['تمديدات ومراسلات',S.extensions.length+S.letters.length,'',{v:'ext'}]]}
+    return {o,pos:pos.length,vac,unc,fillPct:ocPct(pos.length-vac,pos.length),T,open,late,mt:myM.length,nt:myRun.length,core}});
+  return {deps,tk,up,act,run,unpaid,cs};
+}
+function xdExec(){
+  const X=xdData(),gm=ORG_BY.get('gm'),all=[gm,...orgAll('gm')],vac=all.filter(o=>o.vacant).length,fill=ocPct(all.length-vac,all.length);
+  const openT=S.tickets.filter(t=>t.status!=='مغلق'),lateT=openT.filter(tkLate);
+  const m=S.ui.xm&&XD_METRICS.some(x=>x[0]===S.ui.xm)?S.ui.xm:'pos';
+  const val=d=>m==='pos'?d.pos:m==='tk'?d.open.length:m==='nt'?d.nt:d.mt;
+  const rows=X.deps.map(d=>({d,v:val(d)})).sort((a,b)=>b.v-a.v),mx=Math.max(1,...rows.map(r=>r.v)),tot=rows.reduce((s,r)=>s+r.v,0);
+  const mLbl=XD_METRICS.find(x=>x[0]===m)[1];
+  const attn=[];
+  X.deps.forEach(d=>{if(d.late.length)attn.push(['crit',`${d.o.title}: ${d.late.length} طلب متأخر عن موعده`,{v:'cs',st:'late'}]);if(d.vac)attn.push(['warn',`${d.o.title}: ${d.vac} منصب شاغر`,{org:d.o.id}])});
+  const a30=X.act.filter(x=>x.d.remain<=S.settings.t3).length;if(a30)attn.unshift(['crit',`${a30} عقد ينتهي خلال ${S.settings.t3} يومًا`,{v:'contracts',st:'a30'}]);
+  const xd=o=>`data-xd='${esc(JSON.stringify(o))}' role="button" tabindex="0"`;
+  const hk=(l,v,s,o,c='')=>`<div class="xd-hk ${c}" ${xd(o)}><span class="l">${l}</span><b class="num">${typeof v==='number'?fn(v):v}</b><span class="s">${s}</span></div>`;
+  return `<section class="xd-hero">
+   <div class="xd-hero-main">
+    <span class="xd-eyebrow">لوحة المؤشرات التنفيذية</span>
+    <h2>${esc(gm.title)}</h2>
+    <p class="xd-sub">${gm.vacant?'':`<b>${esc(gm.head)}</b>${ORG_ROLE.gm?` · <span>${esc(ORG_ROLE.gm)}</span>`:''}`}</p>
+    <p class="xd-date">بيانات محدّثة حتى ${fd(TODAY_ISO)}</p>
+    <div class="xd-hero-gauge" ${xd({org:'gm'})} data-tip="${esc('نسبة إشغال المناصب: '+fill+'%')}">${xdRing(fill,84)}<b class="num">${fill}%</b><span>إشغال المناصب<small>${all.length-vac} من ${all.length}</small></span></div>
+   </div>
+   <div class="xd-hks">
+    ${hk('العقود السارية',X.act.length,`من ${fn(S.contracts.length)} عقد مسجّل`,{v:'contracts',st:'active'})}
+    ${hk('منشآت الكشوفات',S.needs.length,`ضمن ${fn(S.batches.length)} دفعات`,{v:'needs'})}
+    ${hk('طلبات الزبائن المفتوحة',openT.length,lateT.length?`${lateT.length} متأخرة عن موعدها`:'لا توجد طلبات متأخرة',{v:'cs',st:'open'},lateT.length?'crit':'')}
+    ${hk('إشعارات بيع جارية',X.run.length,`${fn(X.unpaid.length)} بانتظار السداد`,{v:'nt',nst:'جارٍ'})}
+    ${hk('الاجتماعات القادمة',X.up.length,'بين الإدارات',{v:'meetings'})}
+    ${hk('الإدارات والجهات',all.length-1,`${orgKids('gm').length} جهات رئيسية · ${vac} شاغر`,{org:'board'},vac?'warn':'')}
+   </div>
+  </section>
+  <div class="xd-head"><h3 class="section-title">الإدارات <small>اضغط على أي إدارة لفتح لوحتها التفصيلية</small></h3>
+   <div class="grow xd-search">${I.search}<input type="search" id="xd-q" value="${esc(S.ui.xq||'')}" placeholder="بحث باسم الإدارة أو المسؤول…" aria-label="بحث في الإدارات"></div></div>
+  <div class="xd-cards" id="xd-cards">${X.deps.map(d=>{const st=d.late.length?['crit','! طلبات متأخرة']:d.vac?['warn','! شواغر']:['ok','✓ مستقرة'];
+   return `<article class="xd-card" data-q="${esc(norm(d.o.title+' '+(d.o.head||'')))}">
+    <header ${xd({org:d.o.id})}><div class="xd-ct"><span class="xd-type">${esc((ORG_TYPES.find(t=>t.k===d.o.type)||{}).l||'')}</span><h4>${esc(d.o.title)}</h4><p>${d.o.vacant?'شاغرة':esc(d.o.head)}</p></div>
+     <div class="xd-cg" data-tip="${esc('إشغال المناصب: '+d.fillPct+'%')}">${xdRing(d.fillPct,62)}<b class="num">${d.fillPct}%</b></div></header>
+    <div class="xd-core">${d.core.map(c=>`<div class="xd-m ${c[2]}" ${xd(c[3])}><b class="num">${typeof c[1]==='number'?fn(c[1]):esc(c[1])}</b><span>${esc(c[0])}</span></div>`).join('')}</div>
+    <div class="xd-foot"><span>${I.org||''}<b class="num">${d.pos}</b> منصب</span><span ${xd({v:'cs',st:'open'})}><b class="num">${d.open.length}</b> طلب مفتوح</span><span ${xd({v:'meetings'})}><b class="num">${d.mt}</b> اجتماع قادم</span><span class="pill p-${st[0]==='ok'?'ok':st[0]==='warn'?'warn':'crit'}">${st[1]}</span></div>
+   </article>`}).join('')}<div class="empty xd-none" hidden><b>لا توجد إدارة مطابقة</b>جرّب كلمة بحث أخرى.</div></div>
+  <div class="grid2 xd-grid">
+   <section class="panel"><div class="xd-ph"><h3 class="section-title">مقارنة بين الإدارات <small>${esc(mLbl)} · الإجمالي <span class="num">${fn(tot)}</span></small></h3>
+    <div class="xd-seg" role="tablist">${XD_METRICS.map(([k,l])=>`<button role="tab" aria-selected="${k===m}" data-xd-m="${k}">${l}</button>`).join('')}</div></div>
+    ${tot?`<div class="ocd-bars">${rows.map(r=>`<div class="ocd-row go" ${xd({org:r.d.o.id})}><span class="ocd-lbl" title="${esc(r.d.o.title)}">${esc(r.d.o.title)}</span><span class="ocd-track">${r.v?`<span class="ocd-seg f" style="width:${r.v*100/mx}%" data-tip="${esc(r.d.o.title+' · '+mLbl+': '+r.v)}"></span>`:''}</span><span class="ocd-val num">${fn(r.v)}</span></div>`).join('')}</div>`
+      :`<div class="empty"><b>لا توجد بيانات بعد</b>ستظهر المقارنة فور تسجيل البيانات.</div>`}
+   </section>
+   <section class="panel"><h3 class="section-title">إشغال المناصب حسب الإدارة <small>مشغولة مقابل شاغرة</small></h3>
+    <div class="ocd-legend"><span><i class="f"></i>مشغولة</span><span><i class="v"></i>شاغرة</span></div>
+    <div class="ocd-bars">${X.deps.slice().sort((a,b)=>b.pos-a.pos).map(d=>{const mxp=Math.max(...X.deps.map(x=>x.pos));return `<div class="ocd-row go" ${xd({org:d.o.id})}><span class="ocd-lbl" title="${esc(d.o.title)}">${esc(d.o.title)}</span><span class="ocd-track"><span class="ocd-seg f" style="width:${(d.pos-d.vac)*100/mxp}%" data-tip="${esc(d.o.title+' · مشغولة '+(d.pos-d.vac))}"></span>${d.vac?`<span class="ocd-seg v" style="width:${d.vac*100/mxp}%" data-tip="${esc(d.o.title+' · شاغرة '+d.vac)}"></span>`:''}</span><span class="ocd-val num">${d.pos}</span></div>`}).join('')}</div>
+   </section>
+  </div>
+  <section class="panel xd-attn"><h3 class="section-title">يحتاج انتباه الإدارة العامة <small>${attn.length?`<span class="num">${attn.length}</span> بند`:''}</small></h3>
+   ${attn.length?`<div class="alerts">${attn.slice(0,8).map(a=>`<div class="alert-row" ${xd(a[2])}><span class="days p-${a[0]}">${a[0]==='crit'?'! عاجل':'! متابعة'}</span><span class="nm">${esc(a[1])}</span></div>`).join('')}</div>`
+     :`<div class="empty"><b>✓ لا توجد بنود عاجلة</b>كل الإدارات مستقرة حسب البيانات الحالية.</div>`}
+  </section>
+  <h3 class="xd-ops">التفاصيل التشغيلية <small>العقود والكشوفات · مهام قسم المتابعة والتقارير</small></h3>`;
+}
+document.addEventListener('click',e=>{if(S.view!=='dash')return;
+  const mb=e.target.closest('[data-xd-m]');if(mb){S.ui.xm=mb.dataset.xdM;const y=window.scrollY;render();window.scrollTo(0,y);return}
+  const g=e.target.closest('[data-xd]');if(!g)return;e.stopPropagation();const o=JSON.parse(g.dataset.xd);
+  if(o.org){go('org',{om:'dash',of:o.org==='board'?'':o.org});return}
+  if(o.v==='contracts'){S.ui.c={q:'',st:o.st||'all',type:'',dept:'',sort:'remain',dir:'asc'};go('contracts');return}
+  if(o.v==='needs'){S.ui.n={q:'',batch:'',region:'',fuel:'',link:'',act:'',sec:'',sort:'seq',dir:'asc'};go('needs');return}
+  if(o.v==='cs'){S.ui.cs=Object.assign(csUI(),{tab:'tk',q:'',st:o.st||'',type:o.type||'',pri:'',as:''});go('cs');return}
+  if(o.v==='nt'){S.ui.cs=Object.assign(csUI(),{tab:'nt',nq:'',nst:o.nst||'',nsg:'',nstg:''});go('cs');return}
+  go(o.v)},true);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&S.view==='dash'&&e.target.closest&&e.target.closest('[data-xd],[data-xd-m]'))e.target.click()});
+function xdFilter(){const q=norm(S.ui.xq||'');let n=0;document.querySelectorAll('#xd-cards .xd-card').forEach(c=>{const h=q&&!c.dataset.q.includes(q);c.hidden=h;if(!h)n++});const e=document.querySelector('.xd-none');if(e)e.hidden=!!n}
 document.addEventListener('click',e=>{
   const k=e.target.closest('[data-kpi]');if(k){const o=JSON.parse(k.dataset.kpi);if(o.view==='contracts'){S.ui.c={q:'',st:o.f.st||'all',type:'',dept:'',sort:S.ui.c?.sort||'remain',dir:'asc'}}else{S.ui.n={q:'',batch:'',region:'',fuel:o.f.fuel||'',link:o.f.link||'',act:'',sec:'',sort:'seq',dir:'asc'}}go(o.view);return}
   const r=e.target.closest('[data-region]');if(r&&S.view==='dash'){S.ui.n={q:'',batch:'',region:r.dataset.region,fuel:'',link:'',sort:'seq',dir:'asc'};go('needs');return}
