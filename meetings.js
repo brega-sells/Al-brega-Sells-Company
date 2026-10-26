@@ -134,8 +134,8 @@ async function start(){
   try{if(localStorage.getItem('cm_view')==='meetings'&&S.view!=='meetings')go('meetings')}catch(e){}
 }
 const refresh=debounce(()=>{renderNav();
-  const ae=document.activeElement,typing=ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&(ae.closest('.drawer')||ae.id==='mt-q');
-  if(S.view==='meetings'&&!dlg.open&&!typing)render();
+  const ae=document.activeElement,typing=ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&(ae.closest('.drawer')||ae.id==='mt-q'||ae.id==='xd-q');
+  if((S.view==='meetings'||S.view==='dash')&&!dlg.open&&!typing)render();
   if(M.open&&document.querySelector('.drawer[data-mt]')&&!typing&&!dlg.open){if(M.list.has(M.open))openMeeting(M.open,true);else closeDrawer()}
 },120);
 
