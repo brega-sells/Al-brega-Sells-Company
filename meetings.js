@@ -20,6 +20,64 @@ const MI={meet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
  wa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.4z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.6-2-1-1 .8a5 5 0 0 1-2.7-2.7l.8-1-1-2z"/></svg>',
  print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>'};
 I.meet=MI.meet;
+/* شعارا Zoom وواتساب */
+const LOGO={zoom:'<svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="#0B5CFF"/><rect x="8.5" y="16" width="21" height="16" rx="4" fill="#fff"/><path d="M31.5 21.6 39.5 16.5v15l-8-5.1z" fill="#fff"/></svg>',
+ whatsapp:'<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#25D366" d="M24 3.5A20.4 20.4 0 0 0 6.4 34.2L3.6 44.5l10.6-2.8A20.4 20.4 0 1 0 24 3.5z"/><path fill="#fff" d="M34.7 29.5c-.5-.3-3.1-1.5-3.5-1.7-.5-.2-.8-.3-1.2.3-.3.5-1.3 1.7-1.6 2-.3.3-.6.4-1.1.1-.5-.3-2.2-.8-4.2-2.6a15.6 15.6 0 0 1-2.9-3.6c-.3-.5 0-.8.2-1.1l.8-.9c.2-.3.3-.5.5-.9.2-.3.1-.7 0-.9l-1.6-3.8c-.4-1-.8-.9-1.2-.9h-1c-.3 0-.9.1-1.4.6-.5.5-1.8 1.8-1.8 4.3s1.8 5 2.1 5.3c.3.3 3.6 5.5 8.7 7.7 1.2.5 2.2.8 2.9 1.1 1.2.4 2.4.3 3.2.2 1-.1 3.1-1.3 3.5-2.5.4-1.2.4-2.3.3-2.5-.1-.2-.5-.3-1-.6z"/></svg>'};
+const logo=(k,sz=20)=>LOGO[k]?LOGO[k].replace('<svg',`<svg style="width:${sz}px;height:${sz}px;flex:none"`):MI.meet.replace('<svg',`<svg style="width:${sz}px;height:${sz}px;flex:none"`);
+(function(){const st=document.createElement('style');st.textContent=`
+.mt-brands{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
+.mt-brand{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;gap:14px;align-items:center;padding:16px 18px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);transition:border-color .15s,box-shadow .15s,transform .15s}
+.mt-brand:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(15,23,42,.10)}
+.mt-brand:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mt-brand svg{width:46px;height:46px;flex:none}
+.mt-brand b{display:block;font-size:16px;line-height:1.35}.mt-brand small{display:block;color:var(--muted);font-size:12.5px;line-height:1.5;margin-top:2px}
+.mt-brand.zoom:hover,.mt-brand.zoom[aria-pressed="true"]{border-color:#0B5CFF;background:color-mix(in srgb,#0B5CFF 7%,var(--surface))}
+.mt-brand.whatsapp:hover,.mt-brand.whatsapp[aria-pressed="true"]{border-color:#25D366;background:color-mix(in srgb,#25D366 9%,var(--surface))}
+.mt-brand[aria-pressed="true"]::after{content:"✓";position:absolute;top:10px;inset-inline-end:12px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;background:var(--accent)}
+.mt-brand.zoom[aria-pressed="true"]::after{background:#0B5CFF}.mt-brand.whatsapp[aria-pressed="true"]::after{background:#1DA851}
+.mt-others{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.btn.b-zoom{border-color:#0B5CFF}.btn.b-whatsapp{border-color:#25D366}
+.btn.b-zoom:hover{background:color-mix(in srgb,#0B5CFF 8%,var(--surface))}.btn.b-whatsapp:hover{background:color-mix(in srgb,#25D366 10%,var(--surface))}
+.btn.s-zoom{background:#0B5CFF;border-color:#0B5CFF;color:#fff}.btn.s-whatsapp{background:#25D366;border-color:#25D366;color:#06301a}
+.btn.s-zoom:hover,.btn.s-whatsapp:hover{filter:brightness(1.06)}
+.btn.lg{height:44px;padding-inline:18px;font-size:14.5px;border-radius:10px}
+.mt-pl{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);font-weight:500;margin-top:3px}
+.mt-empty{padding:28px 20px;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center}
+.mt-empty .mt-brands{width:min(640px,100%);text-align:start}
+.mt-hero{position:relative;overflow:hidden;border-radius:18px;padding:28px 30px;display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:24px;align-items:center;color:#fff;
+  background:radial-gradient(600px 300px at 0% 0%,rgba(37,211,102,.22),transparent 60%),radial-gradient(700px 360px at 100% 100%,rgba(11,92,255,.35),transparent 60%),linear-gradient(135deg,#0a1a2b 0%,#0d2c4a 55%,#0b4a73 100%);
+  box-shadow:0 18px 40px rgba(10,26,43,.25);animation:mtIn .5s ease both}
+.mt-hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px);background-size:16px 16px;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 70%)}
+.mt-hero>*{position:relative}
+.mt-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.3px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18)}
+.mt-hero h2{margin:12px 0 6px;font-size:clamp(22px,3vw,30px);line-height:1.3;color:#fff}
+.mt-hero p{margin:0;max-width:62ch;color:rgba(255,255,255,.78);font-size:14px;line-height:1.8}
+.mt-hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;align-items:center}
+.mt-cta{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 18px 10px 14px;border-radius:14px;background:#fff;color:#0a1a2b;min-width:210px;box-shadow:0 8px 20px rgba(0,0,0,.18);transition:transform .18s,box-shadow .18s}
+.mt-cta svg{width:38px;height:38px;flex:none}.mt-cta b{display:block;font-size:15px}.mt-cta small{display:block;font-size:12px;color:#51606f;margin-top:1px}
+.mt-cta:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(0,0,0,.25)}
+.mt-cta.zoom:hover{box-shadow:0 14px 28px rgba(11,92,255,.45)}.mt-cta.whatsapp:hover{box-shadow:0 14px 28px rgba(37,211,102,.4)}
+.mt-cta:focus-visible,.mt-cta-other:focus-visible,.mt-next-btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.mt-cta-other{all:unset;cursor:pointer;color:rgba(255,255,255,.85);font-size:13px;padding:8px 6px;border-bottom:1px dashed rgba(255,255,255,.4)}
+.mt-cta-other:hover{color:#fff}
+.mt-trust{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:18px;font-size:12px;color:rgba(255,255,255,.7)}.mt-trust span{display:inline-flex;align-items:center;gap:5px}
+.mt-next{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(6px);min-width:0}
+.mt-next-l{font-size:12px;color:rgba(255,255,255,.7)}.mt-next-when{font-size:24px;font-weight:700;line-height:1.3}
+.mt-next-t{font-size:15px;line-height:1.5;overflow:hidden;text-overflow:ellipsis}.mt-next-d{font-size:12.5px;color:rgba(255,255,255,.72)}
+.mt-next-act{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.mt-next-btn{all:unset;cursor:pointer;font-size:13px;padding:7px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.35);color:#fff}
+.mt-next-btn:hover{background:rgba(255,255,255,.12)}.mt-next-btn.solid{background:#fff;color:#0a1a2b;border-color:#fff}
+.mt-next-btn.solid.zoom{background:#0B5CFF;border-color:#0B5CFF;color:#fff}.mt-next-btn.solid.whatsapp{background:#25D366;border-color:#25D366;color:#06301a}
+@keyframes mtIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.mt-anim>*{animation:mtIn .45s ease both}.mt-anim>*:nth-child(2){animation-delay:.05s}.mt-anim>*:nth-child(3){animation-delay:.1s}.mt-anim>*:nth-child(4){animation-delay:.15s}.mt-anim>*:nth-child(5){animation-delay:.2s}
+@media (prefers-reduced-motion:reduce){.mt-hero,.mt-anim>*,.mt-cta,.mt-brand{animation:none!important;transition:none!important}}
+@media (max-width:760px){.mt-hero{grid-template-columns:1fr;padding:22px 18px}.mt-cta{flex:1 1 100%}}
+.mt-join{display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-inline-start:4px solid var(--accent)}
+.mt-join.zoom{border-inline-start-color:#0B5CFF}.mt-join.whatsapp{border-inline-start-color:#25D366}
+`;document.head.appendChild(st)})();
+const BRAND_TXT={zoom:['اجتماع مرئي عبر Zoom','Video meeting on Zoom','صوت وصورة ومشاركة شاشة بحساب Zoom للشركة','Audio, video and screen share on the company Zoom account'],
+ whatsapp:['اجتماع عبر واتساب','Meeting on WhatsApp','مجموعة أو مكالمة جماعية على واتساب من الهاتف','A WhatsApp group or group call from the phone']};
+const brandCard=(k,act,pressed)=>`<button type="button" class="mt-brand ${k}" ${act} ${pressed!=null?`aria-pressed="${pressed}"`:''}>${LOGO[k]}<span><b>${tr(BRAND_TXT[k][0],BRAND_TXT[k][1])}</b><small>${tr(BRAND_TXT[k][2],BRAND_TXT[k][3])}</small></span></button>`;
 if(window.I18N&&I18N.add)I18N.add({'الاجتماعات المغلقة':'Closed meetings'});
 
 const M={list:new Map(),unit:'',myRole:null,loaded:false,subs:[],ui:{f:'upcoming',q:'',u:''},open:null,roles:null};
@@ -111,13 +169,32 @@ function viewMeetings(){
   const kp=(l,v,c,s,f)=>`<button class="kpi ${c}" data-mt-f="${f}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s||''}</span></button>`;
   const chips=[['upcoming',tr('القادمة والجارية','Upcoming')],['closed',tr('المغلقة (محاضر معتمدة)','Closed')],['past',tr('انتهى وقتها دون إغلاق','Past, not closed')],['cancelled',tr('الملغاة','Cancelled')],['all',tr('الكل','All')]];
   const noUnit=!isAdmin()&&!M.unit;
-  return `<div class="page-head"><div><h2>${MI.lock.replace('<svg','<svg style="width:20px;height:20px;vertical-align:-2px"')} ${tr('الاجتماعات المغلقة بين الإدارات','Closed meetings between departments')}</h2>
-   <p>${tr('اجتماعات عن بُعد مغلقة: لا يراها ولا ينضم إليها إلا الإدارات المدعوة. جدول أعمال، رابط انضمام، تأكيد حضور، محضر وقرارات تُتابَع حتى التنفيذ.','Private online meetings: only invited departments can see and join them. Agenda, join link, attendance, minutes and decisions tracked to completion.')}</p></div>
-   <div class="toolbar">${canWrite()&&(isAdmin()||M.unit)?`<button class="btn primary" data-mt="new">${I.plus}${tr('اجتماع جديد','New meeting')}</button>`:''}</div></div>
+  const canNew=canWrite()&&(isAdmin()||M.unit);
+  const next=up.slice().sort((a,b)=>startOf(a)-startOf(b))[0];
+  const until=m=>{const ms=startOf(m)-new Date();if(m.status==='live'||ms<=0&&endOf(m)>=new Date())return tr('منعقد الآن','Happening now');const mi=Math.round(ms/60000),h=Math.floor(mi/60),d=Math.floor(h/24);
+    return d?tr(`بعد ${d} يوم${h%24?' و'+(h%24)+' ساعة':''}`,`in ${d}d${h%24?' '+(h%24)+'h':''}`):h?tr(`بعد ${h} ساعة${mi%60?' و'+(mi%60)+' دقيقة':''}`,`in ${h}h${mi%60?' '+(mi%60)+'m':''}`):tr(`بعد ${mi} دقيقة`,`in ${mi} min`)};
+  const nk=next?platOf(next):'';
+  return `<section class="mt-hero">
+   <div class="mt-hero-main">
+    <span class="mt-eyebrow">${MI.lock.replace('<svg','<svg style="width:13px;height:13px"')} ${tr('مساحة آمنة للإدارات','A private space for departments')}</span>
+    <h2>${tr('الاجتماعات المغلقة بين الإدارات','Closed meetings between departments')}</h2>
+    <p>${tr('اجتمعوا عن بُعد عبر Zoom أو واتساب، بجدول أعمال ومحضر معتمد وقرارات تُتابَع حتى التنفيذ. لا يرى الاجتماع ولا ينضم إليه إلا المدعوون.','Meet remotely on Zoom or WhatsApp with an agenda, approved minutes and tracked decisions. Only invitees can see or join.')}</p>
+    ${canNew?`<div class="mt-hero-cta"><button class="mt-cta zoom" data-mt="new" data-p="zoom">${LOGO.zoom}<span><b>${tr('اجتماع Zoom','Zoom meeting')}</b><small>${tr('صوت وصورة ومشاركة شاشة','Video & screen share')}</small></span></button>
+      <button class="mt-cta whatsapp" data-mt="new" data-p="whatsapp">${LOGO.whatsapp}<span><b>${tr('اجتماع واتساب','WhatsApp meeting')}</b><small>${tr('مجموعة أو مكالمة جماعية','Group or group call')}</small></span></button>
+      <button class="mt-cta-other" data-mt="new">${tr('منصة أخرى','Other platform')} ←</button></div>`:''}
+    <div class="mt-trust"><span>${MI.lock.replace('<svg','<svg style="width:13px;height:13px"')} ${tr('مرئي للمدعوين فقط','Invitees only')}</span><span>✓ ${tr('محضر معتمد ومقفل','Locked approved minutes')}</span><span>✓ ${tr('دعوة بضغطة عبر واتساب','One-tap WhatsApp invite')}</span></div>
+   </div>
+   <div class="mt-next">${next?`<span class="mt-next-l">${tr('الاجتماع القادم','Next meeting')}</span>
+     <div class="mt-next-when">${until(next)}</div>
+     <b class="mt-next-t">${esc(next.title)}</b>
+     <span class="mt-next-d">${fdt(next)} · ${esc(uName(next.organizer))}</span>
+     <div class="mt-next-act">${nk?logo(nk,30):''}<button class="mt-next-btn" data-mt-open="${esc(next.id)}">${tr('عرض الاجتماع','Open meeting')}</button>${next.link&&next.status!=='cancelled'?`<a class="mt-next-btn solid ${nk}" href="${esc(next.link)}" target="_blank" rel="noopener" data-mt="join">${tr('انضمام','Join')}</a>`:''}</div>`
+     :`<span class="mt-next-l">${tr('الاجتماع القادم','Next meeting')}</span><div class="mt-next-when" style="font-size:20px">${tr('لا توجد اجتماعات مجدولة','Nothing scheduled')}</div><span class="mt-next-d">${canNew?tr('اختر Zoom أو واتساب لبدء أول اجتماع.','Pick Zoom or WhatsApp to start one.'):tr('ستظهر هنا اجتماعات إدارتك.','Your department’s meetings appear here.')}</span>`}</div>
+  </section>
   ${noUnit?`<div class="banner">${tr('حسابك غير مربوط بأي إدارة بعد، لذلك لا تظهر لك اجتماعات الإدارات. اطلب من مدير النظام ربط بريدك بإدارتك من أسفل هذه الصفحة.','Your account is not linked to a department yet. Ask the administrator to link it at the bottom of this page.')}</div>`:''}
   ${M.err&&M.err!=='failed-precondition'?`<div class="banner">${tr('تعذّر تحميل الاجتماعات','Could not load meetings')} (${esc(M.err)}). ${isAdmin()?tr('تأكد من نشر قواعد Firestore الجديدة (firestore.rules) في لوحة Firebase.','Make sure the new firestore.rules are published in the Firebase console.'):''}</div>`:''}
   ${M.unit?`<div class="muted" style="font-size:13px">${tr('إدارتك','Your department')}: <b>${esc(uFull(M.unit))}</b></div>`:''}
-  <div class="kpis org-kpis">
+  <div class="kpis org-kpis mt-anim">
    ${kp(tr('القادمة والجارية','Upcoming'),up.length,'',tr(`اليوم: ${todayN}`,`Today: ${todayN}`),'upcoming')}
    ${kp(tr('منعقدة الآن','In progress'),live,live?'ok':'','','upcoming')}
    ${kp(tr('بانتظار تأكيد حضوركم','Awaiting your reply'),pendingRsvp,pendingRsvp?'warn':'','','upcoming')}
@@ -128,7 +205,7 @@ function viewMeetings(){
    <select id="mt-u"><option value="">${tr('كل الإدارات','All departments')}</option>${MT_UNITS.map(u=>`<option value="${u}" ${M.ui.u===u?'selected':''}>${esc(uName(u))}</option>`).join('')}</select></div>
   <div class="chips" id="mt-chips">${chips.map(([k,l])=>`<button class="chip" data-mt-f="${k}" aria-pressed="${M.ui.f===k}">${l}</button>`).join('')}</div>
   <div id="mt-list">${listHTML()}</div>
-  ${isAdmin()?`<div class="panel"><h3 class="section-title">${MI.wa.replace('<svg','<svg style="width:18px;height:18px;flex:none"')} ${tr('أرقام واتساب الإدارات','Department WhatsApp numbers')} <small>${tr('لإرسال دعوات الاجتماعات مباشرة','Used to send meeting invitations directly')}</small></h3>
+  ${isAdmin()?`<div class="panel"><h3 class="section-title">${logo('whatsapp',22)} ${tr('أرقام واتساب الإدارات','Department WhatsApp numbers')} <small>${tr('لإرسال دعوات الاجتماعات مباشرة','Used to send meeting invitations directly')}</small></h3>
    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px">${MT_UNITS.map(u=>`<div class="field"><label for="mt-wa-${u}">${esc(uName(u))}</label><input id="mt-wa-${u}" dir="ltr" inputmode="tel" placeholder="2189XXXXXXXX" value="${esc(WA[u]||'')}"></div>`).join('')}</div>
    <div style="margin-top:10px;display:flex;gap:10px;align-items:center"><button class="btn" data-mt="save-wa">${tr('حفظ الأرقام','Save numbers')}</button><span class="muted" style="font-size:12px">${tr('بالصيغة الدولية بدون + (مثال ليبيا: 218912345678).','International format without + (Libya e.g. 218912345678).')}</span></div></div>`:''}
   ${isAdmin()?`<div class="panel"><h3 class="section-title">${tr('ربط المستخدمين بالإدارات','Link users to departments')} <small>${tr('يحدد الاجتماعات التي يراها كل مستخدم','Decides which meetings each user can see')}</small></h3><div id="mt-roles"><div class="muted">${tr('جارٍ التحميل…','Loading…')}</div></div></div>`:''}`;
@@ -136,10 +213,14 @@ function viewMeetings(){
 function listHTML(){
   if(!M.loaded)return `<div class="tablewrap"><div class="empty">${tr('جارٍ تحميل الاجتماعات…','Loading meetings…')}</div></div>`;
   const rows=filtered();
+  const canNew=canWrite()&&(isAdmin()||M.unit);
+  if(!rows.length&&canNew&&![...M.list.values()].some(isMine))return `<div class="panel mt-empty"><div><h3 class="section-title" style="justify-content:center;font-size:17px;margin:0">${tr('ابدأ أول اجتماع مغلق','Start your first closed meeting')}</h3><p class="muted" style="margin:6px 0 0;font-size:13px">${tr('اختر المنصة، ثم حدد الإدارات المدعوة وجدول الأعمال. لن يرى الاجتماع إلا المدعوون.','Pick a platform, then the invited departments and agenda. Only invitees will see it.')}</p></div>
+   <div class="mt-brands">${brandCard('zoom','data-mt="new" data-p="zoom"')}${brandCard('whatsapp','data-mt="new" data-p="whatsapp"')}</div>
+   <button class="btn sm ghost" data-mt="new">${tr('أو استخدم Google Meet أو Teams أو Jitsi','Or use Google Meet, Teams or Jitsi')}</button></div>`;
   if(!rows.length)return `<div class="tablewrap"><div class="empty"><b>${tr('لا توجد اجتماعات هنا','No meetings here')}</b>${canWrite()&&(isAdmin()||M.unit)?tr('أنشئ اجتماعًا بزر «اجتماع جديد» وادعُ الإدارات المعنية.','Create one with “New meeting” and invite the departments.'):''}</div></div>`;
   return `<div class="tablewrap" style="max-height:none"><table><thead><tr><th class="nosort">${tr('الموعد','When')}</th><th class="nosort">${tr('الاجتماع','Meeting')}</th><th class="nosort">${tr('الجهة الداعية','Organizer')}</th><th class="nosort">${tr('الإدارات المدعوة','Invited')}</th><th class="nosort">${tr('الحضور','Replies')}</th><th class="nosort">${tr('الحالة','Status')}</th><th class="nosort">${tr('القرارات','Decisions')}</th></tr></thead><tbody>
   ${rows.map(m=>{const r=m.rsvp||{},inv=(m.units||[]).filter(u=>u!==m.organizer),yes=inv.filter(u=>(r[u]||{}).s==='yes').length,ds=m.decisions||[],dd=ds.filter(d=>d.done).length;
-   return `<tr data-mt-open="${esc(m.id)}"><td>${fdt(m)}</td><td class="wrap t-strong">${esc(m.title)}</td><td>${esc(uName(m.organizer))}</td><td class="wrap">${inv.map(u=>`<span class="tag">${esc(uName(u))}</span>`).join(' ')}</td><td>${yes}/${inv.length}</td><td>${stPill(effStatus(m))}</td><td>${ds.length?`${dd}/${ds.length}`:'—'}</td></tr>`}).join('')}
+   return `<tr data-mt-open="${esc(m.id)}"><td>${fdt(m)}</td><td class="wrap"><div class="t-strong">${esc(m.title)}</div>${platOf(m)?`<span class="mt-pl">${logo(platOf(m),16)}${esc(PLAT[platOf(m)].l)}</span>`:''}</td><td>${esc(uName(m.organizer))}</td><td class="wrap">${inv.map(u=>`<span class="tag">${esc(uName(u))}</span>`).join(' ')}</td><td>${yes}/${inv.length}</td><td>${stPill(effStatus(m))}</td><td>${ds.length?`${dd}/${ds.length}`:'—'}</td></tr>`}).join('')}
   </tbody></table></div>`;
 }
 function afterMeetings(){
@@ -157,9 +238,9 @@ async function loadRoles(){
 }
 
 /* ---------- create / edit ---------- */
-function meetingForm(m){
+function meetingForm(m,preset){
   const isNew=!m;const d=new Date(Date.now()+86400000);
-  m=m||{date:iso(d),time:'10:00',duration:60,organizer:M.unit||'gm',units:[],agenda:[],platform:'zoom',link:''};
+  m=m||{date:iso(d),time:'10:00',duration:60,organizer:M.unit||'gm',units:[],agenda:[],platform:preset||'zoom',link:''};
   const plat=platOf(m)||'zoom';
   const unitBox=MT_UNITS.map(u=>`<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)"><input type="checkbox" name="mt-inv" value="${u}" ${(m.units||[]).includes(u)?'checked':''} style="margin-top:3px"><span><b>${esc(uName(u))}</b><br><span class="muted" style="font-size:12px">${esc(uHead(u))}</span></span></label>`).join('');
   modal(isNew?tr('اجتماع مغلق جديد','New closed meeting'):tr('تعديل الاجتماع','Edit meeting'),`
@@ -175,8 +256,10 @@ function meetingForm(m){
    <fieldset><legend>${tr('جدول الأعمال','Agenda')}</legend>
     <div class="field full"><label for="mt-agenda">${tr('بند في كل سطر','One item per line')}</label><textarea id="mt-agenda" rows="5">${esc((m.agenda||[]).map(a=>a.t).join('\n'))}</textarea></div></fieldset>
    <fieldset><legend>${tr('منصة الاجتماع عن بُعد','Online meeting platform')}</legend>
-    <div class="field"><label for="mt-plat">${tr('المنصة','Platform')}</label><select id="mt-plat">${Object.entries(PLAT).map(([k,v])=>`<option value="${k}" ${plat===k?'selected':''}>${v.l}${k==='jitsi'?' '+tr('(رابط تلقائي مجاني)','(free auto link)'):''}</option>`).join('')}</select></div>
-    <div class="field" style="justify-content:flex-end"><button type="button" class="btn" data-mt="plat-start" id="mt-start">${tr('إنشاء الاجتماع في المنصة','Create it on the platform')}</button></div>
+    <input type="hidden" id="mt-plat" value="${plat}">
+    <div class="field full"><div class="mt-brands" id="mt-brands">${brandCard('zoom','data-mt="pick" data-p="zoom"',plat==='zoom')}${brandCard('whatsapp','data-mt="pick" data-p="whatsapp"',plat==='whatsapp')}</div>
+     <div class="mt-others" style="margin-top:8px">${tr('منصات أخرى','Other platforms')}: ${['meet','teams','jitsi'].map(k=>`<button type="button" class="chip" data-mt="pick" data-p="${k}" aria-pressed="${plat===k}">${PLAT[k].l}</button>`).join('')}</div></div>
+    <div class="field full"><button type="button" class="btn" data-mt="plat-start" id="mt-start" style="align-self:flex-start"></button></div>
     <div class="field full"><label for="mt-link">${tr('رابط الانضمام','Join link')}</label><input id="mt-link" dir="ltr" value="${esc(m.link||'')}" placeholder="https://zoom.us/j/..."><span class="hint" id="mt-plat-hint"></span></div>
     ${F('mt-mid',tr('رقم الاجتماع (Meeting ID)','Meeting ID'),m.meetingId)}
     ${F('mt-pass',tr('رمز الدخول (Passcode)','Passcode'),m.passcode)}
@@ -186,12 +269,14 @@ function meetingForm(m){
   platUI();
 }
 function platUI(){const p=val('mt-plat'),h=document.getElementById('mt-plat-hint'),st=document.getElementById('mt-start'),li=document.getElementById('mt-link');if(!h)return;
-  const H={zoom:tr('اضغط «إنشاء الاجتماع في المنصة» لفتح Zoom بحساب الشركة وجدولة الاجتماع، ثم الصق هنا رابط الدعوة (Invite Link) ورقم الاجتماع ورمز الدخول. يكفي رقم الاجتماع وحده وسيُكوَّن الرابط تلقائيًا.','Click “Create it on the platform” to schedule in Zoom with the company account, then paste the invite link, meeting ID and passcode. The meeting ID alone is enough.'),
+  const H={zoom:tr('اضغط «جدولة الاجتماع في Zoom» بحساب الشركة، ثم الصق هنا رابط الدعوة (Invite Link) ورقم الاجتماع ورمز الدخول. يكفي رقم الاجتماع وحده وسيُكوَّن الرابط تلقائيًا.','Click “Schedule it in Zoom” with the company account, then paste the invite link, meeting ID and passcode. The meeting ID alone is enough.'),
    meet:tr('أنشئ اجتماعًا في Google Meet ثم الصق رابطه هنا.','Create a Google Meet and paste its link.'),
    teams:tr('أنشئ اجتماعًا في Teams ثم الصق رابط الانضمام هنا.','Create a Teams meeting and paste its join link.'),
    whatsapp:tr('أنشئ مجموعة واتساب للاجتماع أو رابط مكالمة واتساب، ثم الصق رابط الدعوة هنا (chat.whatsapp.com أو call.whatsapp.com).','Create a WhatsApp group or call link and paste it here.'),
    jitsi:tr('أُنشئ رابط غرفة Jitsi خاصة تلقائيًا (مجانية، بلا حساب).','A private Jitsi room link was generated (free, no account).')};
-  h.textContent=H[p]||'';st.hidden=p==='jitsi';
+  h.textContent=H[p]||'';st.hidden=p==='jitsi';st.className='btn '+(p==='zoom'||p==='whatsapp'?'s-'+p:'');
+  st.innerHTML=(p==='zoom'||p==='whatsapp'?logo(p,18).replace(/fill="#(0B5CFF|25D366)"/,'fill="rgba(255,255,255,.25)"'):I.plus)+({zoom:tr('جدولة الاجتماع في Zoom','Schedule it in Zoom'),whatsapp:tr('فتح واتساب لإنشاء المجموعة أو المكالمة','Open WhatsApp to create the group or call'),meet:tr('إنشاء اجتماع Google Meet','Create a Google Meet'),teams:tr('فتح Microsoft Teams','Open Microsoft Teams')}[p]||'');
+  document.querySelectorAll('#mtform-plat [data-mt="pick"],.m-body [data-mt="pick"]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===p)));
   if(p==='jitsi'&&!PLAT.jitsi.re.test(li.value))li.value=genLink();else if(p!=='jitsi'&&PLAT.jitsi.re.test(li.value))li.value='';
   li.placeholder={zoom:'https://zoom.us/j/...',meet:'https://meet.google.com/...',teams:'https://teams.microsoft.com/l/meetup-join/...',whatsapp:'https://chat.whatsapp.com/...',jitsi:''}[p]||'';
   document.getElementById('mt-mid').closest('.field').hidden=p!=='zoom'&&p!=='teams'}
@@ -234,12 +319,13 @@ function openMeeting(id,keepScroll){
    <button class="iconbtn" data-act="close-drawer" aria-label="${tr('إغلاق','Close')}">${I.close}</button>`;
   const pk=platOf(m),pl=pk?PLAT[pk].l:'';
   const waUnits=(m.units||[]).filter(u=>u!==M.unit&&WA[u]);
-  const wa=!closed?`<div class="panel"><h3 class="section-title">${MI.wa.replace('<svg','<svg style="width:18px;height:18px;flex:none"')} ${tr('إرسال الدعوة عبر واتساب','Send invitation on WhatsApp')}</h3><div class="toolbar">
-     <a class="btn" href="${esc(waLink(m))}" target="_blank" rel="noopener" data-mt="join">${MI.wa}${tr('اختيار جهة أو مجموعة','Choose chat or group')}</a>
-     ${waUnits.map(u=>`<a class="btn sm" href="${esc(waLink(m,WA[u]))}" target="_blank" rel="noopener" data-mt="join">${esc(uName(u))}</a>`).join('')}</div>
+  const wa=!closed?`<div class="panel"><h3 class="section-title">${logo('whatsapp',22)} ${tr('إرسال الدعوة عبر واتساب','Send invitation on WhatsApp')}</h3><div class="toolbar">
+     <a class="btn s-whatsapp" href="${esc(waLink(m))}" target="_blank" rel="noopener" data-mt="join">${MI.wa}${tr('اختيار جهة أو مجموعة','Choose chat or group')}</a>
+     ${waUnits.map(u=>`<a class="btn sm b-whatsapp" href="${esc(waLink(m,WA[u]))}" target="_blank" rel="noopener" data-mt="join">${esc(uName(u))}</a>`).join('')}</div>
      ${!waUnits.length?`<p class="muted" style="font-size:12px;margin:8px 0 0">${tr('لإرسال الدعوة مباشرة لكل إدارة، يضيف مدير النظام أرقام واتساب الإدارات أسفل صفحة الاجتماعات.','To send directly to each department, the administrator adds department WhatsApp numbers at the bottom of the meetings page.')}</p>`:''}</div>`:'';
-  const join=!closed&&link?`<div class="panel" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-     <a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener" data-mt="join" data-id="${esc(id)}">${pk==='whatsapp'?MI.wa:MI.meet}${pl?tr('انضمام عبر ','Join on ')+pl:tr('انضمام إلى الاجتماع','Join meeting')}</a>
+  const brandJ=pk==='zoom'||pk==='whatsapp';
+  const join=!closed&&link?`<div class="panel mt-join ${pk}">${brandJ?logo(pk,40):''}
+     <a class="btn lg ${brandJ?'s-'+pk:'primary'}" href="${esc(link)}" target="_blank" rel="noopener" data-mt="join" data-id="${esc(id)}">${pk==='whatsapp'?MI.wa:MI.meet}${pl?tr('انضمام عبر ','Join on ')+pl:tr('انضمام إلى الاجتماع','Join meeting')}</a>
      <button class="btn" data-mt="copy" data-id="${esc(id)}">${I.link}${tr('نسخ الدعوة','Copy invitation')}</button>
      ${m.meetingId?`<span class="muted" style="font-size:13px">${tr('رقم الاجتماع','Meeting ID')}: <b dir="ltr">${esc(m.meetingId)}</b></span>`:''}
      ${m.passcode?`<span class="muted" style="font-size:13px">${tr('رمز الدخول','Passcode')}: <b dir="ltr">${esc(m.passcode)}</b></span>`:''}
@@ -292,8 +378,9 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-mt]');if(!b)return;const a=b.dataset.mt,id=b.dataset.id,m=id?M.list.get(id):null;
   if(a==='join')return;
   if(a!=='done')e.preventDefault();
-  if(a==='new')return meetingForm();
+  if(a==='new')return meetingForm(null,b.dataset.p);
   if(a==='save-wa'){const o={};MT_UNITS.forEach(u=>{const v=waNum(val('mt-wa-'+u));if(v)o[u]=v});try{await FS().collection('config').doc('meetings').set({whatsapp:o},{merge:false});toast(tr('حُفظت أرقام واتساب','WhatsApp numbers saved'))}catch(err){toast(errMsg(err))}return}
+  if(a==='pick'){document.getElementById('mt-plat').value=b.dataset.p;platUI();return}
   if(a==='plat-start'){const p=PLAT[val('mt-plat')];if(p&&p.start)window.open(p.start,'_blank','noopener');return}
   if(a==='save')return saveForm(id);
   if(!m)return;
@@ -322,4 +409,5 @@ document.addEventListener('change',async e=>{
 document.addEventListener('click',e=>{if(e.target.closest('[data-act="close-drawer"]'))M.open=null},true);
 
 if(window.claude&&window.claude.use)start();
+setInterval(()=>{if(S.view==='meetings')refresh()},60000);
 })();
