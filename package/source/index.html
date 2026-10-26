@@ -169,6 +169,7 @@ tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:600;bor
 .oc-type{font-size:10.5px;font-weight:600;letter-spacing:.2px;color:var(--c,var(--muted));background:color-mix(in srgb,var(--c,var(--muted)) 12%,transparent);border-radius:999px;padding:1px 8px}
 .oc-title{font-size:13px;line-height:1.45;font-weight:700;color:var(--ink)}
 .oc-name{font-size:12.5px;color:var(--ink);opacity:.85}.oc-no{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.oc-role{font-size:11px;color:var(--muted);line-height:1.4}.oc-card.root .oc-role{color:var(--side-muted)}
 .oc-vac{color:var(--warn);font-weight:600}
 .oc-card.vac{border-style:dashed;border-top-style:solid;background:repeating-linear-gradient(135deg,var(--surface),var(--surface) 8px,var(--warn-soft) 8px,var(--warn-soft) 9px)}
 .oc-foot{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:3px}
@@ -782,7 +783,7 @@ afterRender.dir=()=>{renderDir();const q=document.getElementById('d-q');q.addEve
    الصلاحيات تُضاف لاحقًا في ORG_PERMS بمفتاح معرّف الجهة، ولم تُحدَّد بعد. */
 const ORG_ROWS=[
  ['board',null,'عضو مجلس الإدارة للتزويد والمبيعات والطاقات المتجددة','مصطفى محمد الشنطة','515486'],
- ['gm','board','الإدارة العامة للمبيعات والشؤون التجارية','عصام عمر موسى','502844'],
+ ['gm','board','الإدارة العامة للمبيعات والشؤون التجارية','محمد البهلول الثابت',''],
  // تتبع المدير العام مباشرة
  ['gm-rep','gm','قسم المتابعة والتقارير - العامة للمبيعات','الصغيرة عمر عبد الدائم','512607'],
  ['gm-rep-f','gm-rep','وحدة المتابعة العامة للمبيعات','عبد الباسط منصف الاجنف','40985','u'],
@@ -900,6 +901,8 @@ const ORG_BY=new Map(ORG.map(o=>[o.id,o]));
 const orgKids=id=>ORG.filter(o=>o.parent===id);
 /* صلاحيات كل جهة: { [معرّف الجهة]: [...] } — تُملأ عند وصول بيانات الصلاحيات */
 const ORG_PERMS={};
+/* صفة المسؤول عند ورودها في كتاب التكليف */
+const ORG_ROLE={'gm':'مكلف بمهام مدير عام المبيعات والشؤون التجارية'};
 /* مهام كل جهة: صفحات المنظومة التي تتولاها، بمفتاح معرّف الجهة */
 const ORG_TASKS={'gm-rep':['contracts','ext','needs','batches','dir']};
 function orgPath(id){const p=[];let o=ORG_BY.get(id);while(o){p.unshift(o);o=ORG_BY.get(o.parent)}return p}
@@ -920,7 +923,7 @@ function ocCard(o,cls=''){
   const t=ORG_TYPES.find(x=>x.k===o.type),n=orgKids(o.id).length,perms=ORG_PERMS[o.id],tasks=(ORG_TASKS[o.id]||[]).map(v=>VIEWS.find(x=>x.id===v)).filter(Boolean);
   return `<div class="oc-card t-${o.type}${o.vacant?' vac':''}${n?' has':''} ${cls}" ${n?`data-org-focus="${o.id}" role="button" tabindex="0"`:''} title="${esc(o.title)}">
    <span class="oc-type">${t.l}</span><b class="oc-title">${esc(o.title)}</b>
-   ${o.vacant?'<span class="oc-name oc-vac">شاغرة</span>':`<span class="oc-name">${esc(o.head)}</span>${o.empNo?`<span class="oc-no num">${esc(o.empNo)}</span>`:''}`}
+   ${o.vacant?'<span class="oc-name oc-vac">شاغرة</span>':`<span class="oc-name">${esc(o.head)}</span>${ORG_ROLE[o.id]?`<span class="oc-role">${esc(ORG_ROLE[o.id])}</span>`:''}${o.empNo?`<span class="oc-no num">${esc(o.empNo)}</span>`:''}`}
    ${tasks.length?`<span class="oc-tasks"><span class="oc-tasks-h">المهام</span>${tasks.map(v=>`<button type="button" data-org-go="${v.id}">${I[v.icon]}${esc(v.label)}</button>`).join('')}</span>`:''}
    ${o.uncertain||n||perms&&perms.length?`<span class="oc-foot">${o.uncertain?'<span class="tag dup">تدقيق</span>':''}${perms&&perms.length?`<span class="tag">${perms.length} صلاحية</span>`:''}${n?`<span class="oc-more">${orgDesc(o.id)} جهة تابعة ‹</span>`:''}</span>`:''}</div>`;
 }
@@ -982,7 +985,7 @@ function viewOrgDash(el){
   const path=orgPath(root.id),scopes=['board',...orgKids('gm').map(o=>o.id)];
   el.innerHTML=`<div class="ocd-scopes">${scopes.map(id=>{const o=ORG_BY.get(id);return `<button data-org-dash="${id}" aria-pressed="${id===root.id}">${esc(id==='board'?'الهيكل الكامل':o.title)}</button>`}).join('')}</div>
   <div class="ocd-head"><div><div class="oc-crumbs" style="padding:0 0 4px">${path.map((p,i)=>i<path.length-1?`<button data-org-dash="${p.id}">${esc(p.id==='board'?'الهيكل الكامل':p.title)}</button><span>‹</span>`:'').join('')}</div>
-   <h3>${esc(root.id==='board'?'لوحة مؤشرات الهيكل التنظيمي':'لوحة مؤشرات: '+root.title)}</h3><p>${root.vacant?'المسؤول: شاغرة':`المسؤول: <b>${esc(root.head)}</b>${root.empNo?` <span class="num">${esc(root.empNo)}</span>`:''}`}</p></div>
+   <h3>${esc(root.id==='board'?'لوحة مؤشرات الهيكل التنظيمي':'لوحة مؤشرات: '+root.title)}</h3><p>${root.vacant?'المسؤول: شاغرة':`المسؤول: <b>${esc(root.head)}</b>${ORG_ROLE[root.id]?` · ${esc(ORG_ROLE[root.id])}`:''}${root.empNo?` <span class="num">${esc(root.empNo)}</span>`:''}`}</p></div>
    ${kids.length?`<button class="btn sm" data-org-focus="${root.id==='board'?'':root.id}">عرض في المخطط</button>`:''}</div>
   <h4 class="ocd-sec">مؤشرات الأداء الرئيسية <small>مقارنة بالهدف</small></h4>
   <div class="ocd-gauges">${ocGauge(ocPct(filled,pos.length),'نسبة إشغال المناصب',`${filled} مشغولة من ${pos.length}`,'st:v')}${ocGauge(ocPct(pos.length-unc,pos.length),'دقة بيانات الهيكل',`${unc} بند بحاجة تدقيق`,'st:u')}${ocGauge(ocPct(permd,pos.length),'اكتمال الصلاحيات',permd?`${permd} جهة محددة`:'بانتظار بيانات الصلاحيات')}</div>
