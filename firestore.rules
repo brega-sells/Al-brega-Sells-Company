@@ -41,8 +41,8 @@ service cloud.firestore {
       allow delete: if isAdmin() || owner();
     }
     match /{col}/{id} {
-      allow read: if hasRole() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','config'];
-      allow write: if canWrite() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','config'];
+      allow read: if hasRole() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices','config'];
+      allow write: if canWrite() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices','config'];
     }
   }
 }
