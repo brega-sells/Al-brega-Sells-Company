@@ -74,3 +74,11 @@ Batches (count matches the official letters): الأولى 166 (ref 220-17-158) 
 - Top-level ids: `board` → `gm` → `ca` (الشؤون التجارية والتحصيلات), `w` (المبيعات غ.ج), `e` (المبيعات و.ش), plus `gm-rep`, `gm-fo` directly under the GM.
 - Permissions per unit are NOT defined yet: the user will send them. Attach them in `ORG_PERMS` keyed by unit id (the view already shows "الصلاحيات: لم تُحدَّد بعد" / count).
 - Known doubts: emp. no. 507350 appears twice (عقيلة علي عقيلة and محمد فرج الترهوني); 40985 has 5 digits; page 8 of the scan is blurry (several names marked `u`).
+
+## 8. Closed online meetings between departments (الاجتماعات المغلقة) — added October 2026
+- Web (GitHub Pages + Firebase) version only. Code in `meetings.js` at the repo root, loaded by one script tag at the end of `index.html`; it adds the nav page `meetings` and wraps `render()`.
+- Units that can meet: `board`, `gm`, `e`, `w`, `ca`, `gm-fo`, `gm-rep` (titles/heads from `ORG_ROWS`).
+- Each user is linked to a unit by the admin (meetings page, bottom table) → field `unit` on `roles/<email>`.
+- Collection `meetings`: `title, date, time, duration, organizer, units[] (organizer + invited), agenda[{t}], link, passcode, status (scheduled|live|closed|cancelled), rsvp{unit:{s,by,name,at}}, minutes, decisions[{t,unit,due,done,doneAt,doneBy}], createdBy, createdByName, createdAt, updatedAt, closedAt, closedBy, closedByName`.
+- Privacy enforced in `firestore.rules` (root): read only by admin, creator, or users whose unit is in `units`. Invited viewers can only RSVP; invited editors edit minutes/decisions until closed, and decisions after close. Rules verified with the Firestore emulator (29 allow/deny cases).
+- Join link: auto-generated private Jitsi room (`https://meet.jit.si/BregaSales-<random>`), replaceable by any https link (Google Meet, Teams, Zoom).
