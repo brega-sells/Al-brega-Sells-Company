@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null && request.auth.token.email != null; }
+    function rolePath() { return /databases/$(database)/documents/roles/$(request.auth.token.email); }
+    function hasRole() { return signedIn() && exists(rolePath()); }
+    function role() { return get(rolePath()).data.role; }
+    function isAdmin() { return hasRole() && role() == 'admin'; }
+    function canWrite() { return hasRole() && role() in ['admin', 'editor']; }
+    // الإدارة التي ينتمي إليها المستخدم (يحددها مدير النظام من صفحة الاجتماعات)
+    function myUnit() { return get(rolePath()).data.get('unit', ''); }
+
+    match /roles/{email} {
+      allow read: if signedIn() && (email == request.auth.token.email || isAdmin());
+      allow write: if isAdmin();
+    }
+    match /log/{id} {
+      allow read: if isAdmin();
+      allow create: if canWrite();
+    }
+    // الاجتماعات المغلقة: لا يراها إلا مدير النظام ومنشئ الاجتماع والإدارات المدعوة
+    match /meetings/{id} {
+      function owner() { return signedIn() && resource.data.createdBy == request.auth.token.email; }
+      function invited() { return hasRole() && myUnit() != '' && myUnit() in resource.data.units; }
+      function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+      function sameCore() { return request.resource.data.units == resource.data.units
+        && request.resource.data.organizer == resource.data.organizer
+        && request.resource.data.createdBy == resource.data.createdBy; }
+      allow read: if isAdmin() || owner() || invited();
+      allow create: if canWrite()
+        && request.resource.data.createdBy == request.auth.token.email
+        && request.resource.data.units is list
+        && request.resource.data.organizer in request.resource.data.units
+        && (isAdmin() || myUnit() == request.resource.data.organizer);
+      allow update: if isAdmin() || owner()
+        || (canWrite() && invited() && myUnit() == resource.data.organizer && sameCore())
+        || (invited() && changed().hasOnly(['rsvp', 'updatedAt']))
+        || (canWrite() && invited() && resource.data.status != 'closed' && resource.data.status != 'cancelled'
+            && changed().hasOnly(['minutes', 'decisions', 'updatedAt']))
+        || (canWrite() && invited() && changed().hasOnly(['decisions', 'updatedAt']));
+      allow delete: if isAdmin() || owner();
+    }
+    match /{col}/{id} {
+      allow read: if hasRole() && col in ['contracts','needs','batches','extensions','letters','companies','config'];
+      allow write: if canWrite() && col in ['contracts','needs','batches','extensions','letters','companies','config'];
+    }
+  }
+}
