@@ -88,3 +88,10 @@ Batches (count matches the official letters): الأولى 166 (ref 220-17-158) 
 - Source: `source/build-scripts/i18n/` — `i18n-engine.js`, `rules.js`, `dict1..4.py`, `build_i18n.py` (injects engine + dictionary + Arial-bold CSS + LTR CSS; re-runnable), `build_logo.py` (replaces sidebar/login logo and favicon with `source/logo-brega.png` / `favicon-brega.png`).
 - When adding new UI strings, add their English to a dict file and re-run: `python3 build_logo.py ../../../../index.html && python3 build_i18n.py ../../../../index.html` (run on the pre-injection file, or just re-run build_i18n which replaces the old `#i18n` script).
 - Font: Arial bold everywhere (`*{font-weight:700!important}`), fallbacks Arimo / Noto Sans Arabic from Google Fonts for devices without Arial.
+
+## 8. تحليل البيانات وخدمة الزبائن — added October 2026
+- Two sidebar items under «عام»: `ana` (تحليل البيانات) and `cs` (خدمة الزبائن). Code lives in `source/modules/analytics-cs.js` + `analytics-cs.css`; `source/modules/apply.py FILE...` injects them into a page (root `index.html` and `source/index.html`, already applied — the script refuses to apply twice).
+- Analytics tabs: contracts, needs & fuel, sales opportunities (ministry facilities with no Brega contract, ranked by diesel need), customer-service stats, and a custom group-by/measure tool. Every chart bar can jump to the filtered list; each tab exports to Excel.
+- Customer service: collection `tickets` — `no` (`YYYY/NNN`), `date`, `customer`, `contact`, `phone`, `contractNo`, `channel`, `type`, `priority` (عاجلة/مهمة/عادية → default due 2/5/10 days), `subject`, `details`, `assignee`, `dueDate`, `status` (جديد/قيد المعالجة/بانتظار الزبون/مغلق), `closedAt`, `resolution`, `history[{ts,by,status,note}]`.
+  Customers = the directory (contracts + needs entities) plus manual records saved in the existing `companies` collection (`name, kind, person, phone, email, address, notes`).
+- Firebase: `tickets` must be in the collection lists of `firestore.rules` (done in the repo file; the live rules must be re-published in the Firebase console). Until then the page shows an activation banner in خدمة الزبائن.
