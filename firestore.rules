@@ -53,9 +53,48 @@ service cloud.firestore {
       allow read: if hasRole();
       allow create, delete: if canWrite();
     }
+    // مهام الإدارات المضافة من داخل المنظومة: يقرؤها الجميع ويكتبها مدير النظام فقط
+    match /duties/{unit} {
+      allow read: if hasRole();
+      allow write: if isAdmin();
+    }
+    // التكليفات: لا يراها إلا مدير النظام والإدارة العامة وعضو المجلس والإدارة المُصدِرة والإدارة المكلَّفة
+    match /assignments/{id} {
+      function mine(u) { return hasRole() && myUnit() != '' && myUnit() == u; }
+      function top() { return isAdmin() || (hasRole() && myUnit() in ['gm', 'board']); }
+      function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+      function logAppended() { return request.resource.data.log is list && request.resource.data.log.size() == resource.data.log.size() + 1; }
+      function issuer() { return canWrite() && (isAdmin() || myUnit() == 'gm' || mine(resource.data.fromUnit)); }
+      function doer() { return canWrite() && mine(resource.data.toUnit); }
+      allow read: if top() || mine(resource.data.fromUnit) || mine(resource.data.toUnit);
+      allow create: if canWrite()
+        && request.resource.data.createdBy == request.auth.token.email
+        && request.resource.data.status == 'new'
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 300
+        && request.resource.data.log is list && request.resource.data.log.size() == 1
+        && (isAdmin() || (myUnit() == request.resource.data.fromUnit
+            && (myUnit() == 'gm' || request.resource.data.toUnit == myUnit())));
+      // الجهة المُصدِرة: تعدّل وتعتمد وتعيد، دون تغيير الجهتين أو المنشئ
+      allow update: if (issuer()
+          && request.resource.data.fromUnit == resource.data.fromUnit
+          && request.resource.data.toUnit == resource.data.toUnit
+          && request.resource.data.createdBy == resource.data.createdBy
+          && logAppended())
+        // الإدارة المكلَّفة: تنفّذ وتحدّث الإنجاز وترفع للاعتماد، ولا تعتمد عملها بنفسها
+        || (doer()
+          && changed().hasOnly(['status', 'progress', 'log', 'updatedAt'])
+          && request.resource.data.status in ['progress', 'review', 'hold']
+          && logAppended());
+      allow delete: if isAdmin() || (canWrite() && resource.data.createdBy == request.auth.token.email && resource.data.status == 'new');
+    }
+    // الإعدادات: يغيّرها مدير النظام، عدا آلية إشعارات البيع التي يحررها المحررون
+    match /config/{doc} {
+      allow read: if hasRole();
+      allow write: if isAdmin() || (canWrite() && doc == 'notices');
+    }
     match /{col}/{id} {
-      allow read: if hasRole() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices','config'];
-      allow write: if canWrite() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices','config'];
+      allow read: if hasRole() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices'];
+      allow write: if canWrite() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices'];
     }
   }
 }
