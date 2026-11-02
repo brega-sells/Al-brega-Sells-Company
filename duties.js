@@ -50,7 +50,7 @@ function rebuild(){
   const dict={};
   const put=b=>{const items=(b.items||[]).map(x=>({tag:x[0],txt:x[1],tagEn:x[2]||'',txtEn:x[3]||'',u:x[4]==='u'}));if(!items.length)return;
     ORG_DUTIES[b.unit]={lead:b.lead||'',items:items.map(x=>[x.tag,x.txt])};
-    META[b.unit]=Object.assign({},META[b.unit]&&!b.admin?{}:{},{src:b.src||{kind:'other'},leadEn:b.leadEn||'',items,purpose:b.purpose||null,job:b.job||null,parent:b.parent||'',legacy:b.legacy||null,admin:!!b.admin,by:b.by||'',at:b.at||''});
+    META[b.unit]=Object.assign({},{src:b.src||{kind:'other'},leadEn:b.leadEn||'',items,purpose:b.purpose||null,job:b.job||null,parent:b.parent||'',legacy:b.legacy||null,admin:!!b.admin,by:b.by||'',at:b.at||''});
     if(b.lead&&b.leadEn)dict[b.lead]=b.leadEn;items.forEach(x=>{if(x.tagEn)dict[x.tag]=x.tagEn;if(x.txtEn)dict[x.txt]=x.txtEn});
     if(b.src&&b.src.title&&b.src.en)dict[b.src.title]=b.src.en};
   bookEntries().forEach(put);Object.keys(OVR).forEach(id=>{if(ORG_BY.get(id))put(fromDoc(id,OVR[id]))});
@@ -78,8 +78,8 @@ const DT={list:new Map(),unit:'',loaded:false,err:'',subs:[],roles:null,rulesOk:
 S.dt=DT;
 const myU=()=>DT.unit;
 const seesAll=()=>isAdmin()||myU()==='gm'||myU()==='board';
-const canIssue=()=>canWrite()&&(isAdmin()||!!myU());
-const targets=()=>isAdmin()||myU()==='gm'?MAIN.slice():myU()&&myU()!=='board'?[myU()]:[];
+const canIssue=()=>canWrite()&&targets().length>0;
+function targets(){return isAdmin()||myU()==='gm'?MAIN.slice():myU()&&myU()!=='board'?[myU()]:[]}
 const issuerSide=a=>canWrite()&&(isAdmin()||myU()==='gm'||myU()===a.fromUnit);
 const doerSide=a=>canWrite()&&myU()===a.toUnit;
 const visible=a=>seesAll()||a.fromUnit===myU()||a.toUnit===myU();
@@ -454,7 +454,7 @@ function viewAccess(){const m=me()||{},role=m.role||'viewer',u=myU();
    <p class="muted" style="font-size:12px;margin:8px 0 0">${esc(tr('عضو مجلس الإدارة: يطّلع على كل التكليفات ولا يصدرها إلا داخل جهته.','Board member: sees every assignment and issues only within their own unit.'))}</p></section>
   ${isAdmin()?`<section class="panel"><div class="xd-ph"><h3 class="section-title">${esc(tr('المستخدمون وتخويلاتهم','Users and their access'))}</h3><div class="dt-acts"><button class="btn sm" data-dt="roles-reload">${esc(tr('تحديث','Refresh'))}</button><button class="btn sm ghost" data-dt-gov="meetings">${esc(tr('ربط المستخدمين بالإدارات','Link users to departments'))}</button><button class="btn sm ghost" data-dt-gov="settings">${esc(tr('إضافة مستخدم / تغيير الدور','Add user / change role'))}</button></div></div><div id="dt-roles">${rolesHTML()}</div></section>
    <section class="panel"><h3 class="section-title">${DI.shield}${esc(tr('فحص الأمان قبل التسليم','Pre-handover security check'))}</h3><ul class="dt-chk">${secChecks().map(c=>`<li class="${c[0]}"><span>${c[0]==='ok'?'✓':c[0]==='warn'?'!':'✕'}</span><div><b>${esc(c[1])}</b>${c[2]?`<small>${esc(c[2])}</small>`:''}</div></li>`).join('')}</ul></section>`:''}`}
-function rolesHTML(){if(!DT.roles)return `<div class="muted">${esc(tr('جارٍ التحميل…','Loading…'))}</div>`;if(DT.roles.err)return `<div class="banner">${esc(DT.roles.err)}</div>`;
+function rolesHTML(){if(!DT.roles||DT.roles.loading)return `<div class="muted">${esc(tr('جارٍ التحميل…','Loading…'))}</div>`;if(DT.roles.err)return `<div class="banner">${esc(DT.roles.err)}</div>`;
   const r=DT.roles.list;return `<div class="tablewrap" style="min-height:0"><table><thead><tr><th class="nosort">${esc(tr('البريد','Email'))}</th><th class="nosort">${esc(tr('الاسم','Name'))}</th><th class="nosort">${esc(tr('الدور','Role'))}</th><th class="nosort">${esc(tr('الإدارة','Department'))}</th><th class="nosort">${esc(tr('ملاحظة','Note'))}</th></tr></thead><tbody>
    ${r.map(x=>{const warn=x.role!=='admin'&&!x.unit?tr('غير مربوط بإدارة','Not linked to a department'):x.role==='editor'&&x.unit==='gm'?tr('يرى ويصدر لكل الإدارات','Sees and issues to all'):'';
     return `<tr><td dir="ltr" style="text-align:start">${esc(x.email)}</td><td>${esc(x.name||'')}</td><td><span class="pill ${x.role==='admin'?'p-crit':x.role==='editor'?'p-info':'p-neutral'}">${esc(tr(...(ROLE_L[x.role]||[x.role,x.role])))}</span></td><td>${x.unit?esc(uShort(x.unit)):'—'}</td><td>${warn?`<small class="${!x.unit?'crit':''}">${esc(warn)}</small>`:''}</td></tr>`}).join('')}</tbody></table></div>`}
@@ -532,8 +532,8 @@ function after(){const q=document.getElementById('dt-q');if(q)q.addEventListener
   const kq=document.getElementById('dt-kq');if(kq)kq.addEventListener('input',debounce(()=>{DT.ui.kq=kq.value;const p=kq.selectionStart;render();const n=document.getElementById('dt-kq');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(e){}}},250));
   const sc=document.getElementById('dt-scope');if(sc)sc.addEventListener('change',()=>{DT.ui.scope=sc.value;render()});
   const uu=document.getElementById('dt-u');if(uu)uu.addEventListener('change',()=>{DT.ui.u=uu.value;render()});
-  if(DT.ui.tab==='access'&&isAdmin()&&!DT.roles){DT.roles={list:null};DT.roles=null;loadRoles()}}
-function setTab(t,extra){Object.assign(DT.ui,{tab:t},extra||{});if(t!=='guide')DT.ui.unit=DT.ui.unit;render();const b=document.querySelector('.dt-tabs');if(b&&b.getBoundingClientRect().top<0)b.scrollIntoView({block:'start'})}
+  if(DT.ui.tab==='access'&&isAdmin()&&!DT.roles){DT.roles={loading:true};loadRoles()}}
+function setTab(t,extra){Object.assign(DT.ui,{tab:t},extra||{});render();const b=document.querySelector('.dt-tabs');if(b&&b.getBoundingClientRect().top<0)b.scrollIntoView({block:'start'})}
 document.addEventListener('click',async e=>{
   const go2=e.target.closest('[data-dt-go]');if(go2){e.preventDefault();const u=go2.dataset.dtGo;Object.assign(DT.ui,{tab:go2.dataset.dtTab2||'guide',unit:u||''});go('duties');return}
   if(S.view!=='duties'&&!e.target.closest('.drawer[data-dt]'))return;
@@ -565,7 +565,6 @@ document.addEventListener('click',async e=>{
   if(k==='roles-reload'){DT.roles=null;render();return}
 },true);
 document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const t=e.target.closest&&e.target.closest('tr[data-dt-open],article[data-dt-unit]');if(!t)return;e.preventDefault();t.click()});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-dt-go]');if(b&&S.view==='org')e.stopPropagation()},true);
 
 /* ---------- styles ---------- */
 (function(){const st=document.createElement('style');st.id='dt-css';st.textContent=`

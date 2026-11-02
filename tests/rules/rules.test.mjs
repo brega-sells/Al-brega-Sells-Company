@@ -35,6 +35,7 @@ await T('w start A1',W.doc('assignments/A1').update({status:'progress',progress:
 await T('w self-approve denied',W.doc('assignments/A1').update({status:'done',progress:100,log:[{a:1},{a:2},{a:3}],updatedAt:'x'}),0);
 await T('w change title denied',W.doc('assignments/A1').update({title:'hack',log:[{a:1},{a:2},{a:3}]}),0);
 await T('w rewrite log denied',W.doc('assignments/A1').update({status:'review',log:[{a:9}],updatedAt:'x'}),0);
+await T('w edits old log entry denied',W.doc('assignments/A1').update({status:'review',log:[{a:7},{a:2},{a:3}],updatedAt:'x'}),0);
 await T('w submit A1',W.doc('assignments/A1').update({status:'review',progress:100,log:[{a:1},{a:2},{a:3}],updatedAt:'x'}),1);
 await T('viewer update denied',WV.doc('assignments/A1').update({status:'progress',log:[{a:1},{a:2},{a:3},{a:4}]}),0);
 await T('e update A1 denied',E.doc('assignments/A1').update({status:'progress',log:[{a:1},{a:2},{a:3},{a:4}]}),0);

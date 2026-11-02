@@ -63,7 +63,9 @@ service cloud.firestore {
       function mine(u) { return hasRole() && myUnit() != '' && myUnit() == u; }
       function top() { return isAdmin() || (hasRole() && myUnit() in ['gm', 'board']); }
       function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
-      function logAppended() { return request.resource.data.log is list && request.resource.data.log.size() == resource.data.log.size() + 1; }
+      function logAppended() { return request.resource.data.log is list
+        && request.resource.data.log.size() == resource.data.log.size() + 1
+        && request.resource.data.log[0:resource.data.log.size()] == resource.data.log; }
       function issuer() { return canWrite() && (isAdmin() || myUnit() == 'gm' || mine(resource.data.fromUnit)); }
       function doer() { return canWrite() && mine(resource.data.toUnit); }
       allow read: if top() || mine(resource.data.fromUnit) || mine(resource.data.toUnit);
