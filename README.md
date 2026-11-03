@@ -36,6 +36,7 @@
 | `duties-data.js`, `duties.js` | مهام الإدارات (من اللوائح الرسمية) ومركز التكليفات |
 | `notify.js` | جرس الإشعارات وتفضيلاته، وصفحة التقويم |
 | `palette.js` | لوحة الأوامر، الاختصارات، المساعدة |
+| `govern.js` | الحوكمة: مراجعة الصلاحيات وسجل الحسابات ومصفوفة الصلاحيات، مدد الاحتفاظ، الحجز القانوني، تاريخ التعديلات، ختم الاعتماد |
 | `quality.js` | رقم الإصدار و«عن المنظومة» و«ما الجديد»، حاجز الأخطاء والإبلاغ، لوحة صحة المنظومة، لوحة التطبيق |
 | `pwa.js`, `sw.js`, `manifest.webmanifest`, `icons/` | التثبيت كتطبيق، العمل دون اتصال، شريط التحديث |
 | `version.js`, `releases.js` | رقم الإصدار وتاريخه، وملاحظات الإصدارات بالعربية |
@@ -59,8 +60,8 @@
 ```bash
 node scripts/check-syntax.mjs                       # كل الملفات تُفسَّر
 cd tests && npm install
-npm run rules                                        # قواعد Firestore في المحاكي → PASS 118 FAIL 0
-npm run serve &  NODE_PATH=$PWD/node_modules npm run browser   # اختبارات المتصفح (XSS، المصادقة، التطبيق والإشعارات، لوحة الأوامر)
+npm run rules                                        # قواعد Firestore في المحاكي → PASS 133 FAIL 0
+npm run serve &  NODE_PATH=$PWD/node_modules npm run browser   # اختبارات المتصفح (XSS، المصادقة، التطبيق والإشعارات، لوحة الأوامر، الحوكمة)
 ```
 
 تعمل نفس الاختبارات تلقائيًا على GitHub Actions مع كل طلب دمج ([ci.yml](.github/workflows/ci.yml)).

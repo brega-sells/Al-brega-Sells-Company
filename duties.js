@@ -327,7 +327,8 @@ function openTask(id,keep){const a=DT.list.get(id);if(!a)return;DT.open=id;const
     <dt>${esc(tr('المكلَّف','Assignee'))}</dt><dd>${esc(a.assignee||'—')}</dd>
     <dt>${esc(tr('المهمة','Duty'))}</dt><dd>${d?`<span class="od-tag">${d.n}. ${esc(dutyTag(d.it))}</span><small>${esc(dutyTxt(d.it))}</small>`:'—'}</dd>
     <dt>${esc(tr('تاريخ الإصدار','Issued'))}</dt><dd class="num">${fd(a.start||(a.createdAt||'').slice(0,10))}</dd><dt>${esc(tr('الموعد النهائي','Due'))}</dt><dd>${dueTxt(a)}</dd>
-    ${a.doneAt?`<dt>${esc(tr('تاريخ الاعتماد','Approved'))}</dt><dd class="num">${fd(a.doneAt.slice(0,10))}</dd>`:''}</dl>
+    ${a.doneAt?`<dt>${esc(tr('تاريخ الاعتماد','Approved'))}</dt><dd class="num">${fd(a.doneAt.slice(0,10))}</dd>`:''}
+    ${a.stamp&&a.stamp.hash?`<dt>${esc(tr('ختم الاعتماد','Approval stamp'))}</dt><dd><code dir="ltr" style="font-size:11.5px">${esc(a.stamp.hash.slice(0,20))}…</code> <button type="button" class="btn sm ghost" data-dt-verify="${esc(a.id)}">${esc(tr('تحقق','Verify'))}</button></dd>`:''}</dl>
    ${a.details?`<div class="dt-det">${esc(a.details).replace(/\n/g,'<br>')}</div>`:''}
    ${att?`<div><h4 class="dt-h4">${esc(tr('المرفقات','Attachments'))}</h4>${att}</div>`:''}
    ${acts.length?`<div class="dt-dr-acts">${acts.map(([k,l,c])=>`<button class="btn sm ${c}" data-dt-a="${k}">${esc(l)}</button>`).join('')}</div>`:`<div class="muted" style="font-size:12.5px">${esc(tr('للاطلاع فقط: الإجراءات متاحة للإدارة المكلَّفة والجهة المُصدِرة.','View only: actions are available to the assigned and the issuing departments.'))}</div>`}
@@ -355,7 +356,7 @@ async function doAct(k,a){const note=(val('dt-note')||'').slice(0,1000),pEl=docu
   else if(k==='submit'){status='review';progress=100}else if(k==='hold')status='hold';
   else if(k==='approve'){status='done';progress=100}else if(k==='return'||k==='reopen'){status='progress';if(progress>=100)progress=90}
   const upd={status,progress,updatedAt:nowISO(),log:[...(a.log||[]),{ts:nowISO(),by:m.email||'',name:m.name||'',unit:myU()||(isAdmin()?'admin':''),act:k,note,progress}]};
-  if(k==='approve')upd.doneAt=nowISO();if(k==='return'||k==='reopen')upd.doneAt='';
+  if(k==='approve'){upd.doneAt=nowISO();if(window.__stamp)try{upd.stamp=await window.__stamp(a,upd,m)}catch(e){}}if(k==='return'||k==='reopen'){upd.doneAt='';upd.stamp=null}
   try{await FS().collection('assignments').doc(a.id).update(upd);toast(tr('تم الحفظ','Saved'))}catch(e){document.getElementById('dt-aerr').textContent=errMsg(e)}}
 function errMsg(e){return e&&e.code==='permission-denied'?tr('لا تملك صلاحية هذا الإجراء','You do not have permission for this action'):((e&&e.message)||tr('تعذّر الحفظ','Could not save'))}
 

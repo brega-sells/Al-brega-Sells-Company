@@ -107,7 +107,7 @@ function calEvents(){const m=me();if(!m)return[];const u=unit(),top=isTop(),ev=[
   ((window.__meetings&&window.__meetings())||[]).forEach(mt=>{if(!mt.date||mt.status==='cancelled')return;ev.push({d:mt.date,type:'meet',t:(mt.time?mt.time+' ':'')+(mt.title||''),s:(mt.units||[]).map(uName).join('، '),st:mt.status,open:()=>openMeet(mt.id)})});
   if(typeof D!=='undefined'&&D.get)S.contracts.forEach(c=>{const d=D.get(c.id);if(!d||!d.effEnd)return;ev.push({d:d.effEnd,type:'contract',t:tr('انتهاء عقد','Contract ends')+' '+(c.no||''),s:c.company||'',st:d.status,open:()=>{go('contracts');setTimeout(()=>openContract(c.id),80)}})});
   (S.tickets||[]).forEach(t=>{if(!t.dueDate)return;ev.push({d:t.dueDate,type:'ticket',t:(t.no?t.no+' — ':'')+(t.subject||t.customer||''),s:t.customer||'',st:t.status,open:()=>{go('cs');setTimeout(()=>openTicket(t.id),80)}})});
-  (S.records||[]).forEach(r=>{if(!r.date)return;ev.push({d:r.date,type:'record',t:r.title||'',s:uName(r.unit),st:r.status,open:()=>{go('org',{focus:r.unit});}})});
+  (S.records||[]).forEach(r=>{if(!r.date)return;ev.push({d:r.date,type:'record',t:r.title||'',s:uName(r.unit),st:r.status,open:()=>go('org',{om:'dash',of:r.unit})})});
   return ev}
 const TL={assign:['تكليف','Assignment'],meet:['اجتماع','Meeting'],contract:['عقد','Contract'],ticket:['طلب زبون','Customer request'],record:['سجل','Record']};
 function viewCal(){const st=calState();const first=new Date(st.y,st.m,1),last=new Date(st.y,st.m+1,0);

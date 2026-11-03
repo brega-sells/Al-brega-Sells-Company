@@ -64,11 +64,21 @@ service cloud.firestore {
       function validRec() { return str(request.resource.data, 'title', 300) && request.resource.data.title.size() > 0
         && str(request.resource.data, 'notes', 5000) && str(request.resource.data, 'ref', 200)
         && (!('attachments' in request.resource.data) || request.resource.data.attachments.size() <= 30); }
+      // الحجز القانوني: يضعه ويرفعه مدير النظام فقط، وما دام قائمًا لا يُحذف السجل حتى بيد مدير النظام
+      function holdSame() { return ('hold' in request.resource.data) == ('hold' in resource.data)
+        && (!('hold' in resource.data) || request.resource.data.hold == resource.data.hold); }
+      // تاريخ التعديلات: قائمة تُضاف إليها فقط (حتى 100 بند)
+      function histOk() { return !('history' in request.resource.data) || (request.resource.data.history is list
+        && request.resource.data.history.size() <= 100
+        && request.resource.data.history.size() >= resource.data.get('history', []).size()
+        && request.resource.data.history[0:resource.data.get('history', []).size()] == resource.data.get('history', [])); }
       allow read: if top() || mine(resource.data.unit);
-      allow create: if unitOk(request.resource.data.unit) && request.resource.data.createdBy == me() && validRec();
+      allow create: if unitOk(request.resource.data.unit) && request.resource.data.createdBy == me() && validRec()
+        && !('hold' in request.resource.data) && !('history' in request.resource.data);
       allow update: if unitOk(resource.data.unit) && request.resource.data.unit == resource.data.unit
-        && request.resource.data.get('createdBy', '') == resource.data.get('createdBy', '') && validRec();
-      allow delete: if unitOk(resource.data.unit);
+        && request.resource.data.get('createdBy', '') == resource.data.get('createdBy', '') && validRec()
+        && (holdSame() || isAdmin()) && histOk();
+      allow delete: if unitOk(resource.data.unit) && !('hold' in resource.data);
     }
     // المرفقات: files/<id> بيانات الملف و files/<id>_<n> أجزاء محتواه. يحذفها من رفعها أو مدير النظام فقط
     match /files/{id} {

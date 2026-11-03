@@ -3,7 +3,7 @@
    Strategy: app files network-first (so updates arrive) with cache fallback; vendored libraries and icons cache-first. */
 importScripts('version.js');
 const CACHE='brega-'+self.APP_VERSION;
-const SHELL=['./','index.html','attach.js','meetings.js','duties-data.js','duties.js','version.js','releases.js','pwa.js','notify.js','palette.js','quality.js',
+const SHELL=['./','index.html','attach.js','meetings.js','duties-data.js','duties.js','version.js','releases.js','pwa.js','notify.js','govern.js','palette.js','quality.js',
   'manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png',
   'vendor/firebase/firebase-app-compat.js','vendor/firebase/firebase-auth-compat.js','vendor/firebase/firebase-firestore-compat.js',
   'vendor/pdfjs/pdf.min.js','vendor/pdfjs/pdf.worker.min.js'];

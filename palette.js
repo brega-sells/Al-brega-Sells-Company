@@ -46,7 +46,7 @@ function recordItems(q){if(!q||q.length<2)return[];const out=[];const push=(sec,
   (S.needs||[]).forEach(n=>{if(hit(n.company,n.tradeName,n.project,n.licensee,n.region))push('needs',n.company||n.tradeName||'',[n.region,n.activity].filter(Boolean).join(' · '),()=>{go('needs');setTimeout(()=>openNeed(n.id),80)})});
   ((window.__assignments&&window.__assignments())||[]).forEach(a=>{if(hit(a.title,a.no,a.assignee))push('tasks',a.title||'',[a.no,a.status].filter(Boolean).join(' · '),()=>{go('duties');after('[data-dt-tab="tasks"]');after('[data-dt-open="'+CSS.escape(a.id)+'"]',260)})});
   ((window.__meetings&&window.__meetings())||[]).forEach(mt=>{if(hit(mt.title,mt.no))push('meetings',mt.title||'',[mt.date,mt.status].filter(Boolean).join(' · '),()=>{go('meetings');after('[data-mt-open="'+CSS.escape(mt.id)+'"]',200)})});
-  (S.records||[]).forEach(r=>{if(hit(r.title,r.ref,r.notes))push('records',r.title||'',[r.date,r.ref].filter(Boolean).join(' · '),()=>go('org',{focus:r.unit}))});
+  (S.records||[]).forEach(r=>{if(hit(r.title,r.ref,r.notes))push('records',r.title||'',[r.date,r.ref].filter(Boolean).join(' · '),()=>go('org',{om:'dash',of:r.unit}))});
   (S.companies||[]).forEach(x=>{if(hit(x.name))push('companies',x.name||'',x.phone||'',()=>{go('cs');setTimeout(()=>{try{openCustomer(x.name)}catch(e){}},80)})});
   return out}
 const SEC={screens:['الشاشات','Screens'],actions:['إجراءات','Actions'],contracts:['عقود','Contracts'],tickets:['طلبات الزبائن','Customer requests'],needs:['كشوفات الاحتياجات','Needs sheets'],tasks:['تكليفات','Assignments'],meetings:['اجتماعات','Meetings'],records:['سجلات الإدارات','Department records'],companies:['جهات','Entities']};
