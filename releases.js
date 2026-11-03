@@ -2,6 +2,8 @@
    Newest first. type: جديد | تحسين | إصلاح | أمان. roles: which roles see the highlight (empty = everyone). */
 "use strict";
 window.RELEASES=[
+ {version:'2.2.1',date:'2026-11-03',highlights:[
+   {type:'إصلاح',title:'نافذة الدخول بحساب Google',desc:'كانت النافذة تفشل على الرابط الحي بسبب سياسة الحماية في الصفحة؛ أُصلحت وصار الدخول بحساب Google يعمل.'}]},
  {version:'2.2.0',date:'2026-11-03',highlights:[
    {type:'جديد',title:'الدخول بحساب Google',desc:'زر «الدخول بحساب Google» في شاشة الدخول وفي شاشة تأكيد البريد: من يدخل بحساب Gmail يُعدّ بريده مؤكدًا فورًا دون انتظار رسالة التحقق، وتبقى صلاحيته كما هي.'}]},
  {version:'2.1.0',date:'2026-11-03',highlights:[
