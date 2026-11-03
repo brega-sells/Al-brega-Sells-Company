@@ -2,6 +2,19 @@
 
 كل التغييرات المهمة في المنظومة تُدوَّن هنا. الترقيم `كبير.متوسط.صغير`، والأحدث أولًا. ما يراه المستخدمون في «ما الجديد» موجود في `releases.js`.
 
+## [2.2.0] — 2026-11-03
+
+### جديد
+- الدخول بحساب Google (`signInWithPopup` مع `GoogleAuthProvider`، والرجوع إلى `signInWithRedirect` عند منع النوافذ المنبثقة): زر في شاشة الدخول وزر «تأكيد البريد بحساب Google» في شاشة التحقق. Google مزوّد موثوق فيُعدّ بريد Gmail مؤكدًا تلقائيًا (`email_verified`)، ويربط Firebase الحساب القائم بكلمة المرور بالمزوّد الجديد دون تغيير الصلاحية (الصلاحيات مفهرسة بالبريد).
+- إعادة التحقق قبل الإجراءات الحساسة: الحساب الذي لا كلمة مرور له يعيد التحقق عبر نافذة Google بدل حوار كلمة المرور.
+- رسائل عربية لأخطاء Google (`popup-blocked`, `unauthorized-domain`, `operation-not-allowed`, `account-exists-with-different-credential`).
+
+### تشغيل
+- يلزم تفعيل مزوّد Google مرة واحدة: Firebase Console → Authentication → Sign-in method → Google → Enable → Save. النطاق `brega-sells.github.io` موجود في Authorized domains.
+
+### اختبارات
+- `tests/browser/auth.js`: زر Google في شاشة الدخول وشاشة التحقق يستدعيان نافذة Google، والحساب الذي مزوّده Google فقط يعيد التحقق عبر النافذة لا بكلمة المرور؛ صار الاختبار يُنهي بـ `AUTH OK/FAIL` ورمز خروج.
+
 ## [2.1.0] — 2026-11-03
 
 ### جديد

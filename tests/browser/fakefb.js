@@ -32,13 +32,16 @@ function colRef(c,filters=[],order=null,lim=0){return {path:c,
   onSnapshot:(cb,err)=>{const l={col:c,fire:()=>cb(query(c,filters,order,lim))};LIS.push(l);setTimeout(l.fire,0);return()=>{const i=LIS.indexOf(l);if(i>=0)LIS.splice(i,1)}}}}
 const FS={collection:colRef,doc:p=>{const [c,id]=p.split('/');return docRef(c,id)},enablePersistence:async()=>{},
   batch:()=>{const ops=[];return {set:(r,d)=>ops.push(()=>r.set(d)),update:(r,d)=>ops.push(()=>r.update(d)),delete:r=>ops.push(()=>r.delete()),commit:async()=>{for(const o of ops)await o()}}}};
-let authCbs=[];let USER=F.user?Object.assign({emailVerified:true,sendEmailVerification:async()=>{log.push(['verify'])},reload:async()=>{},updateProfile:async()=>{},getIdToken:async()=>'tok',reauthenticateWithCredential:async()=>{log.push(['reauth'])},metadata:{lastSignInTime:new Date().toISOString()}},F.user):null;
+let authCbs=[];let USER=F.user?Object.assign({emailVerified:true,sendEmailVerification:async()=>{log.push(['verify'])},reload:async()=>{},updateProfile:async()=>{},getIdToken:async()=>'tok',reauthenticateWithCredential:async()=>{log.push(['reauth'])},reauthenticateWithPopup:async p=>{log.push(['reauth-popup',p&&p.providerId])},metadata:{lastSignInTime:new Date().toISOString()}},F.user):null;
 const AUTH={get currentUser(){return USER},onAuthStateChanged:cb=>{authCbs.push(cb);setTimeout(()=>cb(USER),0);return()=>{}},
   signOut:async()=>{USER=null;log.push(['signOut']);try{sessionStorage.setItem('fake_signout','1')}catch(e){}authCbs.forEach(cb=>cb(null))},
   signInWithEmailAndPassword:async(e,p)=>{log.push(['signIn',e]);return {user:USER}},
   createUserWithEmailAndPassword:async(e,p)=>{log.push(['register',e]);return {user:USER}},
-  sendPasswordResetEmail:async e=>{log.push(['reset',e])}};
+  sendPasswordResetEmail:async e=>{log.push(['reset',e])},
+  signInWithPopup:async p=>{log.push(['popup',p&&p.providerId]);try{sessionStorage.setItem('fake_popup',p&&p.providerId)}catch(e){}if(USER){USER.emailVerified=true;USER.providerData=[{providerId:'google.com'}]}return {user:USER}},
+  signInWithRedirect:async p=>{log.push(['redirect',p&&p.providerId])}};
 window.firebase={initializeApp:()=>({}),auth:()=>AUTH,firestore:Object.assign(()=>FS,{FieldValue:{serverTimestamp:()=>new Date().toISOString(),arrayUnion:(...a)=>a,delete:()=>null}})};
 window.firebase.auth.EmailAuthProvider={credential:(e,p)=>({e,p})};
+window.firebase.auth.GoogleAuthProvider=function(){this.providerId='google.com';this.setCustomParameters=()=>this};
 window.__FAKEDB=DB;
 })();
