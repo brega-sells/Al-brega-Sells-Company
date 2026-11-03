@@ -1,0 +1,46 @@
+{
+  "name": "brega-sales-desktop",
+  "productName": "منظومة المبيعات - البريقة",
+  "version": "1.0.0",
+  "description": "نسخة سطح المكتب لمنظومة الإدارة العامة للمبيعات والشؤون التجارية - شركة البريقة لتسويق النفط",
+  "author": "Brega Oil Marketing Company",
+  "license": "UNLICENSED",
+  "private": true,
+  "repository": "github:brega-sells/Al-brega-Sells-Company",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "ly.brega.sales.desktop",
+    "productName": "Brega Sales",
+    "executableName": "BregaSales",
+    "copyright": "Brega Oil Marketing Company",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "offline.html", "build/icon.png"],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "منظومة المبيعات - البريقة",
+      "artifactName": "BregaSales-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "BregaSales-Portable-${version}.${ext}"
+    }
+  }
+}

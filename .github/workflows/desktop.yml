@@ -1,0 +1,74 @@
+name: Desktop app (Windows)
+
+# Builds the Windows installer and portable .exe for the desktop shell in desktop/.
+# Pull requests: build only, the files are attached to the run as an artifact.
+# main (when desktop/ changes) or a manual run: publish a GitHub Release "desktop-v<version>" and mark it latest, so
+# https://github.com/brega-sells/Al-brega-Sells-Company/releases/latest/download/BregaSales-Setup.exe always serves the newest build.
+
+on:
+  push:
+    branches: [main]
+    paths: ['desktop/**', '.github/workflows/desktop.yml']
+  pull_request:
+    paths: ['desktop/**', '.github/workflows/desktop.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Build Windows installer
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Build
+        run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Stable file names
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          cp "dist/BregaSales-Setup-$V.exe" dist/BregaSales-Setup.exe
+          cp "dist/BregaSales-Portable-$V.exe" dist/BregaSales-Portable.exe
+          ls -la dist/*.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BregaSales-windows
+          path: |
+            desktop/dist/BregaSales-Setup.exe
+            desktop/dist/BregaSales-Portable.exe
+          retention-days: 14
+      - name: Publish release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="desktop-v$VERSION"
+          NOTES="نسخة سطح المكتب لمنظومة المبيعات (ويندوز 10/11، 64 بت).
+          - BregaSales-Setup.exe: مثبّت عادي يضيف اختصاراً على سطح المكتب وفي قائمة ابدأ.
+          - BregaSales-Portable.exe: نسخة محمولة تعمل مباشرة دون تثبيت.
+          البرنامج يفتح المنظومة الحية ويتحدّث تلقائياً مع كل تحديث للموقع، ويعمل دون اتصال بعد أول تشغيل."
+          FILES="dist/BregaSales-Setup.exe dist/BregaSales-Portable.exe dist/BregaSales-Setup-$VERSION.exe dist/BregaSales-Portable-$VERSION.exe"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" $FILES --clobber
+          else
+            gh release create "$TAG" $FILES --target "$GITHUB_SHA" --title "منظومة المبيعات لسطح المكتب $VERSION" --notes "$NOTES" --latest
+          fi
