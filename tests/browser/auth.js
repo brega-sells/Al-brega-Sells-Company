@@ -75,6 +75,17 @@ const out = {};
     out.readFailScreen = await page.evaluate(() => !!document.querySelector('#lg-rolefail') && /unavailable/.test(document.querySelector('#lg-rolefail').textContent) && !!document.querySelector('#lg-retry'));
     out.readFailNotNoRole = await page.evaluate(() => !/لم تُمنح له صلاحية/.test(document.getElementById('login').textContent));
     await browser.close(); }
+  // 8) change the password from «حسابي»: validation first, then re-authentication (Google popup for a Google-only account), then updatePassword
+  { const { browser, page } = await open({ user: { email: 'admin@test.ly', displayName: 'A', providerData: [{ providerId: 'google.com' }], metadata: { lastSignInTime: new Date().toISOString() } }, data });
+    await page.evaluate(() => go('settings')); await page.waitForTimeout(500);
+    out.pwForm = await page.evaluate(() => !!document.querySelector('#pw-form') && !!document.querySelector('#pw-new') && !!document.querySelector('#pw-conf'));
+    await page.fill('#pw-new', 'Secret-1234'); await page.fill('#pw-conf', 'Secret-9999'); await page.click('#pw-save'); await page.waitForTimeout(300);
+    out.pwMismatchBlocked = await page.evaluate(() => /غير متطابقتين/.test(document.querySelector('#pw-msg').textContent) && !window.__FBLOG.some(l => l[0] === 'updatePassword'));
+    await page.fill('#pw-conf', 'Secret-1234'); await page.click('#pw-save'); await page.waitForTimeout(600);
+    out.pwReauthForced = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'reauth-popup')); // signed in a moment ago, yet re-authentication is still required
+    out.pwChanged = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'updatePassword' && l[1] === 11) && /تم تغيير كلمة المرور/.test(document.querySelector('#pw-msg').textContent) && document.querySelector('#pw-new').value === '');
+    out.pwLogged = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'log' && /كلمة المرور/.test(JSON.stringify(l[3]))));
+    await browser.close(); }
   console.log(JSON.stringify(out, null, 1));
   const ok = Object.entries(out).every(([k, v]) => Array.isArray(v) ? v.length === 0 : (typeof v === 'boolean' ? v : true));
   console.log(ok ? 'AUTH OK' : 'AUTH FAIL'); process.exit(ok ? 0 : 1);
