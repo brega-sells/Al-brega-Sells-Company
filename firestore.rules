@@ -118,6 +118,17 @@ service cloud.firestore {
           && logAppended()));
       allow delete: if isAdmin() || (canWrite() && resource.data.createdBy == me() && resource.data.status == 'new');
     }
+    // تفضيلات المستخدم (الإشعارات والمقروء والعروض المحفوظة): يقرؤها ويكتبها صاحبها فقط
+    match /prefs/{email} {
+      allow read, write: if hasRole() && email == me();
+    }
+    // بلاغات الأخطاء من المتصفح: يضيفها كل من له دور باسمه، ويقرؤها ويحذفها مدير النظام
+    match /clientErrors/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if hasRole() && request.resource.data.user == me()
+        && request.resource.data.keys().hasOnly(['ts', 'ref', 'msg', 'stack', 'screen', 'ver', 'ua', 'online', 'role', 'lang', 'user', 'note'])
+        && str(request.resource.data, 'msg', 500) && str(request.resource.data, 'stack', 2000) && str(request.resource.data, 'note', 1000);
+    }
     // الإعدادات: يغيّرها مدير النظام، عدا آلية إشعارات البيع التي يحررها المحررون
     match /config/{doc} {
       allow read: if hasRole();

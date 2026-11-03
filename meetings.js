@@ -411,4 +411,5 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-act="close-draw
 
 if(window.appRuntime&&window.appRuntime.use)start();
 setInterval(()=>{if(S.view==='meetings')refresh()},60000);
+window.__meetings=()=>[...M.list.values()];
 })();

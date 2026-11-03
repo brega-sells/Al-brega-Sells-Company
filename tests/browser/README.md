@@ -11,5 +11,6 @@ npm i -g playwright            # or use an existing Playwright + Chromium
 node tests/browser/xss.js       # stored-XSS sweep: payload in every text field of every collection, every view/tab/drawer/print window
 ROLE=w node tests/browser/xss.js
 node tests/browser/auth.js      # e-mail verification gate, re-authentication before role changes, self-demotion guard, per-department records, idle sign-out
+node tests/browser/pwa.js       # notifications bell, calendar, version footer + what’s new, error boundary + clientErrors report, admin health panel, service worker install (no reload on first install)
 ```
-`xss.js` prints `hits: []` when nothing rendered as HTML; `auth.js` prints a JSON object where every value must be `true` (or the expected list).
+`xss.js` prints `hits: []` when nothing rendered as HTML; `auth.js` prints a JSON object where every value must be `true` (or the expected list); `pwa.js` ends with `PWA/NOTIFY OK`.
