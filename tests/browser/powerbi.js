@@ -77,7 +77,45 @@ const out = {};
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'powerbi-dialog-en-dark.png') });
     out.errorsEn = errors.filter(e => !/favicon|ERR_|net::/.test(e));
     await browser.close(); }
+  // in-app analysis (Power BI style)
+  { const evil = '<img src=x onerror="window.__xss=1">';
+    const d2 = JSON.parse(JSON.stringify(data)); const ks = Object.keys(d2.contracts); d2.contracts[ks[0]].status = evil; d2.contracts[ks[0]].location = evil;
+    const { browser, page, errors } = await open({ user: { email: 'admin@test.ly', displayName: 'A' }, data: d2, theme: process.env.THEME || 'light' });
+    await page.evaluate(() => go('contracts')); await page.waitForTimeout(500);
+    await page.click('#view .bi-btn[data-bi="exp"]'); await page.waitForTimeout(300);
+    out.dashButton = await page.evaluate(() => !!document.querySelector('#bi-dlg [data-bi="dash"].primary'));
+    await page.click('#bi-dlg [data-bi="dash"]'); await page.waitForTimeout(400);
+    out.dashOpen = await page.evaluate(() => { const d = document.getElementById('bi-dash'); return !!d && d.open && !document.getElementById('bi-dlg').open; });
+    out.dashKpis = await page.evaluate(() => document.querySelectorAll('#bi-dash .bd-kpi').length >= 4);
+    out.dashVisuals = await page.evaluate(() => ['.bd-line', '.bd-donut path', '.bd-bars li', '.bd-sc', '.bd-table tbody tr'].every(s => document.querySelector('#bi-dash ' + s)) && document.querySelectorAll('#bi-dash .bd-card').length === 6);
+    out.dashMeasure = await page.evaluate(() => document.querySelector('#bi-dash [data-bd="m"]').value === 'القيمة');
+    const sumBefore = await page.evaluate(() => document.querySelector('#bi-dash .bd-kpi b').textContent);
+    await page.click('#bi-dash .bd-bars li:nth-child(2)'); await page.waitForTimeout(150);
+    out.crossFilter = await page.evaluate(() => !!document.querySelector('#bi-dash .bd-clear') && document.querySelectorAll('#bi-dash .bd-bars li.bd-dim').length >= 1);
+    out.filterChangesKpi = await page.evaluate(b => document.querySelector('#bi-dash .bd-kpi b').textContent !== b, sumBefore);
+    await page.click('#bi-dash .bd-clear'); await page.waitForTimeout(150);
+    out.clear = await page.evaluate(() => !document.querySelector('#bi-dash .bd-clear'));
+    await page.selectOption('#bi-dash [data-bd="m"]', '__count'); await page.waitForTimeout(150);
+    out.countMeasure = await page.evaluate(() => /عدد السجلات/.test(document.querySelector('#bi-dash .bd-kpi span').textContent));
+    const yb = await page.$$('#bi-dash [data-bd-year]'); if (yb.length > 1) { await yb[1].click(); await page.waitForTimeout(150); }
+    out.yearSlicer = await page.evaluate(() => !!document.querySelector('#bi-dash [data-bd-year][aria-pressed="true"]:not([data-bd-year=""])'));
+    await page.hover('#bi-dash .bd-bars li'); await page.waitForTimeout(100);
+    out.tooltip = await page.evaluate(() => { const t = document.querySelector('#bi-dash .bd-tip'); return !t.hidden && t.textContent.length > 2; });
+    await page.click('#bi-dash [data-bd-year=""]'); await page.waitForTimeout(100);
+    out.dashXss = await page.evaluate(() => { const sel = document.querySelector('#bi-dash [data-bd="dim"]'); const o = [...sel.options].find(x => /الموقع/.test(x.value)); if (o) { sel.value = o.value; sel.dispatchEvent(new Event('change', { bubbles: true })); } return !window.__xss && !document.querySelector('#bi-dash img') && document.getElementById('bi-dash').textContent.includes('<img'); });
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'powerbi-analysis-ar.png') });
+    await page.click('#bi-dash [data-bd="pack"]'); await page.waitForTimeout(200);
+    out.dashToPack = await page.evaluate(() => !document.getElementById('bi-dash').open && document.getElementById('bi-dlg').open);
+    await page.keyboard.press('Escape');
+    // a screen without dates (needs) still analyses by category
+    await page.evaluate(() => go('needs')); await page.waitForTimeout(400);
+    await page.click('#view .bi-btn[data-bi="exp"]'); await page.waitForTimeout(200); await page.click('#bi-dlg [data-bi="dash"]'); await page.waitForTimeout(300);
+    out.needsDash = await page.evaluate(() => document.querySelectorAll('#bi-dash .bd-card').length >= 3 && !!document.querySelector('#bi-dash .bd-donut path'));
+    await page.setViewportSize({ width: 390, height: 800 }); await page.waitForTimeout(200);
+    out.dashPhone = await page.evaluate(() => { const b = document.querySelector('#bi-dash .bd-body'); return b.scrollWidth <= b.clientWidth + 1; });
+    out.errorsDash = errors.filter(e => !/favicon|ERR_|net::/.test(e));
+    await browser.close(); }
   console.log(JSON.stringify(out, null, 1));
-  const ok = Object.entries(out).every(([k, v]) => k === 'buttons' || (k === 'errors' || k === 'errorsEn' ? v.length === 0 : v === true));
+  const ok = Object.entries(out).every(([k, v]) => k === 'buttons' || (k === 'errors' || k === 'errorsEn' || k === 'errorsDash' ? v.length === 0 : v === true));
   console.log(ok ? 'POWERBI OK' : 'POWERBI FAIL'); process.exit(ok ? 0 : 1);
 })();

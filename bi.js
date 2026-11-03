@@ -70,6 +70,7 @@ function pack(sheets,filename){
   return {tables,title,zipName:title+'-PowerBI.zip'}}
 function zipBlob(p){const files=p.tables.map(t=>[t.file,toCsv(t.rows,t.keys)]);files.push(['BregaPowerBI.pq',mScript(p.tables,p.title)],['اقرأني-README.txt',readme(p.tables,p.title)]);
   const b=zipStore(files);return new Blob([b],{type:'application/zip'})}
+window.__biExport=(tables,title)=>exportDialog(tables.map(t=>[t.name,t.rows]),title+'.xlsx');
 window.__biPack=(sheets,filename)=>{const p=pack(sheets,filename);return {tables:p.tables.map(t=>({name:t.name,file:t.file,rows:t.rows.length,keys:t.keys,types:t.types})),zipName:p.zipName,csv:p.tables.map(t=>toCsv(t.rows,t.keys)),pq:mScript(p.tables,p.title),blob:p.tables.length?zipBlob(p):null}};
 
 /* ---------- dialog ---------- */
@@ -96,7 +97,7 @@ function exportDialog(sheets,filename){
     <li>${esc(T('ملف «اقرأني» بخطوات الفتح.','A read-me with the steps.'))}</li></ul></div>
    <ol class="bi-steps"><li>${esc(T('فك ضغط الحزمة في مجلد.','Unzip the pack into a folder.'))}</li><li>${esc(T('Power BI Desktop ← Get data ← Text/CSV ← اختر الملف ← Load.','Power BI Desktop → Get data → Text/CSV → pick the file → Load.'))}</li><li>${esc(T('للأنواع الدقيقة الصق الاستعلام من BregaPowerBI.pq في Blank query.','For exact types, paste the query from BregaPowerBI.pq into a Blank query.'))}</li></ol>
    <p class="muted bi-note">${esc(T('بيانات داخلية: لا تنشر التقرير أو ملف .pbix للعامة.','Internal data: do not publish the report or the .pbix file.'))}</p>`;
-  const foot=`<button type="button" class="btn primary" data-bi="zip">${I.down}${esc(T('تنزيل حزمة Power BI','Download Power BI pack'))}</button>${p.tables.length===1?`<button type="button" class="btn" data-bi="csv">${esc(T('ملف CSV فقط','CSV only'))}</button>`:''}<button type="button" class="btn" data-bi="close" style="margin-inline-start:auto">${esc(T('إلغاء','Cancel'))}</button>`;
+  const foot=`${window.__biDash?`<button type="button" class="btn primary" data-bi="dash">${ICON}${esc(T('تحليل البيانات','Analyse the data'))}</button>`:''}<button type="button" class="btn${window.__biDash?'':' primary'}" data-bi="zip">${I.down}${esc(T('تنزيل حزمة Power BI','Download Power BI pack'))}</button>${p.tables.length===1?`<button type="button" class="btn" data-bi="csv">${esc(T('ملف CSV فقط','CSV only'))}</button>`:''}<button type="button" class="btn" data-bi="close" style="margin-inline-start:auto">${esc(T('إلغاء','Cancel'))}</button>`;
   show(T('تصدير إلى Power BI','Export to Power BI'),p.zipName,body,foot)}
 async function save(blob,filename){await S.downloads.save({filename,data:blob});toast(T('تم تنزيل الملف','File downloaded'))}
 
@@ -116,6 +117,7 @@ document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest&&e.target
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-bi]');if(!b)return;const k=b.dataset.bi;
   if(k==='close'){dialog().close();return}
   if(k==='zip'&&PEND){const p=PEND;try{await save(zipBlob(p),p.zipName);dialog().close()}catch(err){console.error(err);toast(T('تعذّر تجهيز الملف','Could not prepare the file'))}return}
+  if(k==='dash'&&PEND&&window.__biDash){const p=PEND;dialog().close();window.__biDash(p.tables,p.title);return}
   if(k==='csv'&&PEND){const p=PEND,t=p.tables[0];try{await save(new Blob([toCsv(t.rows,t.keys)],{type:'text/csv;charset=utf-8'}),p.title+'-PowerBI.csv');dialog().close()}catch(err){console.error(err);toast(T('تعذّر تجهيز الملف','Could not prepare the file'))}return}
   if(k==='pick'&&IMPT){const t=IMPT;dialog().close();if(t.isConnected===false){toast(T('أعد فتح الصفحة ثم حاول مرة أخرى','Reopen the page and try again'));return}t.click();return}
   if(k==='exp'){const src=document.getElementById(b.dataset.biFor);if(!src)return;ARM=Date.now();src.click();return}
