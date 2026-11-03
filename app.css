@@ -727,3 +727,4 @@ body.o-ui tbody tr:hover td{background:color-mix(in srgb,var(--accent) 7%,var(--
 @media (max-width:1000px){.bd-grid{grid-template-columns:minmax(0,1fr)}.bd-card.bd-wide,.bd-card.bd-w2{grid-column:auto}}
 @media (max-width:640px){.bd-top{padding:8px 12px;flex-wrap:wrap}.bd-top .btn{display:none}.bd-slicers,.bd-body{padding-inline:12px}.bd-slicers select{min-width:0;max-width:44vw}.bd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bd-kpi b{font-size:22px}.bd-donut{grid-template-columns:1fr}.bd-mon{font-size:8.5px}}
 @media print{body:has(#bi-dash[open])>*:not(#bi-dash){display:none!important}.bi-dash[open]{position:static;height:auto;max-height:none;width:auto}.bd-top .btn,.bd-top .iconbtn,.bd-slicers select{display:none}.bd-body{overflow:visible}}
+.pg-more{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 4px}.pg-more .muted{font-size:12.5px;margin-inline-start:auto;font-variant-numeric:tabular-nums}
