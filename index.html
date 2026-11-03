@@ -623,6 +623,46 @@ legend{font-family:var(--f-display);font-weight:600;font-size:13.5px;padding-inl
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .brand-mark{border-radius:50%!important;background:#fff;padding:0!important;overflow:hidden}.lg-card .brand-mark,.lg-brand .brand-mark{width:130px!important;height:130px!important}
+
+/* ===== Home screen (app launcher) + apps button + current-app crumb (home.js) ===== */
+.apps-btn{all:unset;cursor:pointer;flex:none;display:inline-grid;place-items:center;width:38px;height:38px;border-radius:10px;color:var(--ink);border:1px solid var(--line);background:var(--surface)}
+.apps-btn svg{width:18px;height:18px}
+.apps-btn:hover{color:var(--accent);border-color:var(--accent)}.apps-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.apps-btn[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.app-crumb{display:inline-flex;align-items:center;gap:8px;flex:none;font-size:14.5px;font-weight:700;color:var(--ink);padding-inline-end:6px;white-space:nowrap}
+.app-crumb[hidden]{display:none}
+.hm-ic{--s:64px;width:var(--s);height:var(--s);flex:none;display:inline-grid;place-items:center;border-radius:calc(var(--s)*.28);
+  background:linear-gradient(155deg,color-mix(in srgb,var(--a) 16%,var(--surface)) 0%,color-mix(in srgb,var(--a) 7%,var(--surface)) 100%);
+  border:1px solid color-mix(in srgb,var(--a) 22%,var(--line));box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 6px 14px -6px color-mix(in srgb,var(--a) 45%,transparent)}
+.hm-ic svg{width:62%;height:62%}
+.app-crumb .hm-ic{border-radius:7px;box-shadow:none}
+body.on-home .app{grid-template-columns:minmax(0,1fr)}
+body.on-home .side,body.on-home .mobile-nav{display:none}
+body.on-home .main{background:radial-gradient(1100px 520px at 50% -120px,color-mix(in srgb,var(--hero-glow) 26%,transparent),transparent 70%),var(--bg);min-height:100vh}
+body.on-home .top{background:color-mix(in srgb,var(--bg) 70%,transparent)}
+.hm{width:100%;box-sizing:border-box;max-width:1040px;margin:0 auto;padding:28px 8px 40px}
+.hm-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.hm-who{display:flex;align-items:center;gap:14px}.hm-logo{width:56px;height:56px;border-radius:50%;background:#fff;overflow:hidden;flex:none;box-shadow:0 4px 14px -6px rgba(0,0,0,.4)}.hm-logo img{width:100%;height:100%;object-fit:contain}
+.hm-head h2{margin:0;font-family:var(--f-display);font-size:24px;font-weight:700;color:var(--ink)}
+.hm-head p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.hm-find{position:relative;width:min(320px,100%)}
+.hm-find input{width:100%;height:42px;box-sizing:border-box;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding-inline:40px 14px;font:inherit}
+.hm-find input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.hm-find svg{position:absolute;inset-inline-start:13px;top:12px;width:18px;height:18px;color:var(--muted)}
+.hm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.hm-app{all:unset;box-sizing:border-box;position:relative;cursor:pointer;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:18px 8px 14px;border-radius:16px;border:1px solid transparent;transition:background .15s,border-color .15s,transform .15s}
+.hm-app[hidden]{display:none}
+.hm-app:hover{background:color-mix(in srgb,var(--surface) 75%,transparent);border-color:var(--line);transform:translateY(-2px)}
+.hm-app:hover .hm-ic{box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 10px 20px -8px color-mix(in srgb,var(--a) 60%,transparent)}
+.hm-app:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hm-app b{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.35}
+.hm-app small{font-size:11.5px;color:var(--muted);line-height:1.35}
+.hm-badge{position:absolute;top:10px;inset-inline-end:calc(50% - 44px);min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:var(--flame);color:#fff;font-size:11.5px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px var(--bg)}
+.hm-none{text-align:center;color:var(--muted);margin-top:24px}
+@media (max-width:600px){.hm-logo{width:44px;height:44px}.hm-head p{font-size:12px}.hm{padding-top:16px}.hm-head h2{font-size:20px}.hm-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.hm-ic{--s:56px}.hm-app{padding:12px 2px 10px}.hm-app small{display:none}.app-crumb b{display:none}.hm-badge{inset-inline-end:calc(50% - 38px)}}
+@media (max-width:1280px){.app-crumb b{display:none}}
+@media (max-width:700px){.top{flex-wrap:wrap;row-gap:10px}.top .search{order:9;flex:1 1 100%;max-width:none}.top-actions{flex-wrap:wrap;justify-content:flex-end;gap:6px;min-width:0}}
+@media (prefers-reduced-motion:reduce){.hm-app{transition:none}.hm-app:hover{transform:none}}
 </style>
 
 <div class="mobile-nav" id="mnav"></div>
@@ -2786,6 +2826,7 @@ document.addEventListener('click',async e=>{const a=e.target.closest('[data-act]
 <script src="duties-data.js"></script>
 <script src="duties.js"></script>
 <script src="sms055.js"></script>
+<script src="home.js"></script>
 <script src="version.js"></script>
 <script src="releases.js"></script>
 <script src="pwa.js"></script>
