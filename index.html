@@ -696,7 +696,10 @@ function showLogin(mode){
   try{if(sessionStorage.getItem('cm_idle')){sessionStorage.removeItem('cm_idle');const m=o.querySelector('.lg-msg');m.textContent='انتهت الجلسة بسبب عدم النشاط، سجّل الدخول من جديد.'}}catch(e){}
   setTimeout(()=>o.querySelector(reg?'#lg-n':'#lg-u').focus(),50);
 }
-function noRole(u){screen(`<div class="lg-card">${BRAND}<p style="margin:0">مرحبًا ${u.displayName||u.email||''}. حسابك <b dir="ltr">${u.email}</b> مسجّل، لكن لم تُمنح له صلاحية بعد.</p><p class="muted" style="margin:0;font-size:13px">اطلب من مدير النظام منح الصلاحية لبريدك من صفحة «الإعدادات ← المستخدمون». إذا كنت أول مستخدم (المدير)، أضف نفسك في مجموعة <b dir="ltr">roles</b> كما في دليل التشغيل.</p><button class="btn" id="lg-retry">تحقق مرة أخرى</button><button class="btn ghost" id="lg-out">تسجيل الخروج</button></div>`);
+function noRole(u){screen(`<div class="lg-card">${BRAND}<p style="margin:0">مرحبًا ${hx(u.displayName||u.email||'')}. حسابك <b dir="ltr">${hx(u.email)}</b> مسجّل، لكن لم تُمنح له صلاحية بعد.</p><p class="muted" style="margin:0;font-size:13px">اطلب من مدير النظام منح الصلاحية لبريدك من صفحة «الإعدادات ← المستخدمون». إذا كنت أول مستخدم (المدير)، أضف نفسك في مجموعة <b dir="ltr">roles</b> كما في دليل التشغيل. إن كانت لديك صلاحية من قبل، سجّل الخروج وادخل من جديد.</p><button class="btn" id="lg-retry">تحقق مرة أخرى</button><button class="btn ghost" id="lg-out">تسجيل الخروج</button></div>`);
+  document.getElementById('lg-retry').onclick=()=>location.reload();document.getElementById('lg-out').onclick=()=>AUTH.signOut().then(()=>location.reload())}
+function roleReadFailed(u,err){const code=hx((err&&err.code)||'unknown');const why=code==='permission-denied'?'رفضت قاعدة البيانات قراءة صلاحيتك لأن جلستك قديمة (من قبل تأكيد البريد). سجّل الخروج وادخل من جديد.':code==='unavailable'?'تعذّر الوصول إلى قاعدة البيانات. تحقق من اتصالك بالإنترنت ثم أعد المحاولة.':'حدث خطأ أثناء قراءة صلاحيتك. أعد المحاولة، وإن تكرر أبلغ مدير النظام بالرمز أدناه.';
+  screen(`<div class="lg-card" id="lg-rolefail">${BRAND}<p style="margin:0">مرحبًا ${hx(u.displayName||u.email||'')}. لم نتمكن من قراءة صلاحية حسابك <b dir="ltr">${hx(u.email)}</b>.</p><p class="muted" style="margin:0;font-size:13px">${why}</p><p class="muted" style="margin:0;font-size:12px" dir="ltr">${code}</p><button class="btn" id="lg-retry">إعادة المحاولة</button><button class="btn ghost" id="lg-out">تسجيل الخروج</button></div>`);
   document.getElementById('lg-retry').onclick=()=>location.reload();document.getElementById('lg-out').onclick=()=>AUTH.signOut().then(()=>location.reload())}
 const hx=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function needVerify(u,sent){const o=screen(`<div class="lg-card">${BRAND}<p style="margin:0">${sent?'أرسلنا رسالة تحقق':'يلزم تأكيد البريد'} إلى <b dir="ltr">${hx(u.email)}</b>. افتح الرابط الذي في الرسالة ثم اضغط «تحققت من بريدي».</p><p class="muted" style="margin:0;font-size:13px">حمايةً للمنظومة لا يُفتح الحساب إلا ببريد مؤكد. إن لم تصلك الرسالة راجع مجلد الرسائل غير المرغوبة أو أعد إرسالها.</p><div class="lg-msg" role="alert"></div><button class="btn lg-google" type="button" id="lg-vg">${G_LOGO} تأكيد البريد بحساب Google</button><button class="btn primary" id="lg-vok" style="justify-content:center;height:40px">تحققت من بريدي</button><button class="btn" id="lg-vre">إعادة إرسال رسالة التحقق</button><button class="btn ghost" id="lg-out">تسجيل الخروج</button></div>`);
@@ -725,8 +728,12 @@ AUTH.onAuthStateChanged(async u=>{
   if(!u){showLogin('login');return}
   if(!u.emailVerified){let sent=false;try{const t=Number(sessionStorage.getItem('cm_vsent')||0);if(Date.now()-t>60000){await u.sendEmailVerification();sessionStorage.setItem('cm_vsent',String(Date.now()));sent=true}}catch(e){}needVerify(u,sent);return}
   const email=(u.email||'').toLowerCase();
-  let r=null;try{r=await FS.collection('roles').doc(email).get()}catch(e){}
-  if(!r||!r.exists||!ROLE_AR[r.data().role]){noRole(u);return}
+  // A session opened before the e-mail was confirmed still carries an ID token with email_verified=false for up to an hour,
+  // so the rules refuse the role read. Refresh the token once and retry before concluding anything.
+  let r=null,rerr=null;
+  for(let i=0;i<2&&!r;i++){try{if(i)await u.getIdToken(true);r=await FS.collection('roles').doc(email).get()}catch(e){rerr=e;const c=e&&e.code||'';if(i===0&&c!=='permission-denied'&&c!=='unavailable'){break}}}
+  if(!r){roleReadFailed(u,rerr);return}
+  if(!r.exists||!ROLE_AR[r.data().role]){noRole(u);return}
   ME={email,name:r.data().name||u.displayName||email,role:r.data().role,unit:r.data().unit||''};
   try{lastAuthAt=Math.max(lastAuthAt,Date.parse(u.metadata&&u.metadata.lastSignInTime||0)||0)}catch(e){}
   hide();userChip();idleReset();setConn('متصل · الحفظ تلقائي ومشترك',true);readyResolve();

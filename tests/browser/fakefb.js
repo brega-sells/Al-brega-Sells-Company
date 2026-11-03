@@ -16,7 +16,7 @@ function query(c,filters,order,lim){
   return {docs,size:docs.length,empty:!docs.length,forEach:f=>docs.forEach(f),docChanges:()=>docs.map(doc=>({type:'added',doc,oldIndex:-1,newIndex:0})),metadata:{hasPendingWrites:false,fromCache:false}}
 }
 function docRef(c,id){return {id,path:c+'/'+id,
-  get:async()=>docSnap(c,id),
+  get:async()=>{const f=F.fail&&F.fail[c];if(f&&f.n>0){f.n--;log.push(['get-fail',c,id,f.code]);throw Object.assign(new Error(f.code),{code:f.code})}return docSnap(c,id)},
   set:async(d,o)=>{log.push(['set',c,id,clone(d)]);if(o&&o.merge){col(c).set(id,Object.assign({},col(c).get(id)||{},clone(d)))}else col(c).set(id,clone(d));emitAll(c)},
   update:async d=>{log.push(['update',c,id,clone(d)]);if(!col(c).has(id))throw Object.assign(new Error('not-found'),{code:'not-found'});col(c).set(id,Object.assign({},col(c).get(id),clone(d)));emitAll(c)},
   delete:async()=>{log.push(['delete',c,id]);col(c).delete(id);emitAll(c)},
@@ -32,7 +32,7 @@ function colRef(c,filters=[],order=null,lim=0){return {path:c,
   onSnapshot:(cb,err)=>{const l={col:c,fire:()=>cb(query(c,filters,order,lim))};LIS.push(l);setTimeout(l.fire,0);return()=>{const i=LIS.indexOf(l);if(i>=0)LIS.splice(i,1)}}}}
 const FS={collection:colRef,doc:p=>{const [c,id]=p.split('/');return docRef(c,id)},enablePersistence:async()=>{},
   batch:()=>{const ops=[];return {set:(r,d)=>ops.push(()=>r.set(d)),update:(r,d)=>ops.push(()=>r.update(d)),delete:r=>ops.push(()=>r.delete()),commit:async()=>{for(const o of ops)await o()}}}};
-let authCbs=[];let USER=F.user?Object.assign({emailVerified:true,sendEmailVerification:async()=>{log.push(['verify'])},reload:async()=>{},updateProfile:async()=>{},getIdToken:async()=>'tok',reauthenticateWithCredential:async()=>{log.push(['reauth'])},reauthenticateWithPopup:async p=>{log.push(['reauth-popup',p&&p.providerId])},metadata:{lastSignInTime:new Date().toISOString()}},F.user):null;
+let authCbs=[];let USER=F.user?Object.assign({emailVerified:true,sendEmailVerification:async()=>{log.push(['verify'])},reload:async()=>{},updateProfile:async()=>{},getIdToken:async force=>{if(force)log.push(['token-refresh']);return 'tok'},reauthenticateWithCredential:async()=>{log.push(['reauth'])},reauthenticateWithPopup:async p=>{log.push(['reauth-popup',p&&p.providerId])},metadata:{lastSignInTime:new Date().toISOString()}},F.user):null;
 const AUTH={get currentUser(){return USER},onAuthStateChanged:cb=>{authCbs.push(cb);setTimeout(()=>cb(USER),0);return()=>{}},
   signOut:async()=>{USER=null;log.push(['signOut']);try{sessionStorage.setItem('fake_signout','1')}catch(e){}authCbs.forEach(cb=>cb(null))},
   signInWithEmailAndPassword:async(e,p)=>{log.push(['signIn',e]);return {user:USER}},
