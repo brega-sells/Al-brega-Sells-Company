@@ -32,11 +32,12 @@ const out = {};
   // 2) admin: role grant asks for the password again; self-demotion refused
   { const { browser, page, errors } = await open({ user: { email: 'admin@test.ly', displayName: 'A', metadata: { lastSignInTime: new Date(Date.now() - 3600e3).toISOString() } }, data });
     await page.evaluate(() => go('settings')); await page.waitForTimeout(500);
-    await page.fill('#u-email', 'new@test.ly'); await page.fill('#u-name', 'N'); await page.selectOption('#u-role', 'editor');
+    await page.fill('#u-email', 'new@test.ly'); await page.fill('#u-name', 'N'); await page.selectOption('#u-role', 'editor'); await page.selectOption('#u-unit', 'ca');
     await page.click('[data-act="save-role"]'); await page.waitForTimeout(400);
     out.reauthDialog = await page.evaluate(() => { const d = document.getElementById('reauth'); return !!(d && d.open); });
     await page.fill('#ra-p', 'secret'); await page.click('#reauth button[type=submit]'); await page.waitForTimeout(500);
-    out.roleSaved = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'roles' && l[2] === 'new@test.ly' && l[3].role === 'editor'));
+    out.roleSaved = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'roles' && l[2] === 'new@test.ly' && l[3].role === 'editor' && l[3].unit === 'ca'));
+    out.unitColumn = await page.evaluate(() => !!document.querySelector('#users-box') && /الإدارة/.test(document.querySelector('#users-box thead').textContent) && /بلا إدارة/.test(document.querySelector('#users-box').textContent));
     out.reauthLogged = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'reauth'));
     // second sensitive action within 5 minutes: no second prompt
     await page.fill('#u-email', 'new2@test.ly'); await page.fill('#u-name', 'N2'); await page.selectOption('#u-role', 'viewer');

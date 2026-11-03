@@ -2,6 +2,8 @@
    Newest first. type: جديد | تحسين | إصلاح | أمان. roles: which roles see the highlight (empty = everyone). */
 "use strict";
 window.RELEASES=[
+ {version:'2.3.0',date:'2026-11-03',highlights:[
+   {type:'جديد',title:'تحديد الإدارة لكل حساب من الإعدادات',desc:'في لوحة الصلاحيات صارت هناك قائمة «الإدارة» عند منح الصلاحية أو تعديلها، وعمود يبيّن إدارة كل حساب، وتنبيه للحسابات بلا إدارة.',roles:['admin'],link:'settings'}]},
  {version:'2.2.1',date:'2026-11-03',highlights:[
    {type:'إصلاح',title:'نافذة الدخول بحساب Google',desc:'كانت النافذة تفشل على الرابط الحي بسبب سياسة الحماية في الصفحة؛ أُصلحت وصار الدخول بحساب Google يعمل.'}]},
  {version:'2.2.0',date:'2026-11-03',highlights:[
