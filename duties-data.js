@@ -74,7 +74,6 @@ window.DUTY_BOOK=[
      admin:[['فهم المعارف العلمية والفنية المتعلقة بإدارة الجودة','Understanding of quality-management knowledge'],['حسن إصدار القرار','Sound decision issuing'],['القدرة على اتخاذ القرار','Decision-making ability']],
      personal:[['المرونة','Flexibility'],['الدقة','Accuracy'],['الإلمام بكل جوانب الوظيفة','Command of every aspect of the job']]},
    environment:['بيئة عمل آمنة ومستقرة وواضحة (مكتب متكامل)','Safe, stable and clear work environment (fully equipped office)'],
-   holder:'خالد حسن الطوير',
    /* the job form and the approved org chart do not list the same follow-up units */
    mismatch:['تذكر بطاقة الوظيفة وحدات (طرابلس، السرير، مصراتة، الزاوية، سبها)، بينما يضم الهيكل المعتمد مشرفين لطرابلس ومصراتة والزاوية وسبها وبنغازي وطبرق والبريقة والسرير. يُستحسن توحيدهما.',
      'The job form lists units for Tripoli, Sarir, Misrata, Zawiya and Sabha, while the approved structure has supervisors for Tripoli, Misrata, Zawiya, Sabha, Benghazi, Tobruk and Brega & Sarir. Consider aligning them.']}}

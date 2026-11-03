@@ -255,13 +255,13 @@ function viewUnit(id){const o=ORG_BY.get(id),m=META[id]||{},src=m.src,ds=dutiesO
 }
 function jobCard(j,id){const T=x=>esc(tr(x[0],x[1]));const o=ORG_BY.get(id);
   const li=a=>a.map(x=>`<li>${T(x)}</li>`).join('');
-  const same=o&&!o.vacant&&j.holder&&norm(o.head)===norm(j.holder);
+  const holder=ORG_HOLDER[id]||'';const same=o&&!o.vacant&&holder&&norm(o.head)===norm(holder);
   return `<section class="panel dt-job"><h3 class="section-title">${DI.user}${esc(tr('بطاقة الوصف الوظيفي','Job description card'))} <small>${esc(tr('من نموذج جمع معلومات الوظيفة','from the job information form'))}</small></h3>
    <div class="dt-job-top"><div class="dt-jt"><span>${esc(tr('مسمى الوظيفة','Job title'))}</span><b>${esc(tr(j.title,j.titleEn))}</b></div>
     <div class="dt-jf"><span>${esc(tr('الفئة','Grade'))}</span><b class="num">${esc(j.grade)}</b></div>
     <div class="dt-jf"><span>${esc(tr('المسؤول المباشر','Reports to'))}</span><b>${esc(tr(j.reportsTo,j.reportsToEn))}</b></div>
     <div class="dt-jf"><span>${esc(tr('موقع العمل','Location'))}</span><b>${esc(tr(j.location,j.locationEn))}</b></div>
-    ${j.holder?`<div class="dt-jf"><span>${esc(tr('شاغل الوظيفة','Job holder'))}</span><b>${esc(j.holder)}</b>${same?`<small class="ok">✓ ${esc(tr('مطابق للهيكل','matches the structure'))}</small>`:''}</div>`:''}</div>
+    ${holder?`<div class="dt-jf"><span>${esc(tr('شاغل الوظيفة','Job holder'))}</span><b>${esc(holder)}</b>${same?`<small class="ok">✓ ${esc(tr('مطابق للهيكل','matches the structure'))}</small>`:''}</div>`:''}</div>
    <div class="dt-job-grid">
     <div><h4>${esc(tr('التقسيمات التابعة للمكتب','Office structure'))}</h4><ul class="dt-tl">${j.structure.map(s=>`<li><span class="tag">${esc(tr(s[0],s[2]))}</span>${esc(tr(s[1],s[3]))}</li>`).join('')}</ul></div>
     <div><h4>${esc(tr('المسؤولية الإشرافية','Supervises'))}</h4><ul>${li(j.supervises)}</ul></div>
