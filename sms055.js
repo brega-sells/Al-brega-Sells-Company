@@ -169,13 +169,13 @@ async function saveImport(P,replace){const FS=window.__fs(),m=me();const id='b'+
   await FS.collection(COL).doc(id).set({kind:'batch',file:String(P.file||'').slice(0,200),sheet:String(P.sheet||'').slice(0,100),from:P.from,to:P.to,rows:P.rows.length,parts:chunks.length,
     value:Math.round(tot.v*100)/100,returns:Math.round(tot.rv*100)/100,createdBy:m.email,by:String(m.name||m.email||'').slice(0,120),at:new Date().toISOString()});
   let removed=0;if(replace){for(const o of overlaps(P)){await delBatch(o,true);removed++}}
-  try{await FS.collection('log').add({ts:new Date().toISOString(),user:m.email,name:m.name||'',action:'استيراد SMS055',col:COL,id,summary:`${P.file} · ${P.from} – ${P.to} · ${P.rows.length} صف`+(removed?` · استُبدل ${removed} ملف`:'')})}catch(e){}
+  try{await FS.collection('log').add({at:firebase.firestore.FieldValue.serverTimestamp(),ts:new Date().toISOString(),user:m.email,name:m.name||'',action:'استيراد SMS055',col:COL,id,summary:`${P.file} · ${P.from} – ${P.to} · ${P.rows.length} صف`+(removed?` · استُبدل ${removed} ملف`:'')})}catch(e){}
   return id}
 function overlaps(P){return SM.batches.filter(b=>!(b.to<P.from||b.from>P.to))}
 async function delBatch(b,quiet){const FS=window.__fs();const n=b.parts||0;const ops=[];for(let i=0;i<n;i++)ops.push(FS.collection(COL).doc(b.id+'_p'+i));
   for(let i=0;i<ops.length;i+=400){const bt=FS.batch();ops.slice(i,i+400).forEach(r=>bt.delete(r));await bt.commit()}
   await FS.collection(COL).doc(b.id).delete();
-  if(!quiet){const m=me();try{await FS.collection('log').add({ts:new Date().toISOString(),user:m.email,name:m.name||'',action:'حذف ملف SMS055',col:COL,id:b.id,summary:`${b.file||''} · ${b.from} – ${b.to}`})}catch(e){}}}
+  if(!quiet){const m=me();try{await FS.collection('log').add({at:firebase.firestore.FieldValue.serverTimestamp(),ts:new Date().toISOString(),user:m.email,name:m.name||'',action:'حذف ملف SMS055',col:COL,id:b.id,summary:`${b.file||''} · ${b.from} – ${b.to}`})}catch(e){}}}
 
 /* ---------- analysis ---------- */
 function UI(){return S.ui.sm||(S.ui.sm={pre:'all',from:'',to:'',prod:'',type:'',q:'',sort:'net',dir:'desc',lim:25})}

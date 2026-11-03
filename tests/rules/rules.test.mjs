@@ -37,8 +37,11 @@ await T('admin may edit own name keeping admin',A.doc('roles/admin@b.ly').set({r
 await T('admin demotes another admin',A.doc('roles/admin2@b.ly').set({role:'viewer',name:'x'}),1);
 await T('admin sets unit by merge',A.doc('roles/m@b.ly').set({unit:'e'},{merge:true}),1);
 // --- activity log: append-only, in the writer's own name
-await T('editor logs own action',W.collection('log').add({ts:'t',user:'w@b.ly',name:'n',action:'a',col:'c',id:'i',summary:'s'}),1);
-await T('editor cannot log as someone else',W.collection('log').add({ts:'t',user:'gm@b.ly',name:'n',action:'a',col:'c',id:'i',summary:'s'}),0);
+const NOW=()=>firebase.firestore.FieldValue.serverTimestamp();
+await T('editor logs own action',W.collection('log').add({at:NOW(),ts:'t',user:'w@b.ly',name:'n',action:'a',col:'c',id:'i',summary:'s'}),1);
+await T('editor cannot log as someone else',W.collection('log').add({at:NOW(),ts:'t',user:'gm@b.ly',name:'n',action:'a',col:'c',id:'i',summary:'s'}),0);
+await T('log needs server time',W.collection('log').add({ts:'t',user:'w@b.ly',name:'n',action:'a',col:'c',id:'i',summary:'s'}),0);
+await T('log time cannot be backdated',W.collection('log').add({at:new Date('2020-01-01'),ts:'t',user:'w@b.ly',name:'n',action:'a',col:'c',id:'i',summary:'s'}),0);
 await T('editor cannot edit log',W.doc('log/L1').update({action:'changed'}),0);
 await T('admin cannot delete log',A.doc('log/L1').delete(),0);
 await T('editor cannot read log',W.collection('log').get(),0);
@@ -163,8 +166,29 @@ await T('editor writes config/main denied',W.doc('config/main').set({t1:1}),0);
 await T('editor writes config/notices ok',W.doc('config/notices').set({data:{}}),1);
 await T('admin writes config/meetings',A.doc('config/meetings').set({whatsapp:{}}),1);
 await T('editor reads config',W.doc('config/main').get(),1);
-await T('editor writes contracts ok',W.doc('contracts/c1').set({no:'1'}),1);
-await T('viewer writes contracts denied',WV.doc('contracts/c1').set({no:'1'}),0);
+// --- shared collections: every write is committed together with its own activity-log entry
+const entry=(user,col,id,action)=>({at:NOW(),ts:'t',user,name:'n',action:action||'a',col,id,summary:'s'});
+const logged=(db,col,id,data,user,opts={})=>{const b=db.batch();const L=opts.L||db.collection('log').doc().id;
+  if(opts.del)b.delete(db.doc(col+'/'+id));else b.set(db.doc(col+'/'+id),Object.assign({},data,{_log:L}),opts.merge?{merge:true}:undefined);
+  if(!opts.noLog)b.set(db.doc('log/'+L),entry(opts.logUser||user,opts.logCol||col,opts.logId||id));return b.commit()};
+await T('editor writes contract with log',logged(W,'contracts','c1',{no:'1'},'w@b.ly'),1);
+await T('viewer writes contracts denied',logged(WV,'contracts','c1',{no:'1'},'wv@b.ly'),0);
+await T('write without log denied',W.doc('contracts/c2').set({no:'2'}),0);
+await T('write pointing to missing log denied',logged(W,'contracts','c2',{no:'2'},'w@b.ly',{noLog:true}),0);
+await T('write reusing an old log entry denied',W.doc('contracts/c2').set({no:'2',_log:'L1'}),0);
+await T('log entry in someone else name denied',logged(W,'contracts','c2',{no:'2'},'w@b.ly',{logUser:'gm@b.ly'}),0);
+await T('log entry for another document denied',logged(W,'contracts','c2',{no:'2'},'w@b.ly',{logId:'c9'}),0);
+await T('log entry for another collection denied',logged(W,'contracts','c2',{no:'2'},'w@b.ly',{logCol:'needs'}),0);
+await T('update with log (merge)',logged(W,'contracts','c1',{no:'1b'},'w@b.ly',{merge:true}),1);
+await T('update with bulk log denied',logged(W,'contracts','c1',{no:'1c'},'w@b.ly',{logId:'*'}),0);
+await T('bulk import creates with one shared entry',(async()=>{const b=W.batch();const L=W.collection('log').doc().id;
+  for(let i=0;i<400;i++)b.set(W.doc('needs/bulk'+i),{company:'x',_log:L});b.set(W.doc('log/'+L),entry('w@b.ly','needs','*'));await b.commit()})(),1);
+await T('delete without log denied',W.doc('contracts/c1').delete(),0);
+{ let cur;await env.withSecurityRulesDisabled(async c=>{cur=(await c.firestore().doc('contracts/c1').get()).data()._log});
+  await T('delete with wrong log id denied',logged(W,'contracts','c1',null,'w@b.ly',{del:1,L:'del-contracts-c1-nope'}),0);
+  await T('delete with derived log id',logged(W,'contracts','c1',null,'w@b.ly',{del:1,L:'del-contracts-c1-'+cur}),1); }
+await env.withSecurityRulesDisabled(async c=>{await c.firestore().doc('tickets/legacy').set({no:'old'})});
+await T('legacy doc deleted with x log id',logged(W,'tickets','legacy',null,'w@b.ly',{del:1,L:'del-tickets-legacy-x'}),1);
 await T('editor writes unknown collection denied',W.doc('secrets/s1').set({a:1}),0);
 // --- meetings
 await T('gm creates meeting',G.collection('meetings').add({title:'m',units:['gm','w'],organizer:'gm',createdBy:'gm@b.ly',status:'open'}),1);

@@ -160,7 +160,7 @@ function notifyHTML(m,fresh){
     <p class="muted" style="font-size:12.5px;margin:10px 0 4px">${tr('ولمن لا يفتح المنظومة باستمرار، أرسل لهم الرسالة الجاهزة:','For those who do not open the system often, send them the ready message:')}</p>${wa}${mail}</div>`;
 }
 function safeUrl(u){u=(u||'').trim();return /^https:\/\/[^\s"'<>]+$/i.test(u)?u:''}
-async function logM(action,id,summary){try{if(canWrite())await FS().collection('log').add({ts:nowISO(),user:me().email,name:me().name||'',action,col:'meetings',id,summary:summary||''})}catch(e){}}
+async function logM(action,id,summary){try{if(canWrite())await FS().collection('log').add({at:firebase.firestore.FieldValue.serverTimestamp(),ts:nowISO(),user:me().email,name:me().name||'',action,col:'meetings',id,summary:summary||''})}catch(e){}}
 function errMsg(e){return e&&e.code==='permission-denied'?tr('لا تملك صلاحية هذا الإجراء على الاجتماع','You do not have permission for this action'):((e&&e.message)||tr('تعذّر الحفظ','Could not save'))}
 
 /* ---------- live data ---------- */
