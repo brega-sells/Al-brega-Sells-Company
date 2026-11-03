@@ -187,7 +187,16 @@ service cloud.firestore {
     // الإعدادات: يغيّرها مدير النظام، عدا آلية إشعارات البيع التي يحررها المحررون
     match /config/{doc} {
       allow read: if hasRole();
-      allow write: if isAdmin() || (canWrite() && doc == 'notices');
+      allow write: if doc != 'orgPeople' && (isAdmin() || (canWrite() && doc == 'notices'));
+    }
+    // أسماء المسؤولين وأرقامهم الوظيفية في الهيكل: خارج كود الموقع العام، يقرؤها من له دور ويستوردها مدير النظام
+    match /config/orgPeople {
+      function okPeople(d) { return d.keys().hasOnly(['v', 'people', 'holder', 'updatedAt', 'by'])
+        && d.people is map && d.people.size() <= 400
+        && d.get('holder', {}) is map && d.get('holder', {}).size() <= 50
+        && d.by == me() && str(d, 'updatedAt', 40); }
+      allow write: if isAdmin() && request.resource != null && okPeople(request.resource.data);
+      allow delete: if isAdmin();
     }
     // السجلات المشتركة: كل كتابة تُحفظ في الدفعة نفسها مع قيد جديد في سجل النشاط باسم الكاتب، وإلا رُفضت.
     // _log في الوثيقة رقم القيد. القيد يخص الوثيقة نفسها، أو يكون استيرادًا جماعيًا (id = '*') للمجموعة نفسها.

@@ -166,6 +166,21 @@ await T('editor writes config/main denied',W.doc('config/main').set({t1:1}),0);
 await T('editor writes config/notices ok',W.doc('config/notices').set({data:{}}),1);
 await T('admin writes config/meetings',A.doc('config/meetings').set({whatsapp:{}}),1);
 await T('editor reads config',W.doc('config/main').get(),1);
+// --- config/orgPeople: names and staff numbers live behind sign-in, not in the public code
+{const SX=as('stranger@b.ly');const op=(o)=>Object.assign({v:1,people:{gm:{head:'n',empNo:'1'}},holder:{},updatedAt:'2026-11-03T00:00:00Z',by:'admin@b.ly'},o||{});
+ await T('admin imports org people',A.doc('config/orgPeople').set(op()),1);
+ await T('editor reads org people',W.doc('config/orgPeople').get(),1);
+ await T('viewer reads org people',WV.doc('config/orgPeople').get(),1);
+ await T('signed-in user without a role cannot read org people',SX.doc('config/orgPeople').get(),0);
+ await T('anonymous cannot read org people',ANON.doc('config/orgPeople').get(),0);
+ await T('unverified cannot read org people',UNV.doc('config/orgPeople').get(),0);
+ await T('editor cannot write org people',W.doc('config/orgPeople').set(op({by:'w@b.ly'})),0);
+ await T('org people: by must be the writer',A.doc('config/orgPeople').set(op({by:'w@b.ly'})),0);
+ await T('org people: extra field denied',A.doc('config/orgPeople').set(op({x:1})),0);
+ await T('org people: people must be a map',A.doc('config/orgPeople').set(op({people:'x'})),0);
+ await T('org people: size cap',A.doc('config/orgPeople').set(op({people:Object.fromEntries(Array.from({length:401},(_,i)=>['u'+i,{head:'h'}]))})),0);
+ await T('editor cannot delete org people',W.doc('config/orgPeople').delete(),0);
+ await T('admin deletes org people',A.doc('config/orgPeople').delete(),1);}
 // --- shared collections: every write is committed together with its own activity-log entry
 const entry=(user,col,id,action)=>({at:NOW(),ts:'t',user,name:'n',action:action||'a',col,id,summary:'s'});
 const logged=(db,col,id,data,user,opts={})=>{const b=db.batch();const L=opts.L||db.collection('log').doc().id;
