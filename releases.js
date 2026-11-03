@@ -2,6 +2,9 @@
    Newest first. type: جديد | تحسين | إصلاح | أمان. roles: which roles see the highlight (empty = everyone). */
 "use strict";
 window.RELEASES=[
+ {version:'2.14.0',date:'2026-11-03',highlights:[
+   {type:'جديد',title:'تصدير واستيراد Power BI',desc:'بجانب كل زر Excel زر Power BI: يعرض الجداول وأنواع أعمدتها ثم ينزّل حزمة جاهزة (ملفات CSV واستعلام Power Query وخطوات الفتح). وبجانب الاستيراد من Excel زر لاستيراد ما صدّرته من Power BI بصيغة xlsx أو csv.'}
+ ]},
  {version:'2.13.1',date:'2026-11-03',highlights:[
    {type:'تحسين',title:'تنظيم داخلي للشيفرة',desc:'قُسّمت شيفرة المنظومة إلى ملفات حسب الشاشة لتسهيل التطوير والصيانة. لا تغيير في الاستخدام.',roles:['admin']}
  ]},
