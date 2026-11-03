@@ -5,7 +5,7 @@
   "scripts": {
     "rules": "cp ../firestore.rules ./firestore.rules && firebase emulators:exec --only firestore --project demo-brega \"node rules/rules.test.mjs\"",
     "serve": "python3 -m http.server 8765 --bind 127.0.0.1 --directory ..",
-    "browser": "node browser/xss.js && ROLE=w node browser/xss.js && node browser/auth.js && node browser/pwa.js && node browser/palette.js && node browser/govern.js"
+    "browser": "node browser/xss.js && ROLE=w node browser/xss.js && node browser/auth.js && node browser/pwa.js && node browser/palette.js && node browser/govern.js && node browser/polish.js"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^3.0.4",

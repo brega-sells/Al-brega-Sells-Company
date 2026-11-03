@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:wght@700&family=Noto+Sans+Arabic:wght@700&display=swap" media="print" onload="this.media='all'">
 </head>
 <body>
+<a class="skip-link" href="#view">تخطَّ إلى المحتوى</a>
 <noscript><div style="font-family:sans-serif;padding:24px;text-align:center;direction:rtl">هذه المنظومة تحتاج تفعيل JavaScript في المتصفح. فعّله ثم أعد تحميل الصفحة.</div></noscript>
 <script>if(window.top!==window.self){try{window.top.location=window.self.location}catch(e){document.documentElement.hidden=true}}</script>
 <script src="vendor/firebase/firebase-app-compat.js" integrity="sha384-ZaR6mWzmJtrRibZ1Vm7SoHFr8OXjyAuGAXalGDKqbxFT18oi/z+oZLIRFkpeNor1" crossorigin="anonymous"></script>
@@ -177,6 +178,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--side)}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.skip-link{position:absolute;inset-inline-start:8px;top:-60px;z-index:100;background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;font-weight:700}.skip-link:focus{top:8px}
 .num,td.n,.tab{font-variant-numeric:tabular-nums}
 .app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100%}
 /* sidebar */
@@ -609,14 +611,13 @@ legend{font-family:var(--f-display);font-weight:600;font-size:13.5px;padding-inl
         <button class="iconbtn" id="theme-btn" title="تبديل المظهر" aria-label="تبديل المظهر"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
       </div>
     </header>
-    <main class="content" id="view"></main>
+    <main class="content" id="view" tabindex="-1"></main>
   </div>
 </div>
 <div id="drawer-root"></div>
 <dialog id="dlg"></dialog>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script type="application/json" id="seed-data">{}</script>
 <script type="application/json" id="articles-data">{"diesel":[{"n":1,"title":"حكم التمهيد","summary":"التمهيد جزء لا يتجزأ من العقد ويأخذ كافة أحكامه."},{"n":2,"title":"التزامات الطرف الأول","summary":"تزويد الطرف الثاني بالديزل حسب الكمية الشهرية المحددة من لجنة تحديد الاحتياجات، ولا زيادة إلا بموافقة وإعادة تقدير؛ وتسجيله في منظومة المبيعات ومنحه رمزاً ورابطاً إلكترونياً للحجز."},{"n":3,"title":"التزامات الطرف الثاني","summary":"توفير المستندات، الالتزام بالأمن والسلامة والبيئة، شهادة السلامة الوطنية لمكان التفريغ، تحمل مسؤولية الشحنة بعد خروجها، مستندات النقل الخاص، مندوب للاستلام، مندوبان ليبيان مخولان، وضوابط طلبات الشراء."},{"n":4,"title":"طريقة الدفع","summary":"دفع مسبق بصكوك مصدقة أو حوالات مباشرة لحسابات الشركة، مع تحمل مصاريف النقل وفق قرارات وزارة الاقتصاد."},{"n":5,"title":"وقف التزويد","summary":"للطرف الأول وقف التزويد عند الإخلال أو عدم تجديد المستندات خلال عشرة أيام أو عدم استيفاء شروط التزويد بالموقع."},{"n":6,"title":"صحة المستندات","summary":"يقر الطرف الثاني بصحة مستنداته وعدم تعاقده مع شركات توزيع وقود أخرى وخلوه من الالتزامات."},{"n":7,"title":"مدة العقد","summary":"سنة واحدة قابلة للتمديد بكتاب سنوي، مع إخطار بعدم الرغبة قبل شهرين، ويُعدل العقد وفق التشريعات المستحدثة."},{"n":8,"title":"التنازل عن العقد","summary":"لا يجوز للطرف الثاني التنازل عن العقد كلياً أو جزئياً وإلا أُلغي دون إجراء قضائي."},{"n":9,"title":"حالات إلغاء العقد","summary":"حق الطرف الأول في الإنهاء عند سوء الاستخدام أو التهريب أو زوال السبب أو التأخر أو الغش أو زوال الأهلية أو انقضاء الشركة، بخطاب مسجل."},{"n":10,"title":"تسجيل العقد لدى مصلحة الضرائب","summary":"اعتماد العقد لدى مصلحة الضرائب وسداد الرسوم خلال 15 يوماً من التوقيع وتحمل الغرامات والضرائب."},{"n":11,"title":"القوة القاهرة","summary":"توقف الالتزامات خلال القوة القاهرة، ويجوز الإنهاء إذا استحال التنفيذ."},{"n":12,"title":"لغة العقد","summary":"اللغة العربية لغة العقد وملاحقه ومراسلاته وفواتيره."},{"n":13,"title":"سريان القانون الليبي واختصاص القضاء الليبي","summary":"القانون الليبي هو الحاكم والمحاكم الليبية (محكمة موطن الطرف الأول) مختصة بعد استنفاد الطرق الودية."},{"n":14,"title":"عناوين طرفي العقد","summary":"الإخطارات صحيحة على العناوين المبينة بالديباجة، ولا تغيير إلا بإخطار كتابي."},{"n":15,"title":"نسخ العقد","summary":"حرر من 5 نسخ تسلم للطرف الثاني للتصديق عليها من مصلحة الضرائب وإرجاعها للطرف الأول."}],"lpg":[{"n":1,"title":"(بلا عنوان) حكم التمهيد","summary":"التمهيد جزء لا يتجزأ من العقد."},{"n":2,"title":"(بلا عنوان) التزام الطرف الأول بالتزويد","summary":"تزويد الطرف الثاني بالغاز المسال بالكمية الشهرية المحددة بنموذج الزيارة الميدانية، ولا زيادة إلا بموافقة وإعادة تقدير."},{"n":3,"title":"(بلا عنوان) التزامات الطرف الثاني","summary":"توفير المستندات واتباع شروط التزويد والسعة التخزينية والسلامة، وتسجيل الجهة في منظومة المبيعات ومنحها رابط حجز."},{"n":4,"title":"(بلا عنوان) طريقة الدفع","summary":"دفع مسبق بالأسعار المحددة، صكوك مصدقة أو حوالات، ومصاريف النقل وفق قرار وزير الاقتصاد 19/2018 مع رسوم التشغيل والمناولة."},{"n":5,"title":"(بلا عنوان) المندوبون وطلبات الشراء","summary":"تكليف مندوبين ليبيين وضوابط طلب الشراء (موقع ومختوم، خلال الدوام، ضمن الكمية، لا عطلات ولا هاتف)."},{"n":6,"title":"غير متوفر","summary":"الصفحة 3 مفقودة."},{"n":7,"title":"غير متوفر","summary":"الصفحة 3 مفقودة."},{"n":8,"title":"غير متوفر","summary":"الصفحة 3 مفقودة."},{"n":9,"title":"(بلا عنوان) تسجيل العقد لدى مصلحة الضرائب","summary":"تسجيل العقد خلال 15 يوماً من التوقيع وتحمل الضرائب والغرامات وتقديم ما يثبت السداد."},{"n":10,"title":"(بلا عنوان) القوة القاهرة","summary":"توقف الالتزامات وجواز الإنهاء عند الاستحالة."},{"n":11,"title":"(بلا عنوان) لغة العقد","summary":"اللغة العربية."},{"n":12,"title":"(بلا عنوان) القانون والاختصاص","summary":"القانون الليبي والمحاكم الليبية ومحكمة موطن الطرف الأول."},{"n":13,"title":"(بلا عنوان) العناوين","summary":"الإخطارات على العناوين بالديباجة ولا تغيير إلا بإخطار كتابي."},{"n":14,"title":"(بلا عنوان) نسخ العقد","summary":"حرر من 4 نسخ للتصديق عليها من مصلحة الضرائب."}]}</script>
 <script>
 /* ===== Firebase adapter: shared data in Firestore, sign-in with Firebase Authentication ===== */
@@ -660,7 +661,7 @@ const user={can:async()=>!!ME&&ME.role!=='viewer',canEdit:async()=>!!ME&&ME.role
 const downloads={save:async({filename,data})=>{const blob=data instanceof Blob?data:new Blob([data]);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},2000);return {status:'saved'}}};
 window.appRuntime={use:async n=>{await ready;return {db,user,downloads}[n]||null}};
 window.__me=()=>ME;window.__fs=()=>FS;window.__auth=()=>AUTH;
-window.__seedIfEmpty=async function(){const seedEl=document.getElementById('seed-data');if(!seedEl)return 0;const s=JSON.parse(seedEl.textContent);let n=0;let batch=FS.batch(),k=0;
+window.__seedIfEmpty=async function(){const r=await fetch('data/seed.json',{cache:'no-store'});if(!r.ok)throw new Error('تعذّر تحميل ملف البيانات الأولية');const s=await r.json();let n=0;let batch=FS.batch(),k=0;
   for(const col of Object.keys(s)){for(const o of s[col]){const d=Object.assign({},o);const id=d.id;delete d.id;batch.set(FS.collection(col).doc(id),d);n++;k++;if(k>=400){await batch.commit();batch=FS.batch();k=0}}}
   if(k)await batch.commit();await logAct('استيراد','','','تحميل البيانات الأولية: '+n+' سجل');return n};
 function authErr(e){const m={'auth/invalid-email':'البريد الإلكتروني غير صحيح','auth/user-not-found':'لا يوجد حساب بهذا البريد','auth/wrong-password':'كلمة المرور غير صحيحة','auth/invalid-credential':'البريد أو كلمة المرور غير صحيحة','auth/invalid-login-credentials':'البريد أو كلمة المرور غير صحيحة','auth/email-already-in-use':'هذا البريد مسجّل مسبقًا، سجّل الدخول','auth/weak-password':'كلمة المرور ضعيفة (6 أحرف على الأقل)','auth/too-many-requests':'محاولات كثيرة، انتظر قليلًا','auth/network-request-failed':'تعذّر الاتصال بالإنترنت','auth/unauthorized-domain':'هذا النطاق غير مُصرّح به في إعدادات Firebase (Authorized domains)','auth/operation-not-allowed':'تسجيل الدخول بالبريد غير مفعّل في Firebase'};return m[e.code]||(e.message||'حدث خطأ')}
@@ -2507,7 +2508,7 @@ const rerender=debounce(()=>{renderNav();const ae=document.activeElement;const k
   let f2=true;db.doc('config/main').onSnapshot(snap=>{if(snap.exists)S.settings=Object.assign({},S.settings,snap.data());if(f2){f2=false;done()}rerender()},()=>{if(f2){f2=false;done()}});
   setTimeout(()=>{if(S.dbState==='wait')setConn('ready')},8000);
 })();
-function setConn(s){S.dbState=s;const d=document.getElementById('conn-dot'),t=document.getElementById('conn-txt');
+function setConn(s,ok){if(ok===true)s='ready';S.dbState=s;if(s==='ready')S.loadedOnce=true;const d=document.getElementById('conn-dot'),t=document.getElementById('conn-txt');
   if(s==='ready'){d.className='dot on';t.textContent='متصل · الحفظ تلقائي ومشترك'}else if(s==='none'){d.className='dot off';t.textContent='غير متصل بقاعدة البيانات'}render()}
 document.getElementById('theme-btn').addEventListener('click',()=>{const r=document.documentElement;const cur=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const nx=cur==='dark'?'light':'dark';r.dataset.theme=nx;try{localStorage.setItem('cm_theme',nx)}catch(e){}});
 async function loadArticles(){try{const r=await fetch('articles.json');if(r.ok){const j=await r.json();Object.assign(ARTICLES,j)}}catch(e){}}
@@ -2637,11 +2638,10 @@ loadArticles=async function(){};
 dbBanner=function(){
   const me=window.__me();
   if(S.dbState==='wait')return `<div class="banner info">جارٍ تحميل البيانات…</div>`;
-  if(me&&me.role==='admin'&&S.loadedOnce&&!S.contracts.length&&!S.needs.length&&document.getElementById('seed-data'))return `<div class="banner info">قاعدة البيانات فارغة. <button class="btn primary sm" data-act="seed-now" style="margin-inline-start:8px">تحميل البيانات الأولية (39 عقدًا و393 منشأة)</button></div>`;
+  if(me&&me.role==='admin'&&S.loadedOnce&&!S.contracts.length&&!S.needs.length)return `<div class="banner info">قاعدة البيانات فارغة. <button class="btn primary sm" data-act="seed-now" style="margin-inline-start:8px">تحميل البيانات الأولية (39 عقدًا و393 منشأة)</button></div>`;
   if(!S.canWrite)return `<div class="banner info">حسابك بصلاحية «مشاهد»: يمكنك البحث والاطلاع والتصدير. لطلب صلاحية التعديل تواصل مع مدير النظام.</div>`;
   return '';
 };
-const __setConn=setConn;setConn=function(s){if(s==='ready')S.loadedOnce=true;__setConn(s)};
 const __vs=viewSettings;
 viewSettings=function(){const me=window.__me()||{};const admin=me.role==='admin';
   return __vs()+`<div class="grid2"><div class="panel"><h3 class="section-title">حسابي <small dir="ltr">${esc(me.email||'')}</small> <small>· ${esc(window.__roleAr[me.role]||'')}</small></h3>
