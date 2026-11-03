@@ -26,7 +26,7 @@ const data = {
   const hits = []; const popups = []; let nChecks=0, nPrints=0, nRows=0;
   const { browser, page, errors } = await open({ user: { email: ME, displayName: 'U' }, data, onPopup: async p => { try { await p.waitForLoadState(); const r = await p.evaluate(() => ({ x: window.__xss || 0, n: document.querySelectorAll('img[src="x"]').length, tags: [...document.querySelectorAll('img[src="x"]')].map(i => i.dataset.p) })); popups.push(r); } catch (e) {} finally { try { await p.close(); } catch (e) {} } } });
   const check = async (where) => { nChecks++; const r = await page.evaluate(() => ({ x: window.__xss || 0, n: document.querySelectorAll('img[src="x"]').length, tags: [...document.querySelectorAll('img[src="x"]')].map(i => i.dataset.p) })); if (r.n || r.x) hits.push({ where, ...r }); };
-  const views = ['dash', 'ana', 'cs', 'contracts', 'ext', 'needs', 'batches', 'dir', 'org', 'settings', 'meetings', 'duties'];
+  const views = ['home', 'dash', 'ana', 'cs', 'contracts', 'ext', 'needs', 'batches', 'dir', 'org', 'settings', 'meetings', 'duties'];
   const ROWS='#view tbody tr, #view .mt-card, #view [data-dt-open], #view [data-dt-unit], #view [data-org-go], #view [data-org-focus], #view .dt-card, #view .xd-card';
   const PRINTS='#view [data-act*="print"],#view [data-act*="pdf"],#view [data-mt="print"],#view [data-dt-act="print-unit"],#view [data-dt-k="print-unit"],#view button:has-text("PDF")';
   const walk = async (v, label) => {
