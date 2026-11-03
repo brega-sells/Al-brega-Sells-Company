@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const files = fs.readdirSync(root).filter(f => f.endsWith('.js') && !['firebase.js', 'extras-cloud.js'].includes(f));
+const files = fs.readdirSync(root).filter(f => f.endsWith('.js'));
 let bad = 0;
 const check = (name, src) => { try { new Function(src); console.log('ok   ', name); } catch (e) { bad++; console.log('ERROR', name, '→', e.message); } };
 for (const f of files) check(f, fs.readFileSync(path.join(root, f), 'utf8'));
