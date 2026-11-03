@@ -108,6 +108,14 @@ function renderNav(){
   document.getElementById('nav').innerHTML=h;updBack();
   document.getElementById('mnav').innerHTML=VIEWS.filter(v=>v.nav!==false).map(v=>`<button data-v="${v.id}" aria-current="${S.view===v.id}">${esc(v.label)}</button>`).join('');
 }
+/* عرض الجداول الطويلة على دفعات: أول 100 صف، ثم «عرض المزيد». الإجماليات والتصدير تبقى على كل الصفوف.
+   يعود العدّاد إلى 100 كلما تغيّر عدد النتائج (بحث أو تصفية). */
+const PAGE=100;
+function pg(key,rows){const P=S.ui.pg||(S.ui.pg={}),k=P[key];if(!k||k.len!==rows.length)P[key]={len:rows.length,n:PAGE};return rows.slice(0,P[key].n)}
+function pgMore(key,rows){const k=(S.ui.pg||{})[key];const n=k?k.n:PAGE;if(rows.length<=n)return '';
+  return `<div class="pg-more"><button type="button" class="btn sm" data-pg="${key}">عرض المزيد (${Math.min(PAGE,rows.length-n)})</button><button type="button" class="btn sm ghost" data-pg-all="${key}">عرض الكل (${rows.length})</button><span class="muted">${n} / ${rows.length}</span></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pg],[data-pg-all]');if(!b)return;const key=b.dataset.pg||b.dataset.pgAll,k=(S.ui.pg||{})[key];if(!k)return;
+  k.n=b.dataset.pgAll?k.len:k.n+PAGE;const y=window.scrollY;render();window.scrollTo(0,y)});
 function go(v,opts,fromHistory){const prev=S.view;S.view=v;if(opts)Object.assign(S.ui,opts);try{localStorage.setItem('cm_view',v)}catch(e){}
   if(!fromHistory&&v!==prev)try{history.pushState({v,d:((history.state&&history.state.d)||0)+1},'')}catch(e){}
   renderNav();render();window.scrollTo(0,0)}

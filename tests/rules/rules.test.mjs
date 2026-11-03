@@ -268,4 +268,22 @@ await T('editor writes access-review denied',W.doc('config/access-review').set({
  await T('ca viewer cannot delete',CAV.doc('sms055/B1').delete(),0);
  await T('ca editor deletes a file',CA.doc('sms055/B1_p0').delete(),1);
  await T('admin deletes a file',A.doc('sms055/B4').delete(),1);}
+// --- config/security: admins must sign in with Google once enforced (2-step via Google, no paid plan)
+{const AG=as('admin@b.ly',{firebase:{sign_in_provider:'google.com'}}),AP=as('admin@b.ly',{firebase:{sign_in_provider:'password'}});
+ const sec=(v,by)=>({adminGoogle:v,by:by||'admin@b.ly',at:'2026-11-04T00:00:00Z'});
+ await T('password admin cannot enforce google-only (lock-out guard)',AP.doc('config/security').set(sec(true)),0);
+ await T('editor cannot write security',W.doc('config/security').set(sec(false,'w@b.ly')),0);
+ await T('security: extra field denied',AG.doc('config/security').set({...sec(true),x:1}),0);
+ await T('google admin enforces google-only',AG.doc('config/security').set(sec(true)),1);
+ await T('enforced: password admin cannot grant roles',AP.doc('roles/z@b.ly').set({role:'viewer'}),0);
+ await T('enforced: password admin cannot read the log',AP.collection('log').get(),0);
+ await T('enforced: password admin cannot write config',AP.doc('config/main').set({t1:1}),0);
+ await T('enforced: password admin still reads own role',AP.doc('roles/admin@b.ly').get(),1);
+ await T('enforced: password admin still reads config',AP.doc('config/main').get(),1);
+ await T('enforced: google admin grants roles',AG.doc('roles/z@b.ly').set({role:'viewer'}),1);
+ await T('enforced: google admin reads the log',AG.collection('log').get(),1);
+ await T('enforced: editor unaffected',W.doc('config/notices').set({data:{}}),1);
+ await T('password admin cannot switch it off',AP.doc('config/security').set(sec(false)),0);
+ await T('google admin switches it off',AG.doc('config/security').set(sec(false)),1);
+ await T('off: password admin grants roles again',AP.doc('roles/z2@b.ly').set({role:'viewer'}),1);}
 console.log(`PASS ${pass} FAIL ${fail}`);await env.cleanup();process.exit(fail?1:0);

@@ -7,8 +7,13 @@ service cloud.firestore {
     function rolePath() { return /databases/$(database)/documents/roles/$(me()); }
     function hasRole() { return signedIn() && exists(rolePath()); }
     function role() { return get(rolePath()).data.role; }
-    function isAdmin() { return hasRole() && role() == 'admin'; }
-    function canWrite() { return hasRole() && role() in ['admin', 'editor']; }
+    // التحقق بخطوتين دون خطة مدفوعة: إن فعّل مدير النظام config/security.adminGoogle فلا تعمل صلاحية المدير
+    // إلا لمن دخل في هذه الجلسة بحساب Google (الذي يحمل التحقق بخطوتين من Google). الدخول بكلمة المرور يبقى للأدوار الأخرى.
+    function secPath() { return /databases/$(database)/documents/config/security; }
+    function strongAdmin() { return !exists(secPath()) || get(secPath()).data.get('adminGoogle', false) != true
+      || request.auth.token.firebase.sign_in_provider == 'google.com'; }
+    function isAdmin() { return hasRole() && role() == 'admin' && strongAdmin(); }
+    function canWrite() { return hasRole() && (role() == 'editor' || isAdmin()); }
     // الإدارة التي ينتمي إليها المستخدم (يحددها مدير النظام من صفحة الاجتماعات أو التخويلات)
     function myUnit() { return get(rolePath()).data.get('unit', ''); }
     function top() { return isAdmin() || (hasRole() && myUnit() in ['gm', 'board']); }
@@ -187,9 +192,16 @@ service cloud.firestore {
     // الإعدادات: يغيّرها مدير النظام، عدا آلية إشعارات البيع التي يحررها المحررون
     match /config/{doc} {
       allow read: if hasRole();
-      allow write: if doc != 'orgPeople' && (isAdmin() || (canWrite() && doc == 'notices'));
+      allow write: if !(doc in ['orgPeople', 'security']) && (isAdmin() || (canWrite() && doc == 'notices'));
     }
     // أسماء المسؤولين وأرقامهم الوظيفية في الهيكل: خارج كود الموقع العام، يقرؤها من له دور ويستوردها مدير النظام
+    // فرض دخول المديرين بحساب Google: لا يُفعَّل إلا من جلسة Google (حتى لا يُقفل المدير نفسه خارج النظام)
+    match /config/security {
+      allow write: if isAdmin() && request.resource != null
+        && request.resource.data.keys().hasOnly(['adminGoogle', 'by', 'at'])
+        && request.resource.data.adminGoogle is bool && request.resource.data.by == me() && str(request.resource.data, 'at', 40)
+        && (request.resource.data.adminGoogle == false || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
     match /config/orgPeople {
       function okPeople(d) { return d.keys().hasOnly(['v', 'people', 'holder', 'updatedAt', 'by'])
         && d.people is map && d.people.size() <= 400

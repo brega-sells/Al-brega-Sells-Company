@@ -107,7 +107,8 @@ window.__safeSignOut=function(){const sy=window.__sync,n=sy?sy.count():0;
 let lastAuthAt=0;
 window.__reauth=function(reason,force){const u=AUTH.currentUser;if(!u)return Promise.resolve(false);if(!force&&Date.now()-lastAuthAt<5*60*1000)return Promise.resolve(true);
   const hasPw=(u.providerData||[]).some(p=>p&&p.providerId==='password');
-  if(!hasPw&&(u.providerData||[]).some(p=>p&&p.providerId==='google.com'))return u.reauthenticateWithPopup(googleProvider()).then(()=>{lastAuthAt=Date.now();return true}).catch(err=>{if(err&&err.code!=='auth/popup-closed-by-user')toast(authErr(err));return false});
+  /* إن فُرض دخول المديرين بحساب Google فإعادة التحقق بكلمة المرور تُسقط صلاحية المدير: نستعمل Google */
+  if((!hasPw||window.__adminGoogle)&&(u.providerData||[]).some(p=>p&&p.providerId==='google.com'))return u.reauthenticateWithPopup(googleProvider()).then(()=>{lastAuthAt=Date.now();return true}).catch(err=>{if(err&&err.code!=='auth/popup-closed-by-user')toast(authErr(err));return false});
   return new Promise(res=>{let d=document.getElementById('reauth');if(!d){d=document.createElement('dialog');d.id='reauth';document.body.appendChild(d)}
     d.innerHTML=`<form method="dialog" class="lg-card" style="width:min(380px,92vw);margin:0" novalidate><h3 style="margin:0">تأكيد الهوية</h3><p class="muted" style="margin:0;font-size:13px">${hx(reason||'هذا إجراء حساس، أدخل كلمة المرور للمتابعة.')}</p><div class="field"><label for="ra-p">كلمة المرور</label><input id="ra-p" type="password" autocomplete="current-password" dir="ltr"></div><div class="lg-msg" role="alert"></div><div style="display:flex;gap:8px"><button class="btn primary" type="submit" value="ok">متابعة</button><button class="btn ghost" type="button" id="ra-x">إلغاء</button></div></form>`;
     const f=d.querySelector('form'),m=d.querySelector('.lg-msg');let done=false;const fin=v=>{if(done)return;done=true;try{d.close()}catch(e){}res(v)};
