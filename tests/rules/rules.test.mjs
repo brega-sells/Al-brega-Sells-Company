@@ -1,16 +1,74 @@
 import {initializeTestEnvironment,assertSucceeds,assertFails} from '@firebase/rules-unit-testing';
 import fs from 'fs';
 const env=await initializeTestEnvironment({projectId:'demo-brega',firestore:{rules:fs.readFileSync(new URL('../../firestore.rules',import.meta.url),'utf8'),host:'127.0.0.1',port:8085}});
-const roles={'admin@b.ly':{role:'admin'},'gm@b.ly':{role:'editor',unit:'gm'},'w@b.ly':{role:'editor',unit:'w'},'e@b.ly':{role:'editor',unit:'e'},'wv@b.ly':{role:'viewer',unit:'w'},'board@b.ly':{role:'viewer',unit:'board'},'nounit@b.ly':{role:'editor'}};
+const roles={'admin@b.ly':{role:'admin'},'admin2@b.ly':{role:'admin',name:'x'},'gm@b.ly':{role:'editor',unit:'gm'},'w@b.ly':{role:'editor',unit:'w'},'w2@b.ly':{role:'editor',unit:'w'},'e@b.ly':{role:'editor',unit:'e'},'wv@b.ly':{role:'viewer',unit:'w'},'board@b.ly':{role:'viewer',unit:'board'},'nounit@b.ly':{role:'editor'},'unv@b.ly':{role:'admin'},'m@b.ly':{role:'viewer'}};
 await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();for(const[k,v]of Object.entries(roles))await db.doc('roles/'+k).set(v);
  const base={title:'x',status:'new',progress:0,log:[{a:1}],createdBy:'gm@b.ly',fromUnit:'gm',toUnit:'w'};
  await db.doc('assignments/A1').set(base);await db.doc('assignments/A2').set({...base,toUnit:'e'});await db.doc('assignments/A3').set({...base,fromUnit:'w',toUnit:'w',createdBy:'w@b.ly'});
- await db.doc('config/main').set({t1:90});await db.doc('duties/w').set({items:[]});});
-const as=e=>env.authenticatedContext(e.replace(/[^a-z]/g,''),{email:e}).firestore();
-let pass=0,fail=0;const T=async(name,p,ok)=>{try{await (ok?assertSucceeds(p):assertFails(p));pass++}catch(e){fail++;console.log('FAIL',name,e.message)}};
+ await db.doc('config/main').set({t1:90});await db.doc('duties/w').set({items:[]});
+ await db.doc('records/R1').set({unit:'w',title:'r',createdBy:'w@b.ly'});await db.doc('records/R2').set({unit:'e',title:'r',createdBy:'e@b.ly'});await db.doc('records/R3').set({unit:'w',title:'old'});
+ await db.doc('files/F1').set({name:'a.pdf',n:1,byEmail:'w@b.ly'});await db.doc('files/F1_0').set({d:'x'});await db.doc('files/F2').set({name:'b.pdf',n:1,byEmail:'e@b.ly'});await db.doc('files/F2_0').set({d:'x'});await db.doc('files/ORPHAN_0').set({d:'x'});
+ await db.doc('log/L1').set({ts:'t',user:'w@b.ly',action:'a'});});
+const as=(e,o)=>env.authenticatedContext(e.replace(/[^a-z0-9]/g,''),Object.assign({email:e,email_verified:true},o||{})).firestore();
+let pass=0,fail=0;const T=async(name,p,ok)=>{try{await (ok?assertSucceeds(p):assertFails(p));pass++}catch(e){fail++;console.log('FAIL',name,e.message.slice(0,160))}};
 const nw=(o)=>Object.assign({title:'t',status:'new',progress:0,log:[{a:1}]},o);
-const W=as('w@b.ly'),E=as('e@b.ly'),G=as('gm@b.ly'),A=as('admin@b.ly'),WV=as('wv@b.ly'),B=as('board@b.ly'),N=as('nounit@b.ly');
-// reads
+const W=as('w@b.ly'),W2=as('w2@b.ly'),E=as('e@b.ly'),G=as('gm@b.ly'),A=as('admin@b.ly'),WV=as('wv@b.ly'),B=as('board@b.ly'),N=as('nounit@b.ly');
+const UNV=as('unv@b.ly',{email_verified:false}),NOEMAIL=env.authenticatedContext('anon').firestore(),ANON=env.unauthenticatedContext().firestore();
+// --- identity: unverified e-mail and anonymous users get nothing, even with an admin role document
+await T('unverified admin cannot read own role',UNV.doc('roles/unv@b.ly').get(),0);
+await T('unverified admin cannot read contracts',UNV.collection('contracts').get(),0);
+await T('unverified admin cannot write roles',UNV.doc('roles/x@b.ly').set({role:'admin'}),0);
+await T('token without email denied',NOEMAIL.collection('contracts').get(),0);
+await T('anonymous denied',ANON.collection('contracts').get(),0);
+// --- roles: self-service escalation and admin lock-out are impossible
+await T('user reads own role',W.doc('roles/w@b.ly').get(),1);
+await T('user cannot read others role',W.doc('roles/e@b.ly').get(),0);
+await T('editor cannot grant self admin',W.doc('roles/w@b.ly').set({role:'admin'}),0);
+await T('editor cannot create a role',W.doc('roles/new@b.ly').set({role:'editor'}),0);
+await T('admin grants editor',A.doc('roles/new@b.ly').set({role:'editor',name:'n',unit:'w'}),1);
+await T('admin unknown role value denied',A.doc('roles/new2@b.ly').set({role:'superuser'}),0);
+await T('admin extra field denied',A.doc('roles/new3@b.ly').set({role:'editor',isOwner:true}),0);
+await T('admin oversized name denied',A.doc('roles/new4@b.ly').set({role:'editor',name:'x'.repeat(121)}),0);
+await T('admin cannot demote self',A.doc('roles/admin@b.ly').set({role:'viewer'}),0);
+await T('admin cannot delete self',A.doc('roles/admin@b.ly').delete(),0);
+await T('admin may edit own name keeping admin',A.doc('roles/admin@b.ly').set({role:'admin',name:'me'}),1);
+await T('admin demotes another admin',A.doc('roles/admin2@b.ly').set({role:'viewer',name:'x'}),1);
+await T('admin sets unit by merge',A.doc('roles/m@b.ly').set({unit:'e'},{merge:true}),1);
+// --- activity log: append-only, in the writer's own name
+await T('editor logs own action',W.collection('log').add({ts:'t',user:'w@b.ly',name:'n',action:'a',col:'c',id:'i',summary:'s'}),1);
+await T('editor cannot log as someone else',W.collection('log').add({ts:'t',user:'gm@b.ly',name:'n',action:'a',col:'c',id:'i',summary:'s'}),0);
+await T('editor cannot edit log',W.doc('log/L1').update({action:'changed'}),0);
+await T('admin cannot delete log',A.doc('log/L1').delete(),0);
+await T('editor cannot read log',W.collection('log').get(),0);
+await T('admin reads log',A.collection('log').get(),1);
+// --- department records: each department sees its own; gm, board and admin see all
+await T('w reads own unit record',W.doc('records/R1').get(),1);
+await T('w cannot read e record',W.doc('records/R2').get(),0);
+await T('w query own unit',W.collection('records').where('unit','==','w').get(),1);
+await T('w query all records denied',W.collection('records').get(),0);
+await T('board reads all records',B.collection('records').get(),1);
+await T('gm reads all records',G.collection('records').get(),1);
+await T('nounit cannot read records',N.doc('records/R1').get(),0);
+await T('w creates own record',W.collection('records').add({unit:'w',title:'t',createdBy:'w@b.ly'}),1);
+await T('w creates record for e denied',W.collection('records').add({unit:'e',title:'t',createdBy:'w@b.ly'}),0);
+await T('w oversized notes denied',W.collection('records').add({unit:'w',title:'t',createdBy:'w@b.ly',notes:'x'.repeat(5001)}),0);
+await T('w2 edits unit-mate record',W2.doc('records/R1').update({title:'t2'}),1);
+await T('w2 cannot move record to other unit',W2.doc('records/R1').update({unit:'e'}),0);
+await T('w2 cannot change createdBy',W2.doc('records/R1').update({createdBy:'w2@b.ly'}),0);
+await T('legacy record without createdBy editable',W.doc('records/R3').update({title:'t3'}),1);
+await T('viewer cannot edit record',WV.doc('records/R1').update({title:'v'}),0);
+// --- attachments: anyone with a role reads, only the uploader or an admin deletes
+await T('viewer reads file',WV.doc('files/F1').get(),1);
+await T('editor uploads chunk then meta',(async()=>{await W.doc('files/N1_0').set({d:'x'});await W.doc('files/N1').set({name:'n',n:1,byEmail:'w@b.ly'})})(),1);
+await T('editor cannot upload as someone else',W.doc('files/N2').set({name:'n',n:1,byEmail:'e@b.ly'}),0);
+await T('uploader deletes own chunk',W.doc('files/F1_0').delete(),1);
+await T('uploader deletes own meta',W.doc('files/F1').delete(),1);
+await T('other editor cannot delete chunk',W.doc('files/F2_0').delete(),0);
+await T('other editor cannot delete meta',W.doc('files/F2').delete(),0);
+await T('editor cannot delete orphan chunk',W.doc('files/ORPHAN_0').delete(),0);
+await T('admin deletes orphan chunk',A.doc('files/ORPHAN_0').delete(),1);
+await T('admin deletes any file',A.doc('files/F2').delete(),1);
+// --- assignments: reads
 await T('w reads A1 (to w)',W.doc('assignments/A1').get(),1);
 await T('w cannot read A2',W.doc('assignments/A2').get(),0);
 await T('e reads A2',E.doc('assignments/A2').get(),1);
@@ -30,12 +88,18 @@ await T('gm create to e',G.collection('assignments').add(nw({fromUnit:'gm',toUni
 await T('create as done denied',G.collection('assignments').add(nw({fromUnit:'gm',toUnit:'e',createdBy:'gm@b.ly',status:'done'})),0);
 await T('viewer create denied',WV.collection('assignments').add(nw({fromUnit:'w',toUnit:'w',createdBy:'wv@b.ly'})),0);
 await T('admin create',A.collection('assignments').add(nw({fromUnit:'gm',toUnit:'ca',createdBy:'admin@b.ly'})),1);
+await T('create oversized title denied',G.collection('assignments').add(nw({fromUnit:'gm',toUnit:'e',createdBy:'gm@b.ly',title:'x'.repeat(301)})),0);
+await T('create oversized details denied',G.collection('assignments').add(nw({fromUnit:'gm',toUnit:'e',createdBy:'gm@b.ly',details:'x'.repeat(4001)})),0);
+await T('create bad priority denied',G.collection('assignments').add(nw({fromUnit:'gm',toUnit:'e',createdBy:'gm@b.ly',priority:'nuclear'})),0);
+await T('create progress 150 denied',G.collection('assignments').add(nw({fromUnit:'gm',toUnit:'e',createdBy:'gm@b.ly',progress:150})),0);
+await T('create progress as string denied',G.collection('assignments').add(nw({fromUnit:'gm',toUnit:'e',createdBy:'gm@b.ly',progress:'50'})),0);
 // doer updates
 await T('w start A1',W.doc('assignments/A1').update({status:'progress',progress:20,log:[{a:1},{a:2}],updatedAt:'x'}),1);
 await T('w self-approve denied',W.doc('assignments/A1').update({status:'done',progress:100,log:[{a:1},{a:2},{a:3}],updatedAt:'x'}),0);
 await T('w change title denied',W.doc('assignments/A1').update({title:'hack',log:[{a:1},{a:2},{a:3}]}),0);
 await T('w rewrite log denied',W.doc('assignments/A1').update({status:'review',log:[{a:9}],updatedAt:'x'}),0);
 await T('w edits old log entry denied',W.doc('assignments/A1').update({status:'review',log:[{a:7},{a:2},{a:3}],updatedAt:'x'}),0);
+await T('w progress -5 denied',W.doc('assignments/A1').update({status:'progress',progress:-5,log:[{a:1},{a:2},{a:3}],updatedAt:'x'}),0);
 await T('w submit A1',W.doc('assignments/A1').update({status:'review',progress:100,log:[{a:1},{a:2},{a:3}],updatedAt:'x'}),1);
 await T('viewer update denied',WV.doc('assignments/A1').update({status:'progress',log:[{a:1},{a:2},{a:3},{a:4}]}),0);
 await T('e update A1 denied',E.doc('assignments/A1').update({status:'progress',log:[{a:1},{a:2},{a:3},{a:4}]}),0);
@@ -48,14 +112,20 @@ await T('w delete gm-created A2 denied',W.doc('assignments/A2').delete(),0);
 await T('gm delete own new A2',G.doc('assignments/A2').delete(),1);
 await T('gm delete done A1 denied',G.doc('assignments/A1').delete(),0);
 await T('admin delete A1',A.doc('assignments/A1').delete(),1);
-// duties & config
+// --- duties & config
 await T('editor reads duties',W.doc('duties/w').get(),1);
 await T('editor writes duties denied',G.doc('duties/w').set({items:[]}),0);
 await T('admin writes duties',A.doc('duties/w').set({items:[]}),1);
+await T('admin duties without items denied',A.doc('duties/e').set({lead:'x'}),0);
 await T('editor writes config/main denied',W.doc('config/main').set({t1:1}),0);
 await T('editor writes config/notices ok',W.doc('config/notices').set({data:{}}),1);
 await T('admin writes config/meetings',A.doc('config/meetings').set({whatsapp:{}}),1);
 await T('editor reads config',W.doc('config/main').get(),1);
 await T('editor writes contracts ok',W.doc('contracts/c1').set({no:'1'}),1);
 await T('viewer writes contracts denied',WV.doc('contracts/c1').set({no:'1'}),0);
+await T('editor writes unknown collection denied',W.doc('secrets/s1').set({a:1}),0);
+// --- meetings
+await T('gm creates meeting',G.collection('meetings').add({title:'m',units:['gm','w'],organizer:'gm',createdBy:'gm@b.ly',status:'open'}),1);
+await T('w creates meeting organised by gm denied',W.collection('meetings').add({title:'m',units:['gm','w'],organizer:'gm',createdBy:'w@b.ly',status:'open'}),0);
+await T('meeting oversized title denied',G.collection('meetings').add({title:'x'.repeat(301),units:['gm'],organizer:'gm',createdBy:'gm@b.ly'}),0);
 console.log(`PASS ${pass} FAIL ${fail}`);await env.cleanup();process.exit(fail?1:0);

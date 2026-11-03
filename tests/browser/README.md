@@ -1,0 +1,15 @@
+# Browser tests (Playwright, no Firebase project needed)
+
+`fakefb.js` replaces the Firebase compat SDK with an in-memory fake, so every screen runs against seeded data
+without touching the real project. `harness.js` serves `index.html` from a local HTTP server and routes
+`vendor/firebase/*` to the fake.
+
+```
+cd <repo root>
+python3 -m http.server 8765 &
+npm i -g playwright            # or use an existing Playwright + Chromium
+node tests/browser/xss.js       # stored-XSS sweep: payload in every text field of every collection, every view/tab/drawer/print window
+ROLE=w node tests/browser/xss.js
+node tests/browser/auth.js      # e-mail verification gate, re-authentication before role changes, self-demotion guard, per-department records, idle sign-out
+```
+`xss.js` prints `hits: []` when nothing rendered as HTML; `auth.js` prints a JSON object where every value must be `true` (or the expected list).

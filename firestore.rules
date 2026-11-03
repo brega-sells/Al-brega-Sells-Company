@@ -1,83 +1,112 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null && request.auth.token.email != null; }
-    function rolePath() { return /databases/$(database)/documents/roles/$(request.auth.token.email); }
+    // البريد المؤكد شرط لكل شيء: يمنع من يسجّل بريد زميل قبل صاحبه من الحصول على صلاحيته
+    function signedIn() { return request.auth != null && request.auth.token.email != null && request.auth.token.email_verified == true; }
+    function me() { return request.auth.token.email; }
+    function rolePath() { return /databases/$(database)/documents/roles/$(me()); }
     function hasRole() { return signedIn() && exists(rolePath()); }
     function role() { return get(rolePath()).data.role; }
     function isAdmin() { return hasRole() && role() == 'admin'; }
     function canWrite() { return hasRole() && role() in ['admin', 'editor']; }
-    // الإدارة التي ينتمي إليها المستخدم (يحددها مدير النظام من صفحة الاجتماعات)
+    // الإدارة التي ينتمي إليها المستخدم (يحددها مدير النظام من صفحة الاجتماعات أو التخويلات)
     function myUnit() { return get(rolePath()).data.get('unit', ''); }
+    function top() { return isAdmin() || (hasRole() && myUnit() in ['gm', 'board']); }
+    function mine(u) { return hasRole() && myUnit() != '' && myUnit() == u; }
+    function str(d, k, max) { return d.get(k, '') is string && d.get(k, '').size() <= max; }
 
+    // الصلاحيات: يقرأ كل مستخدم صلاحيته، ويديرها مدير النظام دون أن يتمكن من إزالة نفسه أو تخفيض صلاحيته (حماية من إقفال النظام)
     match /roles/{email} {
-      allow read: if signedIn() && (email == request.auth.token.email || isAdmin());
-      allow write: if isAdmin();
+      function validRole() { return request.resource.data.role in ['admin', 'editor', 'viewer']
+        && request.resource.data.keys().hasOnly(['role', 'name', 'unit'])
+        && str(request.resource.data, 'name', 120) && str(request.resource.data, 'unit', 40); }
+      function notSelf() { return email != me(); }
+      allow read: if signedIn() && (email == me() || isAdmin());
+      allow create: if isAdmin() && validRole();
+      allow update: if isAdmin() && validRole() && (notSelf() || request.resource.data.role == 'admin');
+      allow delete: if isAdmin() && notSelf();
     }
+    // سجل النشاط: يُضاف إليه فقط، باسم الكاتب نفسه، ولا يُعدَّل ولا يُحذف
     match /log/{id} {
       allow read: if isAdmin();
-      allow create: if canWrite();
+      allow create: if canWrite() && request.resource.data.user == me()
+        && request.resource.data.keys().hasOnly(['ts', 'user', 'name', 'action', 'col', 'id', 'summary'])
+        && str(request.resource.data, 'summary', 500) && str(request.resource.data, 'action', 60);
     }
     // الاجتماعات المغلقة: لا يراها إلا مدير النظام ومنشئ الاجتماع والإدارات المدعوة
     match /meetings/{id} {
-      function owner() { return signedIn() && resource.data.createdBy == request.auth.token.email; }
+      function owner() { return signedIn() && resource.data.createdBy == me(); }
       function invited() { return hasRole() && myUnit() != '' && myUnit() in resource.data.units; }
       function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
       function sameCore() { return request.resource.data.units == resource.data.units
         && request.resource.data.organizer == resource.data.organizer
         && request.resource.data.createdBy == resource.data.createdBy; }
+      function validMeeting() { return str(request.resource.data, 'title', 300) && request.resource.data.units.size() <= 60
+        && (!('decisions' in request.resource.data) || request.resource.data.decisions.size() <= 200); }
       allow read: if isAdmin() || owner() || invited();
       allow create: if canWrite()
-        && request.resource.data.createdBy == request.auth.token.email
+        && request.resource.data.createdBy == me()
         && request.resource.data.units is list
         && request.resource.data.organizer in request.resource.data.units
+        && validMeeting()
         && (isAdmin() || myUnit() == request.resource.data.organizer);
-      allow update: if isAdmin() || owner()
+      allow update: if validMeeting() && (isAdmin() || owner()
         || (canWrite() && invited() && myUnit() == resource.data.organizer && sameCore())
         || (invited() && changed().hasOnly(['rsvp', 'updatedAt']))
         || (canWrite() && invited() && resource.data.status != 'closed' && resource.data.status != 'cancelled'
             && changed().hasOnly(['minutes', 'decisions', 'attachments', 'updatedAt']))
-        || (canWrite() && invited() && changed().hasOnly(['decisions', 'updatedAt']));
+        || (canWrite() && invited() && changed().hasOnly(['decisions', 'updatedAt'])));
       allow delete: if isAdmin() || owner();
     }
-    // سجلات الإدارات: يقرؤها كل من له صلاحية، ويضيف ويعدل ويحذف فيها مدير النظام أو محرر من الإدارة نفسها أو من الإدارة العامة
+    // سجلات الإدارات: تراها الإدارة نفسها والإدارة العامة والمجلس ومدير النظام، ويكتب فيها مدير النظام أو محرر من الإدارة نفسها أو من الإدارة العامة
     match /records/{id} {
       function unitOk(u) { return isAdmin() || (canWrite() && (myUnit() == u || myUnit() == 'gm')); }
-      allow read: if hasRole();
-      allow create: if unitOk(request.resource.data.unit) && request.resource.data.createdBy == request.auth.token.email;
-      allow update: if unitOk(resource.data.unit) && request.resource.data.unit == resource.data.unit;
+      function validRec() { return str(request.resource.data, 'title', 300) && request.resource.data.title.size() > 0
+        && str(request.resource.data, 'notes', 5000) && str(request.resource.data, 'ref', 200)
+        && (!('attachments' in request.resource.data) || request.resource.data.attachments.size() <= 30); }
+      allow read: if top() || mine(resource.data.unit);
+      allow create: if unitOk(request.resource.data.unit) && request.resource.data.createdBy == me() && validRec();
+      allow update: if unitOk(resource.data.unit) && request.resource.data.unit == resource.data.unit
+        && request.resource.data.get('createdBy', '') == resource.data.get('createdBy', '') && validRec();
       allow delete: if unitOk(resource.data.unit);
     }
-    // المرفقات والمستندات الممسوحة ضوئيًا: files/<id> بيانات الملف، و files/<id>_<n> أجزاء محتواه (حد المستند 1 ميغابايت)
+    // المرفقات: files/<id> بيانات الملف و files/<id>_<n> أجزاء محتواه. يحذفها من رفعها أو مدير النظام فقط
     match /files/{id} {
+      function parentOwner() { return get(/databases/$(database)/documents/files/$(id.split('_')[0])).data.get('byEmail', '') == me(); }
       allow read: if hasRole();
-      allow create, delete: if canWrite();
+      allow create: if canWrite() && request.resource.data.get('byEmail', me()) == me();
+      allow delete: if isAdmin() || (canWrite() && (resource.data.get('byEmail', '') == me() || parentOwner()));
     }
     // مهام الإدارات المضافة من داخل المنظومة: يقرؤها الجميع ويكتبها مدير النظام فقط
     match /duties/{unit} {
       allow read: if hasRole();
-      allow write: if isAdmin();
+      allow write: if isAdmin() && request.resource.data.items is list && request.resource.data.items.size() <= 200;
     }
     // التكليفات: لا يراها إلا مدير النظام والإدارة العامة وعضو المجلس والإدارة المُصدِرة والإدارة المكلَّفة
     match /assignments/{id} {
-      function mine(u) { return hasRole() && myUnit() != '' && myUnit() == u; }
-      function top() { return isAdmin() || (hasRole() && myUnit() in ['gm', 'board']); }
       function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
       function logAppended() { return request.resource.data.log is list
         && request.resource.data.log.size() == resource.data.log.size() + 1
         && request.resource.data.log[0:resource.data.log.size()] == resource.data.log; }
+      function validA() { return str(request.resource.data, 'title', 300) && request.resource.data.title.size() > 0
+        && str(request.resource.data, 'details', 4000) && str(request.resource.data, 'assignee', 120)
+        && request.resource.data.get('priority', 'normal') in ['low', 'normal', 'high']
+        && request.resource.data.get('progress', 0) is number
+        && request.resource.data.get('progress', 0) >= 0 && request.resource.data.get('progress', 0) <= 100
+        && request.resource.data.log is list && request.resource.data.log.size() <= 300
+        && (!('attachments' in request.resource.data) || request.resource.data.attachments.size() <= 30); }
       function issuer() { return canWrite() && (isAdmin() || myUnit() == 'gm' || mine(resource.data.fromUnit)); }
       function doer() { return canWrite() && mine(resource.data.toUnit); }
       allow read: if top() || mine(resource.data.fromUnit) || mine(resource.data.toUnit);
       allow create: if canWrite()
-        && request.resource.data.createdBy == request.auth.token.email
+        && request.resource.data.createdBy == me()
         && request.resource.data.status == 'new'
-        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 300
-        && request.resource.data.log is list && request.resource.data.log.size() == 1
+        && request.resource.data.log.size() == 1
+        && validA()
         && (isAdmin() || (myUnit() == request.resource.data.fromUnit
             && (myUnit() == 'gm' || request.resource.data.toUnit == myUnit())));
       // الجهة المُصدِرة: تعدّل وتعتمد وتعيد، دون تغيير الجهتين أو المنشئ
-      allow update: if (issuer()
+      allow update: if validA() && ((issuer()
           && request.resource.data.fromUnit == resource.data.fromUnit
           && request.resource.data.toUnit == resource.data.toUnit
           && request.resource.data.createdBy == resource.data.createdBy
@@ -86,8 +115,8 @@ service cloud.firestore {
         || (doer()
           && changed().hasOnly(['status', 'progress', 'log', 'updatedAt'])
           && request.resource.data.status in ['progress', 'review', 'hold']
-          && logAppended());
-      allow delete: if isAdmin() || (canWrite() && resource.data.createdBy == request.auth.token.email && resource.data.status == 'new');
+          && logAppended()));
+      allow delete: if isAdmin() || (canWrite() && resource.data.createdBy == me() && resource.data.status == 'new');
     }
     // الإعدادات: يغيّرها مدير النظام، عدا آلية إشعارات البيع التي يحررها المحررون
     match /config/{doc} {
