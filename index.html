@@ -700,7 +700,7 @@ const db={collection(col){return {path:col,doc:id=>ref(col,id||FS.collection(col
 const user={can:async()=>!!ME&&ME.role!=='viewer',canEdit:async()=>!!ME&&ME.role==='admin',isOwner:async()=>!!ME&&ME.role==='admin',id:async()=>ME&&ME.email,me:async()=>ME};
 const downloads={save:async({filename,data})=>{const blob=data instanceof Blob?data:new Blob([data]);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},2000);return {status:'saved'}}};
 window.appRuntime={use:async n=>{await ready;return {db,user,downloads}[n]||null}};
-window.__me=()=>ME;window.__fs=()=>FS;window.__auth=()=>AUTH;
+window.__me=()=>ME;window.__fs=()=>FS;window.__auth=()=>AUTH;window.__authErr=e=>authErr(e);
 window.__seedIfEmpty=async function(){const r=await fetch('data/seed.json',{cache:'no-store'});if(!r.ok)throw new Error('تعذّر تحميل ملف البيانات الأولية');const s=await r.json();let n=0;let batch=FS.batch(),k=0;
   for(const col of Object.keys(s)){for(const o of s[col]){const d=Object.assign({},o);const id=d.id;delete d.id;batch.set(FS.collection(col).doc(id),d);n++;k++;if(k>=400){await batch.commit();batch=FS.batch();k=0}}}
   if(k)await batch.commit();await logAct('استيراد','','','تحميل البيانات الأولية: '+n+' سجل');return n};
@@ -751,7 +751,7 @@ const IDLE_MS=30*60*1000;let idleT=null;function idleReset(){if(!ME)return;clear
 ['click','keydown','mousemove','touchstart','scroll','visibilitychange'].forEach(ev=>document.addEventListener(ev,idleReset,{passive:true}));
 /* إعادة التحقق قبل الإجراءات الحساسة (منح الصلاحيات وإزالتها): كلمة المرور مرة أخرى إن مضى على الدخول أكثر من 5 دقائق */
 let lastAuthAt=0;
-window.__reauth=function(reason){const u=AUTH.currentUser;if(!u)return Promise.resolve(false);if(Date.now()-lastAuthAt<5*60*1000)return Promise.resolve(true);
+window.__reauth=function(reason,force){const u=AUTH.currentUser;if(!u)return Promise.resolve(false);if(!force&&Date.now()-lastAuthAt<5*60*1000)return Promise.resolve(true);
   const hasPw=(u.providerData||[]).some(p=>p&&p.providerId==='password');
   if(!hasPw&&(u.providerData||[]).some(p=>p&&p.providerId==='google.com'))return u.reauthenticateWithPopup(googleProvider()).then(()=>{lastAuthAt=Date.now();return true}).catch(err=>{if(err&&err.code!=='auth/popup-closed-by-user')toast(authErr(err));return false});
   return new Promise(res=>{let d=document.getElementById('reauth');if(!d){d=document.createElement('dialog');d.id='reauth';document.body.appendChild(d)}
@@ -2723,7 +2723,9 @@ dbBanner=function(){
 const __vs=viewSettings;
 viewSettings=function(){const me=window.__me()||{};const admin=me.role==='admin';
   return __vs()+`<div class="grid2"><div class="panel"><h3 class="section-title">حسابي <small dir="ltr">${esc(me.email||'')}</small> <small>· ${esc(window.__roleAr[me.role]||'')}</small></h3>
-   <p class="muted" style="margin:0 0 8px;font-size:13px">لتغيير كلمة المرور تُرسل رسالة إلى بريدك فيها رابط التغيير.</p><button class="btn" data-act="pw-reset">إرسال رابط تغيير كلمة المرور</button> <span id="pw-msg" style="font-size:12.5px"></span></div>
+   <p class="muted" style="margin:0 0 8px;font-size:13px">غيّر كلمة المرور من هنا مباشرة؛ ستُطلب منك إعادة تأكيد هويتك أولًا (بنافذة Google أو بكلمة المرور الحالية). إن كنت تدخل بحساب Google فقط فكلمة المرور اختيارية، وتعيينها يتيح لك الدخول بها أيضًا.</p>
+   <form id="pw-form" novalidate style="display:grid;gap:8px;max-width:360px"><div class="field"><label for="pw-new">كلمة المرور الجديدة (8 أحرف على الأقل)</label><input id="pw-new" type="password" autocomplete="new-password" dir="ltr" minlength="8"></div><div class="field"><label for="pw-conf">تأكيد كلمة المرور</label><input id="pw-conf" type="password" autocomplete="new-password" dir="ltr"></div><div><button class="btn primary" type="submit" id="pw-save">تغيير كلمة المرور</button> <span id="pw-msg" role="status" style="font-size:12.5px"></span></div></form>
+   <p class="muted" style="margin:8px 0 0;font-size:12px">أو <a href="#" data-act="pw-reset">أرسل رابط التغيير إلى البريد</a> (قد لا تصل الرسالة إلى بعض صناديق البريد).</p></div>
   ${admin?`<div class="panel"><h3 class="section-title">النسخ الاحتياطي</h3><p class="muted" style="margin:0 0 8px;font-size:13px">البيانات محفوظة في Firebase وتُنسخ تلقائيًا لديهم. وللاحتفاظ بنسخة لديك، صدّر «نسخة كاملة» من قسم التصدير أعلاه بشكل دوري.</p></div>`:''}</div>
   ${admin?`<div class="panel"><h3 class="section-title">المستخدمون والصلاحيات</h3>
    <p class="muted" style="margin:0 0 10px;font-size:13px">يُنشئ كل زميل حسابه بنفسه من شاشة الدخول (إنشاء حساب)، ثم تمنحه الصلاحية هنا ببريده الإلكتروني. <b>مدير النظام</b>: كل الصلاحيات · <b>محرر</b>: إضافة وتعديل وحذف · <b>مشاهد</b>: اطلاع وبحث وتصدير فقط.</p>
@@ -2737,14 +2739,24 @@ viewSettings=function(){const me=window.__me()||{};const admin=me.role==='admin'
   <div class="panel"><h3 class="section-title">سجل النشاط <small>آخر 200 عملية</small></h3><div id="log-box" class="muted">جارٍ التحميل…</div></div>`:''}`};
 const ROLE_UNITS=['board','gm','gm-rep','gm-fo','ca','w','e'].filter(u=>ORG_BY.get(u));
 const __as=afterRender.settings;
-afterRender.settings=()=>{__as();const me=window.__me()||{};if(me.role==='admin'){loadRoles();loadLog()}};
+afterRender.settings=()=>{__as();const me=window.__me()||{};if(me.role==='admin'){loadRoles();loadLog()}
+  const pf=document.getElementById('pw-form');if(pf)pf.addEventListener('submit',changePassword);};
+async function changePassword(e){e.preventDefault();const m=document.getElementById('pw-msg'),b=document.getElementById('pw-save'),n=document.getElementById('pw-new'),c=document.getElementById('pw-conf');const pw=n.value,pw2=c.value;
+  const say=(t,ok)=>{m.style.color=ok?'var(--ok)':'var(--crit)';m.textContent=t};
+  if(pw.length<8){say('كلمة المرور يجب ألا تقل عن 8 أحرف');n.focus();return}
+  if(pw!==pw2){say('كلمتا المرور غير متطابقتين');c.focus();return}
+  b.disabled=true;say('');
+  try{const ok=await window.__reauth('لتغيير كلمة المرور أكّد هويتك أولًا.',true);if(!ok){say('لم يتم التأكيد، لم تتغير كلمة المرور');return}
+    const u=window.__auth().currentUser;await u.updatePassword(pw);n.value='';c.value='';say('تم تغيير كلمة المرور. استخدمها في الدخول القادم مع بريدك.',true);
+    try{const me=window.__me();await window.__fs().collection('log').add({ts:new Date().toISOString(),user:me.name||me.email,email:me.email,action:'تغيير كلمة المرور',col:'settings',id:me.email,summary:'غيّر المستخدم كلمة مروره من «حسابي»'})}catch(err){}
+  }catch(err){say((window.__authErr&&window.__authErr(err))||err.message||'تعذّر تغيير كلمة المرور')}finally{b.disabled=false}}
 async function loadRoles(){const box=document.getElementById('users-box');if(!box)return;try{const qs=await window.__fs().collection('roles').get();const me=window.__me();const rows=[];qs.forEach(d=>rows.push(Object.assign({email:d.id},d.data())));
   box.innerHTML=`<div class="tablewrap" style="max-height:none;min-height:0"><table><thead><tr><th class="nosort">الاسم</th><th class="nosort">البريد</th><th class="nosort">الصلاحية</th><th class="nosort">الإدارة</th><th class="nosort"></th></tr></thead><tbody>${rows.map(u=>`<tr style="cursor:default"><td class="t-strong">${esc(u.name||'')}</td><td dir="ltr" style="text-align:right">${esc(u.email)}</td><td><span class="pill ${u.role==='admin'?'p-fl':u.role==='editor'?'p-ok':'p-neutral'}">${esc(window.__roleAr[u.role]||u.role)}</span></td><td>${u.unit?esc((ORG_BY.get(u.unit)||{}).title||u.unit):`<span class="pill p-crit">بلا إدارة</span>`}</td><td><button class="btn sm ghost" data-act="edit-role" data-e="${esc(u.email)}" data-n="${esc(u.name||'')}" data-r="${esc(u.role)}" data-u="${esc(u.unit||'')}">${I.edit}تعديل</button>${u.email!==me.email?`<button class="btn sm danger" data-act="del-role" data-e="${esc(u.email)}">إزالة</button>`:''}</td></tr>`).join('')}</tbody></table></div>`}catch(e){box.textContent='تعذّر التحميل: '+(e.message||'')}}
 async function loadLog(){const box=document.getElementById('log-box');if(!box)return;try{const qs=await window.__fs().collection('log').orderBy('ts','desc').limit(200).get();const colAr={contracts:'عقد',needs:'منشأة',batches:'دفعة',extensions:'تمديد',letters:'مراسلة',config:'إعدادات',roles:'مستخدم',tickets:'طلب زبون',notices:'إشعار بيع',companies:'زبون'};const rows=[];qs.forEach(d=>rows.push(d.data()));
   box.innerHTML=rows.length?`<div class="tablewrap" style="max-height:420px;min-height:0"><table><thead><tr><th class="nosort">الوقت</th><th class="nosort">المستخدم</th><th class="nosort">العملية</th><th class="nosort">النوع</th><th class="nosort">السجل</th></tr></thead><tbody>${rows.map(r=>`<tr style="cursor:default"><td class="n">${esc((r.ts||'').slice(0,16).replace('T',' '))}</td><td>${esc(r.name||r.user||'')}</td><td>${esc(r.action)}</td><td>${esc(colAr[r.col]||r.col||'')}</td><td>${esc(r.summary||'')}</td></tr>`).join('')}</tbody></table></div>`:'لا توجد عمليات بعد.'}catch(e){box.textContent='تعذّر التحميل: '+(e.message||'')}}
 document.addEventListener('click',async e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;const FS=window.__fs();
   if(act==='seed-now'){a.disabled=true;a.textContent='جارٍ التحميل…';try{const n=await window.__seedIfEmpty();toast('تم تحميل '+n+' سجل')}catch(err){toast('تعذّر التحميل: '+(err.message||''));a.disabled=false}}
-  if(act==='pw-reset'){const m=document.getElementById('pw-msg');try{await window.__auth().sendPasswordResetEmail(window.__me().email);m.style.color='var(--ok)';m.textContent='أُرسلت الرسالة إلى بريدك'}catch(err){m.style.color='var(--crit)';m.textContent=err.message}}
+  if(act==='pw-reset'){e.preventDefault();const m=document.getElementById('pw-msg');try{await window.__auth().sendPasswordResetEmail(window.__me().email);m.style.color='var(--ok)';m.textContent='أُرسلت الرسالة إلى بريدك'}catch(err){m.style.color='var(--crit)';m.textContent=err.message}}
   if(act==='edit-role'){document.getElementById('u-email').value=a.dataset.e;document.getElementById('u-name').value=a.dataset.n;document.getElementById('u-role').value=a.dataset.r;const us=document.getElementById('u-unit');if(us)us.value=a.dataset.u||'';document.getElementById('u-name').focus()}
   if(act==='save-role'){const m=document.getElementById('u-msg');const em=val('u-email').toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){m.style.color='var(--crit)';m.textContent='أدخل بريدًا إلكترونيًا صحيحًا';return}
     const newRole=document.getElementById('u-role').value;if(!['admin','editor','viewer'].includes(newRole)){m.style.color='var(--crit)';m.textContent='صلاحية غير معروفة';return}
