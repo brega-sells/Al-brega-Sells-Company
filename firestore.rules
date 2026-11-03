@@ -29,8 +29,9 @@ service cloud.firestore {
     // سجل النشاط: يُضاف إليه فقط، باسم الكاتب نفسه، ولا يُعدَّل ولا يُحذف
     match /log/{id} {
       allow read: if isAdmin();
-      allow create: if canWrite() && request.resource.data.user == me()
-        && request.resource.data.keys().hasOnly(['ts', 'user', 'name', 'action', 'col', 'id', 'summary'])
+      // at: وقت الخادم (لا يمكن تزويره)، ts: وقت الجهاز للعرض
+      allow create: if canWrite() && request.resource.data.user == me() && request.resource.data.at == request.time
+        && request.resource.data.keys().hasOnly(['at', 'ts', 'user', 'name', 'action', 'col', 'id', 'summary'])
         && str(request.resource.data, 'summary', 500) && str(request.resource.data, 'action', 60);
     }
     // الاجتماعات المغلقة: لا يراها إلا مدير النظام ومنشئ الاجتماع والإدارات المدعوة
@@ -188,9 +189,19 @@ service cloud.firestore {
       allow read: if hasRole();
       allow write: if isAdmin() || (canWrite() && doc == 'notices');
     }
+    // السجلات المشتركة: كل كتابة تُحفظ في الدفعة نفسها مع قيد جديد في سجل النشاط باسم الكاتب، وإلا رُفضت.
+    // _log في الوثيقة رقم القيد. القيد يخص الوثيقة نفسها، أو يكون استيرادًا جماعيًا (id = '*') للمجموعة نفسها.
     match /{col}/{id} {
-      allow read: if hasRole() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices'];
-      allow write: if canWrite() && col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices'];
+      function shared() { return col in ['contracts','needs','batches','extensions','letters','companies','tickets','notices']; }
+      function logPath(l) { return /databases/$(database)/documents/log/$(l); }
+      function logOk(l, bulk) { return l is string && l.size() > 0 && l.size() <= 200
+        && !exists(logPath(l)) && existsAfter(logPath(l))
+        && getAfter(logPath(l)).data.user == me() && getAfter(logPath(l)).data.col == col
+        && (getAfter(logPath(l)).data.id == id || (bulk && getAfter(logPath(l)).data.id == '*')); }
+      allow read: if hasRole() && shared();
+      allow create: if canWrite() && shared() && logOk(request.resource.data.get('_log', ''), true);
+      allow update: if canWrite() && shared() && logOk(request.resource.data.get('_log', ''), false);
+      allow delete: if canWrite() && shared() && logOk('del-' + col + '-' + id + '-' + resource.data.get('_log', 'x'), false);
     }
   }
 }

@@ -35,7 +35,7 @@ function colRef(c,filters=[],order=null,lim=0){return {path:c,
   get:async()=>query(c,filters,order,lim),
   onSnapshot:(cb,err)=>{const l={col:c,fire:()=>cb(query(c,filters,order,lim))};LIS.push(l);setTimeout(l.fire,0);return()=>{const i=LIS.indexOf(l);if(i>=0)LIS.splice(i,1)}}}}
 const FS={collection:colRef,doc:p=>{const [c,id]=p.split('/');return docRef(c,id)},enablePersistence:async()=>{},waitForPendingWrites:()=>new Promise(r=>{const t=()=>HANG.length?setTimeout(t,50):r();t()}),
-  batch:()=>{const ops=[];return {set:(r,d)=>ops.push(()=>r.set(d)),update:(r,d)=>ops.push(()=>r.update(d)),delete:r=>ops.push(()=>r.delete()),commit:async()=>{for(const o of ops)await o()}}}};
+  batch:()=>{const ops=[];return {set:(r,d,o)=>ops.push(()=>r.set(d,o)),update:(r,d)=>ops.push(()=>r.update(d)),delete:r=>ops.push(()=>r.delete()),commit:async()=>{for(const o of ops)await o()}}}};
 let authCbs=[];let USER=F.user?Object.assign({emailVerified:true,sendEmailVerification:async()=>{log.push(['verify'])},reload:async()=>{},updateProfile:async()=>{},updatePassword:async pw=>{log.push(['updatePassword',pw.length])},getIdToken:async force=>{if(force)log.push(['token-refresh']);return 'tok'},reauthenticateWithCredential:async()=>{log.push(['reauth'])},reauthenticateWithPopup:async p=>{log.push(['reauth-popup',p&&p.providerId])},metadata:{lastSignInTime:new Date().toISOString()}},F.user):null;
 const AUTH={get currentUser(){return USER},onAuthStateChanged:cb=>{authCbs.push(cb);setTimeout(()=>cb(USER),0);return()=>{}},
   signOut:async()=>{USER=null;log.push(['signOut']);try{sessionStorage.setItem('fake_signout','1')}catch(e){}authCbs.forEach(cb=>cb(null))},
