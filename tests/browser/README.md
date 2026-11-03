@@ -15,6 +15,7 @@ node tests/browser/pwa.js       # notifications bell, calendar, version footer +
 node tests/browser/govern.js  # access review with re-auth, account register CSV, access matrix, retention periods, legal hold + record history, SHA-256 approval stamp and tamper detection
 node tests/browser/polish.js    # external seed file + empty-database banner, skip link + live toast region, sequential meeting decision numbers
 node tests/browser/offline.js   # offline writes resolve on the device, pending counter + status chip, sync toast, late rejection reported, cache reads, offline sign-in with the saved role, logout guard
+node tests/browser/sms055.js    # SMS055 dashboard: import, parts, KPIs, previous-period comparison, replace overlap, CSV, permissions, English
 node tests/browser/palette.js   # command palette (Ctrl+K), record search with Arabic-Indic digits, theme action, Alt+1, g-k chord, help dialog, no shortcuts while typing
 ```
-`xss.js` prints `hits: []` when nothing rendered as HTML; `auth.js` prints a JSON object where every value must be `true` (or the expected list) and ends with `AUTH OK`; `pwa.js` ends with `PWA/NOTIFY OK` and `palette.js` with `PALETTE OK`, `govern.js` with `GOVERN OK`, `polish.js` with `POLISH OK`, `offline.js` with `OFFLINE OK`.
+`xss.js` prints `hits: []` when nothing rendered as HTML; `auth.js` prints a JSON object where every value must be `true` (or the expected list) and ends with `AUTH OK`; `pwa.js` ends with `PWA/NOTIFY OK` and `palette.js` with `PALETTE OK`, `govern.js` with `GOVERN OK`, `polish.js` with `POLISH OK`, `offline.js` with `OFFLINE OK`, `sms055.js` with `SMS055 OK`.
