@@ -63,6 +63,18 @@ const out = {};
     out.idleSignedOut = await page.evaluate(() => sessionStorage.getItem('fake_signout') === '1');
     out.wErrors = errors.filter(e => !/404/.test(e));
     await browser.close(); }
+  // 6) a stale ID token (email confirmed after sign-in) makes the first role read fail: refresh the token, retry, and enter normally
+  { const { browser, page } = await open({ user: { email: 'admin@test.ly', displayName: 'A' }, data, fail: { roles: { code: 'permission-denied', n: 1 } } });
+    await page.waitForTimeout(600);
+    out.staleTokenRefreshed = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'token-refresh'));
+    out.staleTokenEntered = await page.evaluate(() => !!window.__me && !!window.__me() && window.__me().role === 'admin' && !document.querySelector('#lg-rolefail'));
+    await browser.close(); }
+  // 7) the read keeps failing: an explicit failure screen with the code and a retry button, never "no role granted"
+  { const { browser, page } = await open({ user: { email: 'admin@test.ly', displayName: 'A' }, data, fail: { roles: { code: 'unavailable', n: 5 } } });
+    await page.waitForTimeout(600);
+    out.readFailScreen = await page.evaluate(() => !!document.querySelector('#lg-rolefail') && /unavailable/.test(document.querySelector('#lg-rolefail').textContent) && !!document.querySelector('#lg-retry'));
+    out.readFailNotNoRole = await page.evaluate(() => !/لم تُمنح له صلاحية/.test(document.getElementById('login').textContent));
+    await browser.close(); }
   console.log(JSON.stringify(out, null, 1));
   const ok = Object.entries(out).every(([k, v]) => Array.isArray(v) ? v.length === 0 : (typeof v === 'boolean' ? v : true));
   console.log(ok ? 'AUTH OK' : 'AUTH FAIL'); process.exit(ok ? 0 : 1);
