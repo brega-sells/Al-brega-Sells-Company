@@ -1,7 +1,7 @@
 /* Home screen (app launcher): landing page, tiles, app search, apps button, crumb, back button, English, phone width */
 const { open } = require('./harness');
 const roles = { 'admin@test.ly': { role: 'admin', name: 'Admin' } };
-const seed = require('../../data/seed.json');
+const seed = require('../fixtures/seed.sample.json');
 const coll = a => Object.fromEntries((Array.isArray(a) ? a : Object.values(a || {})).map((d, i) => [d.id || 'x' + i, d]));
 const data = { contracts: coll(seed.contracts), needs: coll(seed.needs), batches: coll(seed.batches), roles, config: { main: { t1: 90, t2: 60, t3: 30 } }, tickets: { t1: { status: 'جديد', subject: 'x' } } };
 const out = {};

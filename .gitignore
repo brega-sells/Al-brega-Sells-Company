@@ -3,3 +3,11 @@ tests/firestore.rules
 tests/node_modules/
 tests/firebase-debug.log
 tests/*.log
+
+# Real data never goes into this public repository
+data/
+originals/
+package/
+*.xlsx
+seed*.json
+!tests/fixtures/seed.sample.json
