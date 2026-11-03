@@ -47,7 +47,7 @@ function badge(v){if(!BADGE.has(v.id)||!v.count)return'';let n='';try{n=v.count(
 function greet(){const h=new Date().getHours();return h<12?T('صباح الخير','Good morning'):T('مساء الخير','Good evening')}
 function myName(){try{const m=window.__me&&window.__me();return (m&&(m.name||m.email))||''}catch(e){return''}}
 const HS={q:''};
-function logo(){const i=document.querySelector('.side .brand-mark img');return i&&/^data:image\//.test(i.src)?`<span class="hm-logo" aria-hidden="true"><img src="${i.src}" alt=""></span>`:''}
+function logo(){const i=document.querySelector('.side .brand-mark img');return i&&i.getAttribute('src')?`<span class="hm-logo" aria-hidden="true"><img src="${i.src}" alt=""></span>`:''}
 
 function viewHome(){
   const list=apps();const q=norm(HS.q||'');
