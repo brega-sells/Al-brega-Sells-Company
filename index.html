@@ -1777,7 +1777,7 @@ function recBind(unit){const p=document.getElementById('rec-panel');if(!p)return
   const u=recUI();const q=p.querySelector('#rc-q');q.addEventListener('input',debounce(()=>{u.q=q.value;renderRecTable(unit)},150));
   ['duty','type','st'].forEach(k=>p.querySelector('#rc-'+k).addEventListener('change',e=>{u[k]=e.target.value;renderRecTable(unit)}))}
 function recForm(unit,rec){const isNew=!rec;const o=ORG_BY.get(unit);rec=rec||{date:TODAY_ISO,status:'جارٍ',type:'مراسلة',duty:recUI().duty||''};const duties=recDuties(unit);
-  const attField=window.ATT&&ATT.formField?ATT.formField('dlg',rec.attachments||[],{name:rec.title||o.title}):`<div class="field full"><label>المرفقات</label><span class="hint">ميزة إرفاق الملفات والمسح الضوئي قيد التفعيل؛ أعد تحميل الصفحة لاحقًا.</span></div>`;
+  const attField=window.ATT&&ATT.formField?ATT.formField('dlg',rec.attachments||[],{name:rec.title||o.title,scope:{k:'units',u:[unit,'gm','board']}}):`<div class="field full"><label>المرفقات</label><span class="hint">ميزة إرفاق الملفات والمسح الضوئي قيد التفعيل؛ أعد تحميل الصفحة لاحقًا.</span></div>`;
   modal(isNew?'إضافة سجل — '+o.title:'تعديل السجل',`<fieldset><legend>السجل</legend>
     <div class="field full"><label for="r-duty">المهمة / الاختصاص<span class="req">*</span></label><select id="r-duty"><option value="">— اختر المهمة التي يندرج تحتها السجل —</option>${duties.map(d=>`<option value="${d.n}" ${String(rec.duty)===String(d.n)?'selected':''}>${d.n}. ${esc(d.l)}</option>`).join('')}${duties.length?'':'<option value="0">عام</option>'}</select></div>
     ${F('r-title','الموضوع',rec.title,{req:1,full:1})}${F('r-type','النوع',rec.type,{type:'select',options:uniq([...REC_TYPES,rec.type])})}${F('r-date','التاريخ',rec.date,{type:'date',req:1})}

@@ -80,12 +80,38 @@ service cloud.firestore {
         && (holdSame() || isAdmin()) && histOk();
       allow delete: if unitOk(resource.data.unit) && !('hold' in resource.data);
     }
-    // المرفقات: files/<id> بيانات الملف و files/<id>_<n> أجزاء محتواه. يحذفها من رفعها أو مدير النظام فقط
+    // المرفقات: files/<id> بيانات الملف و files/<id>_<n> أجزاء محتواه.
+    // يرث الملف صلاحية السجل الذي يتبعه عبر scope في بيانات الملف:
+    //   {k:'all'}            سجلات يقرؤها كل من له دور (العقود، الكشوفات، المراسلات، الطلبات...)
+    //   {k:'units', u:[...]} سجلات الإدارات والتكليفات: الإدارات المذكورة ومدير النظام فقط
+    //   {k:'meeting', id}    الاجتماعات المغلقة: من يرى الاجتماع نفسه الآن (المنشئ والمدعوون ومدير النظام)
+    // رافع الملف يراه دائمًا. الملفات القديمة بلا scope تبقى كما كانت حتى يختمها مدير النظام (تحدث تلقائيًا عند دخوله).
     match /files/{id} {
-      function parentOwner() { return get(/databases/$(database)/documents/files/$(id.split('_')[0])).data.get('byEmail', '') == me(); }
-      allow read: if hasRole();
-      allow create: if canWrite() && request.resource.data.get('byEmail', me()) == me();
-      allow delete: if isAdmin() || (canWrite() && (resource.data.get('byEmail', '') == me() || parentOwner()));
+      function isChunk() { return id.matches('^[^_]+_[0-9]+$'); }
+      function metaOf() { return get(/databases/$(database)/documents/files/$(id.split('_')[0])).data; }
+      function meetingOk(mid) { return isAdmin()
+        || get(/databases/$(database)/documents/meetings/$(mid)).data.get('createdBy', '') == me()
+        || (myUnit() != '' && myUnit() in get(/databases/$(database)/documents/meetings/$(mid)).data.get('units', [])); }
+      function canSee(m) { return hasRole() && (m.get('byEmail', '') == me()
+        || !('scope' in m)
+        || m.scope.k == 'all'
+        || (m.scope.k == 'units' && (isAdmin() || (myUnit() != '' && myUnit() in m.scope.u)))
+        || (m.scope.k == 'meeting' && meetingOk(m.scope.id))); }
+      function validScope(d) { return 'scope' in d && d.scope is map && d.scope.keys().hasOnly(['k', 'u', 'id'])
+        && ((d.scope.k == 'all')
+          || (d.scope.k == 'units' && d.scope.u is list && d.scope.u.size() <= 60)
+          || (d.scope.k == 'meeting' && d.scope.id is string && d.scope.id.size() > 0 && d.scope.id.size() <= 100)); }
+      function parentOwner() { return metaOf().get('byEmail', '') == me(); }
+      allow get: if isChunk() ? canSee(metaOf()) : canSee(resource.data);
+      allow list: if isAdmin();
+      // بيانات الملف أولًا (باسم الرافع ومع scope)، ثم أجزاؤه بيد الرافع نفسه
+      allow create: if canWrite() && (isChunk()
+        ? (parentOwner() && request.resource.data.keys().hasOnly(['d']) && request.resource.data.d is string && request.resource.data.d.size() <= 800000)
+        : (request.resource.data.get('byEmail', '') == me() && validScope(request.resource.data)));
+      // ختم الصلاحية فقط: مدير النظام (ترحيل الملفات القديمة) أو الرافع
+      allow update: if !isChunk() && (isAdmin() || (canWrite() && resource.data.get('byEmail', '') == me()))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scope']) && validScope(request.resource.data);
+      allow delete: if isAdmin() || (canWrite() && (isChunk() ? parentOwner() : resource.data.get('byEmail', '') == me()));
     }
     // مخرجات منظومة SMS055 (إدارة الشؤون التجارية والتحصيلات): ملف مستورد (batch) وأجزاء صفوفه (part) بصيغة JSON مضغوطة.
     // تقرؤها الإدارة نفسها والإدارة العامة والمجلس ومدير النظام، ويستوردها ويحذفها مدير النظام أو محرر من الإدارة أو من الإدارة العامة. لا تُعدَّل بعد الحفظ.

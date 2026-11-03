@@ -366,7 +366,7 @@ function dutyOptions(u,sel){const ds=dutiesOf(u);return ds.length?`<option value
 function taskForm(a,pre){const isNew=!a;pre=pre||{};const tg=targets();
   const dep=a?a.toUnit:(pre.u&&tg.includes(deptOf(pre.u))?deptOf(pre.u):tg[0]);const dutyU=a?(a.dutyUnit||a.toUnit):(pre.u||dep);
   a=a||{priority:'normal',start:TODAY_ISO,due:iso(new Date(Date.now()+7*864e5)),duty:pre.n||''};
-  const attField=window.ATT&&ATT.formField?ATT.formField('dlg',a.attachments||[],{name:a.title||'تكليف'}):'';
+  const attField=window.ATT&&ATT.formField?ATT.formField('dlg',a.attachments||[],{name:a.title||'تكليف',scope:()=>({k:'units',u:[a.fromUnit||(isAdmin()&&!myU()?'gm':myU()),a.toUnit||val('t-to'),'gm','board']})}):'';
   modal(isNew?tr('تكليف جديد','New assignment'):tr('تعديل التكليف','Edit assignment'),`<fieldset><legend>${esc(tr('الجهة المكلَّفة','Assigned to'))}</legend>
     <div class="field"><label for="t-to">${esc(tr('الإدارة','Department'))}<span class="req">*</span></label><select id="t-to" ${isNew?'':'disabled'}>${tg.concat(isNew||tg.includes(dep)?[]:[dep]).map(x=>`<option value="${x}" ${x===dep?'selected':''}>${esc(uTitle(x))}</option>`).join('')}</select></div>
     <div class="field"><label for="t-unit">${esc(tr('القسم / الوحدة','Section / unit'))}</label><select id="t-unit">${unitOptions(dep,a.subUnit||dutyU)}</select></div>
