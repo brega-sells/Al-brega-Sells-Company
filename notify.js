@@ -10,9 +10,9 @@ const tr=(a,b)=>EN()&&b?b:a;
 const me=()=>(window.__me&&window.__me())||null;
 const FS=()=>window.__fs&&window.__fs();
 const say=m=>{try{toast(m)}catch(e){}};
-const DEF={assign:true,review:true,due:true,meet:true,contract:true,ticket:true,browser:false};
+const DEF={invite:true,assign:true,review:true,due:true,meet:true,contract:true,ticket:true,browser:false};
 const NT={raw:null,prefs:null,seen:{},items:[],open:false,notified:null,sub:null,timer:null};
-const TYPE={assign:['تكليف جديد','New assignment','p-info'],review:['بانتظار الاعتماد','Awaiting approval','p-warn'],due:['موعد تكليف','Assignment due','p-crit'],meet:['اجتماع','Meeting','p-fl'],contract:['عقد','Contract','p-warn'],ticket:['طلب زبون','Customer request','p-crit']};
+const TYPE={invite:['دعوة اجتماع','Meeting invitation','p-fl'],assign:['تكليف جديد','New assignment','p-info'],review:['بانتظار الاعتماد','Awaiting approval','p-warn'],due:['موعد تكليف','Assignment due','p-crit'],meet:['اجتماع','Meeting','p-fl'],contract:['عقد','Contract','p-warn'],ticket:['طلب زبون','Customer request','p-crit']};
 const unit=()=>{const m=me();return m?m.unit||'':''};
 const nd=n=>{n=Math.abs(n);if(EN())return n+(n===1?' day':' days');return n===1?'يوم واحد':n===2?'يومان':n<=10?n+' أيام':n+' يومًا'};
 const isTop=()=>{const m=me();return !!m&&(m.role==='admin'||['gm','board'].includes(m.unit))};
@@ -45,8 +45,16 @@ function compute(){const m=me();if(!m)return[];const p=NT.prefs||DEF,u=unit(),to
     if(p.due&&a.status!=='done'&&a.due&&(toMe||fromMe)){const d=days(today,a.due);
       if(d<0)push({id:'a-late-'+a.id,type:'due',at:a.due,title:tr('تكليف متأخر','Overdue assignment')+' · '+nd(d),body:a.title,prio:3,open:()=>openTask(a.id)});
       else if(d<=3)push({id:'a-soon-'+a.id+'-'+a.due,type:'due',at:a.due,title:d===0?tr('تكليف يستحق اليوم','Assignment due today'):tr('تكليف يستحق خلال','Assignment due in')+' '+nd(d),body:a.title,prio:1,open:()=>openTask(a.id)})}});
+  /* a new, changed or cancelled meeting reaches every user of each invited department (and the organizer's colleagues) at once */
+  if(p.invite&&u)((window.__meetings&&window.__meetings())||[]).forEach(mt=>{if(!(mt.units||[]).includes(u)||mt.createdBy===m.email)return;
+    const n=mt.notice||{k:'new',at:mt.createdAt||''},at=String(n.at||'');if(!at||days(at.slice(0,10),today)>21)return;
+    const k=mt.status==='cancelled'?'cancelled':n.k==='changed'?'changed':'new';
+    if(k!=='cancelled'&&(mt.status==='closed'||!mt.date||new Date(mt.date+'T'+(mt.time||'23:59'))<new Date(Date.now()-3*3600e3)))return;
+    const r=mt.rsvp&&mt.rsvp[u],org=uName(mt.organizer);
+    push({id:'mi-'+mt.id+'-'+k+'-'+at,type:'invite',at,title:k==='cancelled'?tr('أُلغي اجتماع','Meeting cancelled'):k==='changed'?tr('تغيّر موعد اجتماع','Meeting rescheduled'):tr('دعوة لاجتماع جديد','New meeting invitation'),
+      body:(mt.title||'')+' · '+fd(mt.date)+(mt.time?' '+mt.time:'')+(org?' · '+tr('من','from')+' '+org:'')+(k!=='cancelled'&&!r&&u!==mt.organizer?' · '+tr('أكّد حضور إدارتك','confirm your attendance'):''),prio:k==='cancelled'?3:2,open:()=>openMeet(mt.id)})});
   ((window.__meetings&&window.__meetings())||[]).forEach(mt=>{if(!p.meet||!mt.date||mt.status==='cancelled'||mt.status==='closed')return;const d=days(today,mt.date);if(d<0||d>7)return;
-    const inv=(mt.units||[]).includes(u)||mt.createdBy===m.email||m.role==='admin';if(!inv)return;const r=mt.rsvp&&mt.rsvp[m.email];
+    const inv=(mt.units||[]).includes(u)||mt.createdBy===m.email||m.role==='admin';if(!inv)return;const r=mt.rsvp&&mt.rsvp[u];
     push({id:'m-'+mt.id+'-'+mt.date,type:'meet',at:mt.date,title:(d===0?tr('اجتماع اليوم','Meeting today'):d===1?tr('اجتماع غدًا','Meeting tomorrow'):tr('اجتماع خلال','Meeting in')+' '+nd(d))+(mt.time?' · '+mt.time:''),body:(mt.title||'')+(r?'':' · '+tr('لم تُحدد حضورك بعد','RSVP pending')),prio:d<=1?2:1,open:()=>openMeet(mt.id)})});
   if(p.contract&&typeof D!=='undefined'&&D.get)S.contracts.forEach(c=>{const d=D.get(c.id);if(!d||!d.alert)return;
     push({id:'c-'+c.id+'-'+d.alert,type:'contract',at:d.effEnd||'',title:tr('عقد','Contract')+' · '+d.alert,body:(c.no||'')+' — '+(c.company||''),prio:d.alert==='عاجل'?3:1,open:()=>{go('contracts');setTimeout(()=>openContract(c.id),80)}})});
@@ -83,7 +91,7 @@ function refresh(){if(!me())return;mount();NT.items=compute();badge();if(NT.open
 const refreshSoon=(()=>{let t;return()=>{clearTimeout(t);t=setTimeout(refresh,150)}})();
 
 /* ---------- preferences panel (settings page) ---------- */
-const LBL={assign:['التكليفات الجديدة لإدارتي','New assignments for my department'],review:['تكليفات بانتظار اعتمادي','Assignments awaiting my approval'],due:['مواعيد التكليفات (متأخرة أو خلال 3 أيام)','Assignment deadlines (overdue or within 3 days)'],meet:['الاجتماعات خلال الأسبوع','Meetings this week'],contract:['العقود القريبة من الانتهاء','Contracts near expiry'],ticket:['طلبات الزبائن المستحقة','Customer requests due']};
+const LBL={invite:['دعوات الاجتماعات الجديدة وتغيير مواعيدها أو إلغاؤها','New meeting invitations, reschedules and cancellations'],assign:['التكليفات الجديدة لإدارتي','New assignments for my department'],review:['تكليفات بانتظار اعتمادي','Assignments awaiting my approval'],due:['مواعيد التكليفات (متأخرة أو خلال 3 أيام)','Assignment deadlines (overdue or within 3 days)'],meet:['الاجتماعات خلال الأسبوع','Meetings this week'],contract:['العقود القريبة من الانتهاء','Contracts near expiry'],ticket:['طلبات الزبائن المستحقة','Customer requests due']};
 function prefsPanel(){const p=NT.prefs||DEF;const perm=('Notification' in window)?Notification.permission:'unsupported';
   return `<div class="panel" id="nt-prefs"><h3 class="section-title">${SV.bell}${esc(tr('الإشعارات','Notifications'))}</h3>
    <p class="muted" style="margin:0 0 10px;font-size:13px">${esc(tr('اختر ما يظهر في جرس الإشعارات. تُحفظ هذه التفضيلات لحسابك على كل الأجهزة.','Choose what the bell shows. Preferences are saved to your account on every device.'))}</p>
