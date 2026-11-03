@@ -17,6 +17,7 @@ node tests/browser/polish.js    # external seed file + empty-database banner, sk
 node tests/browser/offline.js   # offline writes resolve on the device, pending counter + status chip, sync toast, late rejection reported, cache reads, offline sign-in with the saved role, logout guard
 node tests/browser/sms055.js    # SMS055 dashboard: import, parts, KPIs, previous-period comparison, replace overlap, CSV, permissions, English
 node tests/browser/meetnotify.js # meeting notices in the bell for invitees (new/changed/cancelled), «notify everyone» dialog: WhatsApp, e-mail Bcc, .ics, sent marks
+node tests/browser/powerbi.js   # Power BI button beside every Excel export/import, export dialog + .zip pack (CSV, Power Query), CSV import, CSV-injection guard
 node tests/browser/palette.js   # command palette (Ctrl+K), record search with Arabic-Indic digits, theme action, Alt+1, g-k chord, help dialog, no shortcuts while typing
 ```
 `xss.js` prints `hits: []` when nothing rendered as HTML; `auth.js` prints a JSON object where every value must be `true` (or the expected list) and ends with `AUTH OK`; `pwa.js` ends with `PWA/NOTIFY OK` and `palette.js` with `PALETTE OK`, `govern.js` with `GOVERN OK`, `polish.js` with `POLISH OK`, `offline.js` with `OFFLINE OK`, `sms055.js` with `SMS055 OK`.
