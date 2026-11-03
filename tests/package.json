@@ -3,7 +3,7 @@
   "private": true,
   "description": "Firestore rules tests (emulator) and browser tests (Playwright) for the Brega sales system",
   "scripts": {
-    "rules": "firebase emulators:exec --only firestore --project demo-brega \"node rules/rules.test.mjs\"",
+    "rules": "cp ../firestore.rules ./firestore.rules && firebase emulators:exec --only firestore --project demo-brega \"node rules/rules.test.mjs\"",
     "serve": "python3 -m http.server 8765 --bind 127.0.0.1 --directory ..",
     "browser": "node browser/xss.js && ROLE=w node browser/xss.js && node browser/auth.js && node browser/pwa.js && node browser/palette.js"
   },
