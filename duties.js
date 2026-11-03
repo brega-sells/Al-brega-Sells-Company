@@ -667,4 +667,5 @@ document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;c
 
 renderNav();if(S.view==='duties'||S.view==='dash')render();
 start();
+window.__assignments=()=>[...DT.list.values()];
 })();

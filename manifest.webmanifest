@@ -1,0 +1,19 @@
+{
+  "name": "منظومة الإدارة العامة للمبيعات والشؤون التجارية",
+  "short_name": "منظومة المبيعات",
+  "description": "شركة البريقة لتسويق النفط: العقود، كشوفات الاحتياجات، مهام الإدارات والتكليفات، الاجتماعات المغلقة وخدمة الزبائن",
+  "dir": "rtl",
+  "lang": "ar",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f2236",
+  "theme_color": "#0f2236",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

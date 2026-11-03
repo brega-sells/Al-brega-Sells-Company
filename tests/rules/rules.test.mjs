@@ -128,4 +128,23 @@ await T('editor writes unknown collection denied',W.doc('secrets/s1').set({a:1})
 await T('gm creates meeting',G.collection('meetings').add({title:'m',units:['gm','w'],organizer:'gm',createdBy:'gm@b.ly',status:'open'}),1);
 await T('w creates meeting organised by gm denied',W.collection('meetings').add({title:'m',units:['gm','w'],organizer:'gm',createdBy:'w@b.ly',status:'open'}),0);
 await T('meeting oversized title denied',G.collection('meetings').add({title:'x'.repeat(301),units:['gm'],organizer:'gm',createdBy:'gm@b.ly'}),0);
+// --- prefs (own document only)
+await T('user writes own prefs',W.doc('prefs/w@b.ly').set({notif:{assign:true},seen:{}}),1);
+await T('user reads own prefs',W.doc('prefs/w@b.ly').get(),1);
+await T('user cannot write others prefs',W.doc('prefs/e@b.ly').set({notif:{}}),0);
+await T('user cannot read others prefs',W.doc('prefs/e@b.ly').get(),0);
+await T('admin cannot read others prefs',A.doc('prefs/w@b.ly').get(),0);
+await T('viewer writes own prefs',WV.doc('prefs/wv@b.ly').set({seen:{}}),1);
+// --- clientErrors (anyone with a role creates in own name; admin reads/deletes)
+const ce=u=>({ts:'t',ref:'E-1',msg:'m',stack:'s',screen:'dash',ver:'2.0.0',ua:'u',online:true,role:'editor',lang:'ar',user:u});
+await T('viewer reports error',WV.collection('clientErrors').add(ce('wv@b.ly')),1);
+await T('error as someone else denied',W.collection('clientErrors').add(ce('e@b.ly')),0);
+await T('error with extra key denied',W.collection('clientErrors').add(Object.assign(ce('w@b.ly'),{isAdmin:true})),0);
+await T('error oversized stack denied',W.collection('clientErrors').add(Object.assign(ce('w@b.ly'),{stack:'x'.repeat(2001)})),0);
+await T('error note ok',W.collection('clientErrors').add(Object.assign(ce('w@b.ly'),{note:'n'})),1);
+await T('editor cannot read errors',W.collection('clientErrors').get(),0);
+await T('admin reads errors',A.collection('clientErrors').get(),1);
+await T('unverified cannot report',UNV.collection('clientErrors').add(ce('unv@b.ly')),0);
+await T('editor cannot delete error',(async()=>{const q=await A.collection('clientErrors').limit(1).get();await W.doc('clientErrors/'+q.docs[0].id).delete()})(),0);
+await T('admin deletes error',(async()=>{const q=await A.collection('clientErrors').limit(1).get();await A.doc('clientErrors/'+q.docs[0].id).delete()})(),1);
 console.log(`PASS ${pass} FAIL ${fail}`);await env.cleanup();process.exit(fail?1:0);
