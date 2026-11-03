@@ -24,6 +24,7 @@
 <script src="vendor/firebase/firebase-app-compat.js" integrity="sha384-ZaR6mWzmJtrRibZ1Vm7SoHFr8OXjyAuGAXalGDKqbxFT18oi/z+oZLIRFkpeNor1" crossorigin="anonymous"></script>
 <script src="vendor/firebase/firebase-auth-compat.js" integrity="sha384-I1LYojsZ5RM1cOda44Z2h42Qa6YfsQ1XkXxREnhp4ueYBR/4d1pG1K+NZM537Vsj" crossorigin="anonymous"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js" integrity="sha384-Ke0FJhH7LyRqDxZ0wt+/OXV38yfQVu7g9VPEEGjYmB4RVOY/ta04uecRhsMwT7V3" crossorigin="anonymous"></script>
+<script src="offline.js"></script>
 <script>
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyDHMuE7o8V88tYgtCYZ4dn0RrugUoSWpXY",
@@ -241,7 +242,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .nav .cnt{margin-inline-start:auto;font-size:11.5px;color:var(--side-muted);font-variant-numeric:tabular-nums}
 .side-foot{margin-top:auto;font-size:11.5px;color:var(--side-muted);padding-inline:8px;display:flex;flex-direction:column;gap:6px}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--neutral);margin-inline-end:6px}
-.dot.on{background:#3fc380}.dot.off{background:#e5534b}
+.dot.on{background:#3fc380}.dot.off{background:#e5534b}.dot.sync{background:#e0a030;animation:syncPulse 1.2s ease-in-out infinite}@keyframes syncPulse{50%{opacity:.35}}@media (prefers-reduced-motion:reduce){.dot.sync{animation:none}}
 /* main */
 .main{min-width:0;display:flex;flex-direction:column}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding-block:12px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));display:flex;gap:12px;align-items:center}
@@ -678,6 +679,8 @@ if(!cfg||!cfg.projectId||/YOUR_/.test(cfg.apiKey||'')){
 if(!window.firebase){screen(`<div class="lg-card">${BRAND}<p style="margin:0">تعذّر تحميل مكتبة Firebase. تأكد من اتصال الإنترنت ثم أعد تحميل الصفحة.</p></div>`);window.appRuntime={use:async()=>null};return}
 FB=firebase.initializeApp(cfg);AUTH=firebase.auth();FS=firebase.firestore();
 try{FS.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+// writes resolve once saved on the device and sync when the connection returns (offline.js)
+if(window.__sync)FS=window.__sync.wrap(FS);
 const L={},DL={},CACHE={};
 function snap(col){const m=CACHE[col]||new Map();const docs=[...m.entries()].map(([id,d])=>({id,exists:true,data:()=>d,metadata:{}}));return {docs,size:docs.length,empty:!docs.length,docChanges:()=>[],metadata:{}}}
 function emitDoc(col,id){const d=(CACHE[col]||new Map()).get(id);(DL[col+'/'+id]||[]).forEach(f=>f({id,exists:!!d,data:()=>d,metadata:{}}))}
@@ -747,7 +750,13 @@ function needVerify(u,sent){const o=screen(`<div class="lg-card">${BRAND}<p styl
   o.querySelector('#lg-vre').onclick=async()=>{m.style.color='';try{await u.sendEmailVerification();m.style.color='var(--ok)';m.textContent='أُرسلت الرسالة من جديد'}catch(e){m.textContent=authErr(e)}};
   o.querySelector('#lg-out').onclick=()=>AUTH.signOut().then(()=>location.reload());}
 /* الجلسة الخاملة: خروج تلقائي بعد 30 دقيقة دون نشاط */
-const IDLE_MS=30*60*1000;let idleT=null;function idleReset(){if(!ME)return;clearTimeout(idleT);idleT=setTimeout(()=>{try{sessionStorage.setItem('cm_idle','1')}catch(e){}AUTH.signOut().then(()=>location.reload())},IDLE_MS)}
+const IDLE_MS=30*60*1000;let idleT=null;function idleReset(){if(!ME)return;clearTimeout(idleT);idleT=setTimeout(idleOut,IDLE_MS)}
+/* offline, signing out would lock the user out until the internet returns and strand unsynced work: wait for the connection and the sync first */
+function idleOut(){const sy=window.__sync;if(sy&&(!navigator.onLine||sy.count()>0)){sy.idle().then(()=>{if(ME)idleOut()});return}try{sessionStorage.setItem('cm_idle','1')}catch(e){}AUTH.signOut().then(()=>location.reload())}
+window.__safeSignOut=function(){const sy=window.__sync,n=sy?sy.count():0;
+  if(n>0&&!confirm('لديك تعديلات محفوظة على هذا الجهاز لم تُرفع بعد إلى قاعدة البيانات. ستُرفع عند دخولك من جديد بالحساب نفسه وعلى الجهاز نفسه.\n\nهل تريد الخروج الآن؟'))return;
+  if(!navigator.onLine&&!confirm('أنت غير متصل بالإنترنت. بعد الخروج لن تتمكن من الدخول مرة أخرى حتى يعود الاتصال.\n\nهل تريد الخروج الآن؟'))return;
+  AUTH.signOut().then(()=>location.reload())};
 ['click','keydown','mousemove','touchstart','scroll','visibilitychange'].forEach(ev=>document.addEventListener(ev,idleReset,{passive:true}));
 /* إعادة التحقق قبل الإجراءات الحساسة (منح الصلاحيات وإزالتها): كلمة المرور مرة أخرى إن مضى على الدخول أكثر من 5 دقائق */
 let lastAuthAt=0;
@@ -761,7 +770,7 @@ window.__reauth=function(reason,force){const u=AUTH.currentUser;if(!u)return Pro
     f.addEventListener('submit',async e=>{e.preventDefault();const pw=d.querySelector('#ra-p').value;if(!pw){m.textContent='أدخل كلمة المرور';return}try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,pw));lastAuthAt=Date.now();fin(true)}catch(err){m.textContent=authErr(err)}});
     d.showModal();setTimeout(()=>d.querySelector('#ra-p').focus(),30)})};
 function userChip(){const box=document.querySelector('.top-actions');if(!box||!ME)return;let c=document.getElementById('who');if(!c){c=document.createElement('div');c.id='who';c.className='who';box.appendChild(c)}
-  c.innerHTML='<span class="who-name"></span><span class="who-role"></span><button class="btn sm ghost" id="logout-btn">خروج</button>';c.querySelector('.who-name').textContent=ME.name||ME.email;c.querySelector('.who-role').textContent=ROLE_AR[ME.role];c.querySelector('#logout-btn').onclick=()=>AUTH.signOut().then(()=>location.reload())}
+  c.innerHTML='<span class="who-name"></span><span class="who-role"></span><button class="btn sm ghost" id="logout-btn">خروج</button>';c.querySelector('.who-name').textContent=ME.name||ME.email;c.querySelector('.who-role').textContent=ROLE_AR[ME.role];c.querySelector('#logout-btn').onclick=()=>window.__safeSignOut()}
 AUTH.onAuthStateChanged(async u=>{
   if(!u){showLogin('login');return}
   if(!u.emailVerified){let sent=false;try{const t=Number(sessionStorage.getItem('cm_vsent')||0);if(Date.now()-t>60000){await u.sendEmailVerification();sessionStorage.setItem('cm_vsent',String(Date.now()));sent=true}}catch(e){}needVerify(u,sent);return}
@@ -769,7 +778,11 @@ AUTH.onAuthStateChanged(async u=>{
   // A session opened before the e-mail was confirmed still carries an ID token with email_verified=false for up to an hour,
   // so the rules refuse the role read. Refresh the token once and retry before concluding anything.
   let r=null,rerr=null;
-  for(let i=0;i<2&&!r;i++){try{if(i)await u.getIdToken(true);r=await FS.collection('roles').doc(email).get()}catch(e){rerr=e;const c=e&&e.code||'';if(i===0&&c!=='permission-denied'&&c!=='unavailable'){break}}}
+  for(let i=0;i<2&&!r;i++){try{if(i&&!navigator.onLine)break;if(i)await u.getIdToken(true);r=await FS.collection('roles').doc(email).get()}catch(e){rerr=e;const c=e&&e.code||'';if(i===0&&c!=='permission-denied'&&c!=='unavailable'){break}}}
+  const RK='cm_role_'+email;
+  if(r&&r.exists){try{localStorage.setItem(RK,JSON.stringify(r.data()))}catch(e){}}
+  // offline: open with the role this device last saw (the server rules still check every change when it syncs)
+  if(!r&&!navigator.onLine){try{const c=JSON.parse(localStorage.getItem(RK)||'null');if(c&&c.role)r={exists:true,data:()=>c}}catch(e){}}
   if(!r){roleReadFailed(u,rerr);return}
   if(!r.exists||!ROLE_AR[r.data().role]){noRole(u);return}
   ME={email,name:r.data().name||u.displayName||email,role:r.data().role,unit:r.data().unit||''};
@@ -2587,7 +2600,7 @@ const rerender=debounce(()=>{renderNav();const ae=document.activeElement;const k
   setTimeout(()=>{if(S.dbState==='wait')setConn('ready')},8000);
 })();
 function setConn(s,ok){if(ok===true)s='ready';S.dbState=s;if(s==='ready')S.loadedOnce=true;const d=document.getElementById('conn-dot'),t=document.getElementById('conn-txt');
-  if(s==='ready'){d.className='dot on';t.textContent='متصل · الحفظ تلقائي ومشترك'}else if(s==='none'){d.className='dot off';t.textContent='غير متصل بقاعدة البيانات'}render()}
+  if(s==='ready'){d.className='dot on';t.textContent='متصل · الحفظ تلقائي ومشترك';window.__syncReady=true;if(window.__sync)window.__sync.paint()}else if(s==='none'){d.className='dot off';t.textContent='غير متصل بقاعدة البيانات'}render()}
 document.getElementById('theme-btn').addEventListener('click',()=>{const r=document.documentElement;const cur=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const nx=cur==='dark'?'light':'dark';r.dataset.theme=nx;try{localStorage.setItem('cm_theme',nx)}catch(e){}});
 async function loadArticles(){try{const r=await fetch('articles.json');if(r.ok){const j=await r.json();Object.assign(ARTICLES,j)}}catch(e){}}
 

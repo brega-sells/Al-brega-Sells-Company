@@ -3,6 +3,10 @@
 const F=window.__FAKE||{user:null,data:{}};
 const DB={};for(const c in F.data){DB[c]=new Map(Object.entries(F.data[c]));}
 const LIS=[];const log=[];window.__FBLOG=log;
+/* F.hang=true holds every write like the real SDK does offline (resolves only on server ack); __fakeFlush(err) acknowledges or rejects them */
+const HANG=[];const gate=run=>{if(!F.hang)return run();return new Promise((res,rej)=>HANG.push({res,rej,run}))};
+window.__fakeFlush=async err=>{while(HANG.length){const h=HANG.shift();if(err){h.rej(Object.assign(new Error(err),{code:err}))}else{try{h.res(await h.run())}catch(e){h.rej(e)}}}};
+window.__fakeHeld=()=>HANG.length;
 function clone(x){return x==null?x:JSON.parse(JSON.stringify(x))}
 function col(c){if(!DB[c])DB[c]=new Map();return DB[c]}
 function emitAll(c){LIS.filter(l=>l.col===c).forEach(l=>{try{l.fire()}catch(e){console.error(e)}})}
@@ -16,10 +20,10 @@ function query(c,filters,order,lim){
   return {docs,size:docs.length,empty:!docs.length,forEach:f=>docs.forEach(f),docChanges:()=>docs.map(doc=>({type:'added',doc,oldIndex:-1,newIndex:0})),metadata:{hasPendingWrites:false,fromCache:false}}
 }
 function docRef(c,id){return {id,path:c+'/'+id,
-  get:async()=>{const f=F.fail&&F.fail[c];if(f&&f.n>0){f.n--;log.push(['get-fail',c,id,f.code]);throw Object.assign(new Error(f.code),{code:f.code})}return docSnap(c,id)},
-  set:async(d,o)=>{log.push(['set',c,id,clone(d)]);if(o&&o.merge){col(c).set(id,Object.assign({},col(c).get(id)||{},clone(d)))}else col(c).set(id,clone(d));emitAll(c)},
-  update:async d=>{log.push(['update',c,id,clone(d)]);if(!col(c).has(id))throw Object.assign(new Error('not-found'),{code:'not-found'});col(c).set(id,Object.assign({},col(c).get(id),clone(d)));emitAll(c)},
-  delete:async()=>{log.push(['delete',c,id]);col(c).delete(id);emitAll(c)},
+  get:async o=>{if(o&&o.source)log.push(['get-src',c,id,o.source]);const f=F.fail&&F.fail[c];if(f&&f.n>0){f.n--;log.push(['get-fail',c,id,f.code]);throw Object.assign(new Error(f.code),{code:f.code})}return docSnap(c,id)},
+  set:(d,o)=>gate(async()=>{log.push(['set',c,id,clone(d)]);if(o&&o.merge){col(c).set(id,Object.assign({},col(c).get(id)||{},clone(d)))}else col(c).set(id,clone(d));emitAll(c)}),
+  update:d=>gate(async()=>{log.push(['update',c,id,clone(d)]);if(!col(c).has(id))throw Object.assign(new Error('not-found'),{code:'not-found'});col(c).set(id,Object.assign({},col(c).get(id),clone(d)));emitAll(c)}),
+  delete:()=>gate(async()=>{log.push(['delete',c,id]);col(c).delete(id);emitAll(c)}),
   onSnapshot:(cb,err)=>{const l={col:c,fire:()=>cb(docSnap(c,id))};LIS.push(l);setTimeout(l.fire,0);return()=>{const i=LIS.indexOf(l);if(i>=0)LIS.splice(i,1)}},
   collection:sub=>colRef(c+'/'+id+'/'+sub)}}
 function colRef(c,filters=[],order=null,lim=0){return {path:c,
@@ -30,7 +34,7 @@ function colRef(c,filters=[],order=null,lim=0){return {path:c,
   limit:n=>colRef(c,filters,order,n),
   get:async()=>query(c,filters,order,lim),
   onSnapshot:(cb,err)=>{const l={col:c,fire:()=>cb(query(c,filters,order,lim))};LIS.push(l);setTimeout(l.fire,0);return()=>{const i=LIS.indexOf(l);if(i>=0)LIS.splice(i,1)}}}}
-const FS={collection:colRef,doc:p=>{const [c,id]=p.split('/');return docRef(c,id)},enablePersistence:async()=>{},
+const FS={collection:colRef,doc:p=>{const [c,id]=p.split('/');return docRef(c,id)},enablePersistence:async()=>{},waitForPendingWrites:()=>new Promise(r=>{const t=()=>HANG.length?setTimeout(t,50):r();t()}),
   batch:()=>{const ops=[];return {set:(r,d)=>ops.push(()=>r.set(d)),update:(r,d)=>ops.push(()=>r.update(d)),delete:r=>ops.push(()=>r.delete()),commit:async()=>{for(const o of ops)await o()}}}};
 let authCbs=[];let USER=F.user?Object.assign({emailVerified:true,sendEmailVerification:async()=>{log.push(['verify'])},reload:async()=>{},updateProfile:async()=>{},updatePassword:async pw=>{log.push(['updatePassword',pw.length])},getIdToken:async force=>{if(force)log.push(['token-refresh']);return 'tok'},reauthenticateWithCredential:async()=>{log.push(['reauth'])},reauthenticateWithPopup:async p=>{log.push(['reauth-popup',p&&p.providerId])},metadata:{lastSignInTime:new Date().toISOString()}},F.user):null;
 const AUTH={get currentUser(){return USER},onAuthStateChanged:cb=>{authCbs.push(cb);setTimeout(()=>cb(USER),0);return()=>{}},

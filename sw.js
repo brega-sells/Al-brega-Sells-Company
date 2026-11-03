@@ -1,20 +1,32 @@
 /* Service worker: makes the system installable and keeps the app shell available offline.
-   Data is not cached here; Firestore keeps its own offline cache and syncs writes when the connection returns.
-   Strategy: app files network-first (so updates arrive) with cache fallback; vendored libraries and icons cache-first. */
+   Data is not cached here; Firestore keeps its own offline cache and syncs writes when the connection returns (offline.js).
+   Strategy: app files network-first (so updates arrive) with a short timeout and cache fallback, so a weak connection
+   does not leave the page hanging; vendored libraries, icons and Google Fonts cache-first. */
 importScripts('version.js');
 const CACHE='brega-'+self.APP_VERSION;
-const SHELL=['./','index.html','attach.js','meetings.js','duties-data.js','duties.js','version.js','releases.js','pwa.js','notify.js','govern.js','palette.js','quality.js',
+const FONTS='brega-fonts';
+const SHELL=['./','index.html','offline.js','attach.js','meetings.js','duties-data.js','duties.js','version.js','releases.js','pwa.js','notify.js','govern.js','palette.js','quality.js',
   'manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png',
   'vendor/firebase/firebase-app-compat.js','vendor/firebase/firebase-auth-compat.js','vendor/firebase/firebase-firestore-compat.js',
   'vendor/pdfjs/pdf.min.js','vendor/pdfjs/pdf.worker.min.js'];
 const STATIC=/\/(vendor|icons)\//;
+const NET_WAIT=5000;
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>Promise.all(SHELL.map(u=>c.add(u).catch(()=>{})))))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('brega-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('brega-')&&k!==CACHE&&k!==FONTS).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('message',e=>{if(e.data==='SKIP_WAITING')self.skipWaiting()});
+const put=(name,req,res)=>caches.open(name).then(c=>c.put(req,res)).catch(()=>{});
+function fromCache(req){return caches.match(req).then(r=>r||(req.mode==='navigate'?caches.match('index.html'):undefined))}
 self.addEventListener('fetch',e=>{
   const req=e.request;if(req.method!=='GET')return;
-  const url=new URL(req.url);if(url.origin!==self.location.origin)return;
-  if(STATIC.test(url.pathname)){e.respondWith(caches.match(req).then(r=>r||fetch(req).then(res=>{if(res.ok)caches.open(CACHE).then(c=>c.put(req,res.clone()));return res})));return}
-  e.respondWith(fetch(req).then(res=>{if(res.ok&&(req.mode==='navigate'||/\.(js|html|webmanifest|json)$/.test(url.pathname)||url.pathname.endsWith('/')))caches.open(CACHE).then(c=>c.put(req,res.clone()));return res})
-    .catch(()=>caches.match(req).then(r=>r||(req.mode==='navigate'?caches.match('index.html'):undefined))));
+  const url=new URL(req.url);
+  if(/^fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)){e.respondWith(caches.open(FONTS).then(c=>c.match(req).then(r=>r||fetch(req).then(res=>{if(res.ok||res.type==='opaque')c.put(req,res.clone());return res}))));return}
+  if(url.origin!==self.location.origin)return;
+  if(STATIC.test(url.pathname)){e.respondWith(caches.match(req).then(r=>r||fetch(req).then(res=>{if(res.ok)put(CACHE,req,res.clone());return res})));return}
+  const cacheable=req.mode==='navigate'||/\.(js|html|webmanifest|json)$/.test(url.pathname)||url.pathname.endsWith('/');
+  e.respondWith(new Promise(resolve=>{let done=false;const finish=r=>{if(!done){done=true;resolve(r)}};
+    // weak connection: after NET_WAIT serve the cached copy if there is one, and let the network answer refresh the cache
+    const t=setTimeout(()=>fromCache(req).then(r=>{if(r)finish(r)}),NET_WAIT);
+    fetch(req).then(res=>{clearTimeout(t);if(res.ok&&cacheable)put(CACHE,req,res.clone());finish(res)})
+      .catch(()=>{clearTimeout(t);fromCache(req).then(r=>finish(r||Response.error()))});
+  }));
 });

@@ -25,10 +25,13 @@ if('serviceWorker' in navigator){
 }
 /* connection awareness */
 function conn(){const on=navigator.onLine;document.documentElement.dataset.offline=on?'':'1';let b=document.getElementById('net-bar');
-  if(on){if(b)b.remove();if(conn.was===false)say(tr('عاد الاتصال، تجري مزامنة التعديلات المحفوظة على الجهاز','Back online, syncing the changes saved on this device'))}
-  else{if(!b){b=document.createElement('div');b.id='net-bar';b.className='pwa-bar off';document.body.appendChild(b)}b.textContent=tr('أنت غير متصل بالإنترنت. يمكنك متابعة العمل وستُحفظ التعديلات عند عودة الاتصال.','You are offline. You can keep working; changes are saved when the connection returns.')}
+  const sy=window.__sync&&window.__sync.state(),n=sy?sy.inflight:0,pend=sy?sy.pending:0;
+  if(on){if(b)b.remove();if(conn.was===false)say(pend?tr('عاد الاتصال، تجري مزامنة التعديلات المحفوظة على الجهاز','Back online, syncing the changes saved on this device'):tr('عاد الاتصال بالإنترنت','Back online'))}
+  else{if(!b){b=document.createElement('div');b.id='net-bar';b.className='pwa-bar off';b.setAttribute('role','status');document.body.appendChild(b)}
+    b.textContent=tr('أنت غير متصل بالإنترنت. تابع العمل، تُحفظ التعديلات على هذا الجهاز وتُرفع تلقائيًا عند عودة الاتصال.','You are offline. Keep working; changes are saved on this device and upload automatically when the connection returns.')
+      +(pend?' '+(n?tr(`(${window.__sync.ar(n)} بانتظار المزامنة)`,`(${n} waiting to sync)`):tr('(توجد تعديلات بانتظار المزامنة)','(changes waiting to sync)')):'')}
   conn.was=on}
-window.addEventListener('online',conn);window.addEventListener('offline',conn);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',conn);else conn();
+window.addEventListener('online',conn);window.addEventListener('offline',conn);if(window.__sync)window.__sync.on(()=>{if(!navigator.onLine)conn()});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',conn);else conn();
 /* install prompt (Android, desktop); iOS shows a hint instead */
 let deferred=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;document.dispatchEvent(new CustomEvent('pwa-installable'))});
 window.addEventListener('appinstalled',()=>{deferred=null;say(tr('ثُبّتت المنظومة على هذا الجهاز','The system is installed on this device'))});
