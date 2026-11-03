@@ -420,8 +420,8 @@ function printMinutes(id){
    <h2>المحضر</h2><div style="white-space:pre-wrap">${esc(m.minutes||'—')}</div>
    <h2>القرارات والتكليفات</h2>${(m.decisions||[]).length?`<table><tr><th>#</th><th>القرار</th><th>الجهة المكلفة</th><th>الموعد</th><th>الحالة</th></tr>${m.decisions.map((d,i)=>`<tr><td>${esc(d.no||String(i+1))}</td><td>${esc(d.t)}</td><td>${esc(uFull(d.unit))}</td><td>${d.due?fd(d.due):'—'}</td><td>${d.done?'منفّذ':'قيد التنفيذ'}</td></tr>`).join('')}</table>`:'<p>—</p>'}
    <div class="sig"><div>مقرر الاجتماع: ................</div><div>رئيس الاجتماع: ................</div></div>
-   <script>window.onload=()=>window.print()<\/script></body></html>`);
-  w.document.close();
+   </body></html>`);
+  w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){}},400);
 }
 
 /* ---------- events ---------- */
