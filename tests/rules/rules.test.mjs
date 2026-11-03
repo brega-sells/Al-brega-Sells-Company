@@ -59,10 +59,15 @@ await T('w2 cannot move record to other unit',W2.doc('records/R1').update({unit:
 await T('w2 cannot change createdBy',W2.doc('records/R1').update({createdBy:'w2@b.ly'}),0);
 await T('legacy record without createdBy editable',W.doc('records/R3').update({title:'t3'}),1);
 await T('viewer cannot edit record',WV.doc('records/R1').update({title:'v'}),0);
-// --- attachments: anyone with a role reads, only the uploader or an admin deletes
-await T('viewer reads file',WV.doc('files/F1').get(),1);
-await T('editor uploads chunk then meta',(async()=>{await W.doc('files/N1_0').set({d:'x'});await W.doc('files/N1').set({name:'n',n:1,byEmail:'w@b.ly'})})(),1);
-await T('editor cannot upload as someone else',W.doc('files/N2').set({name:'n',n:1,byEmail:'e@b.ly'}),0);
+// --- attachments: legacy files (no scope) still open for any role; uploader or admin deletes
+await T('viewer reads legacy file',WV.doc('files/F1').get(),1);
+await T('editor cannot upload chunk before meta',W.doc('files/N0_0').set({d:'x'}),0);
+await T('editor cannot upload meta without scope',W.doc('files/N0').set({name:'n',n:1,byEmail:'w@b.ly'}),0);
+await T('editor uploads meta then chunk',(async()=>{await W.doc('files/N1').set({name:'n',n:1,byEmail:'w@b.ly',scope:{k:'all'}});await W.doc('files/N1_0').set({d:'x'})})(),1);
+await T('editor cannot upload as someone else',W.doc('files/N2').set({name:'n',n:1,byEmail:'e@b.ly',scope:{k:'all'}}),0);
+await T('editor cannot add chunk to someone else file',E.doc('files/N1_1').set({d:'x'}),0);
+await T('chunk accepts only d',W.doc('files/N1_1').set({d:'x',extra:1}),0);
+await T('bad scope kind rejected',W.doc('files/N3').set({name:'n',n:1,byEmail:'w@b.ly',scope:{k:'public'}}),0);
 await T('uploader deletes own chunk',W.doc('files/F1_0').delete(),1);
 await T('uploader deletes own meta',W.doc('files/F1').delete(),1);
 await T('other editor cannot delete chunk',W.doc('files/F2_0').delete(),0);
@@ -70,6 +75,41 @@ await T('other editor cannot delete meta',W.doc('files/F2').delete(),0);
 await T('editor cannot delete orphan chunk',W.doc('files/ORPHAN_0').delete(),0);
 await T('admin deletes orphan chunk',A.doc('files/ORPHAN_0').delete(),1);
 await T('admin deletes any file',A.doc('files/F2').delete(),1);
+await T('non-admin cannot list files',W.collection('files').get(),0);
+await T('admin lists file metadata',A.collection('files').where('n','>=',1).get(),1);
+// --- attachments inherit the access of their record
+await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();
+ await db.doc('meetings/MF').set({title:'m',units:['w','e'],organizer:'w',createdBy:'w@b.ly'});
+ await db.doc('files/RW').set({name:'r',n:1,byEmail:'w@b.ly',scope:{k:'units',u:['w','gm','board']}});await db.doc('files/RW_0').set({d:'x'});
+ await db.doc('files/MW').set({name:'m',n:1,byEmail:'e@b.ly',scope:{k:'meeting',id:'MF'}});await db.doc('files/MW_0').set({d:'x'});
+ await db.doc('files/AL').set({name:'a',n:1,byEmail:'w@b.ly',scope:{k:'all'}});await db.doc('files/AL_0').set({d:'x'});
+ await db.doc('files/OR').set({name:'o',n:1,byEmail:'w@b.ly',scope:{k:'units',u:[]}});await db.doc('files/OR_0').set({d:'x'});
+ await db.doc('files/LG').set({name:'l',n:1,byEmail:'w@b.ly'});});
+await T('same-unit viewer reads record file',WV.doc('files/RW').get(),1);
+await T('same-unit viewer reads record chunk',WV.doc('files/RW_0').get(),1);
+await T('other unit cannot read record file',E.doc('files/RW').get(),0);
+await T('other unit cannot read record chunk',E.doc('files/RW_0').get(),0);
+await T('gm reads record file',G.doc('files/RW_0').get(),1);
+await T('board reads record file',B.doc('files/RW_0').get(),1);
+await T('admin reads record file',A.doc('files/RW_0').get(),1);
+await T('no-unit editor cannot read record file',N.doc('files/RW_0').get(),0);
+await T('invited unit reads meeting file',WV.doc('files/MW_0').get(),1);
+await T('uninvited gm cannot read meeting file',G.doc('files/MW').get(),0);
+await T('uninvited gm cannot read meeting chunk',G.doc('files/MW_0').get(),0);
+await T('board cannot read meeting chunk',B.doc('files/MW_0').get(),0);
+await T('admin reads meeting chunk',A.doc('files/MW_0').get(),1);
+await T('shared file readable by any role',B.doc('files/AL_0').get(),1);
+await T('orphan readable by uploader',W.doc('files/OR_0').get(),1);
+await T('orphan hidden from same unit',W2.doc('files/OR_0').get(),0);
+await T('orphan readable by admin',A.doc('files/OR').get(),1);
+await env.withSecurityRulesDisabled(async c=>{await c.firestore().doc('meetings/MF').update({units:['w','e','gm']})});
+await T('newly invited unit reads meeting file',G.doc('files/MW_0').get(),1);
+// --- scope stamping (migration)
+await T('admin stamps legacy file',A.doc('files/LG').update({scope:{k:'units',u:['w']}}),1);
+await T('admin cannot change other fields while stamping',A.doc('files/AL').update({scope:{k:'all'},name:'x'}),0);
+await T('uploader narrows own file',W.doc('files/AL').update({scope:{k:'units',u:['w']}}),1);
+await T('other editor cannot restamp',E.doc('files/RW').update({scope:{k:'all'}}),0);
+await T('chunk cannot be updated',W.doc('files/RW_0').update({d:'y'}),0);
 // --- assignments: reads
 await T('w reads A1 (to w)',W.doc('assignments/A1').get(),1);
 await T('w cannot read A2',W.doc('assignments/A2').get(),0);

@@ -52,14 +52,21 @@ const IC={
 /* ---------------- storage (Firestore, chunked) ---------------- */
 const cache=new Map();
 const toB64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=()=>rej(r.error);r.readAsDataURL(blob)});
-async function upload(blob,name,extra,onProg){
+/* scope: who may open the file, inherited from the record it belongs to (see firestore.rules → files).
+   {k:'all'} | {k:'units',u:[...]} | {k:'meeting',id}. Missing scope means a record everyone with a role reads. */
+const normScope=sc=>{sc=typeof sc==='function'?sc():sc;if(!sc||!sc.k)return {k:'all'};
+  if(sc.k==='units')return {k:'units',u:[...new Set((sc.u||[]).filter(Boolean).map(String))].slice(0,60)};
+  if(sc.k==='meeting'&&sc.id)return {k:'meeting',id:String(sc.id)};return {k:'all'}};
+async function upload(blob,name,extra,onProg,scope){
   const fs=FSX();if(!fs)throw new Error(tr('قاعدة البيانات غير متصلة','Database not connected'));
   if(blob.size>MAX_MB*1048576)throw new Error(tr(`الحجم أكبر من ${MAX_MB} ميغابايت`,`larger than ${MAX_MB} MB`));
   const data=await toB64(blob);const n=Math.max(1,Math.ceil(data.length/CHUNK));
   const id=fs.collection('files').doc().id;
-  for(let i=0;i<n;i++){await fs.collection('files').doc(id+'_'+i).set({d:data.slice(i*CHUNK,(i+1)*CHUNK)});onProg&&onProg((i+1)/(n+.25))}
   const m=ME();const meta=Object.assign({name,type:blob.type||'application/octet-stream',size:blob.size,n,at:new Date().toISOString(),by:m.name||m.email||''},extra||{});
-  await fs.collection('files').doc(id).set(Object.assign({},meta,{byEmail:m.email||''}));
+  // the metadata (owner + scope) goes first: the rules check it before accepting each chunk
+  await fs.collection('files').doc(id).set(Object.assign({},meta,{byEmail:m.email||'',scope:normScope(scope)}));
+  try{for(let i=0;i<n;i++){await fs.collection('files').doc(id+'_'+i).set({d:data.slice(i*CHUNK,(i+1)*CHUNK)});onProg&&onProg((i+1)/(n+.25))}}
+  catch(e){removeFile({id,n});throw e}
   cache.set(id,blob);onProg&&onProg(1);return Object.assign({id},meta);
 }
 async function getBlob(a){
@@ -107,7 +114,7 @@ function prog(key,pid,p,txt){const s=ST.get(key);if(!s)return;const e=s.pending.
 function field(key,list,opts={}){
   let s=ST.get(key);
   if(!s||!s.pending.size||opts.reset)s={list:(list||[]).slice(),pending:new Map(),fresh:new Set(),waiters:[]};
-  s.onChange=opts.onChange||null;s.ro=!!opts.readonly;s.name=opts.name||'';ST.set(key,s);
+  s.onChange=opts.onChange||null;s.scope=opts.scope||null;s.ro=!!opts.readonly;s.name=opts.name||'';ST.set(key,s);
   const zone=s.ro?'':`<div class="att-zone" data-att-drop="${H(key)}"><span class="att-zi">${IC.clip}</span>
     <span class="att-zt"><b>${H(tr('أرفق المستندات','Attach documents'))}</b><small>${H(tr('اسحب الملفات وأفلتها هنا، أو امسح المستند الورقي بكاميرا الجهاز','Drop files here, or scan a paper document with your camera'))}</small></span>
     <span class="att-zb"><button type="button" class="att-btn" data-att-act="pick" data-key="${H(key)}">${IC.up}${H(tr('رفع ملف','Upload file'))}</button><button type="button" class="att-btn att-scan" data-att-act="scan" data-key="${H(key)}">${IC.scan}${H(tr('مسح ضوئي','Scan'))}</button></span></div>`;
@@ -125,7 +132,7 @@ async function addBlobs(key,items){
   await Promise.all(items.map(async it=>{
     const pid='p'+(++seq);s.pending.set(pid,{name:it.name,p:0,k:kind({type:it.blob.type,name:it.name}),txt:tr('جارٍ التجهيز…','Preparing…')});paint(key);
     try{let blob=it.blob,name=it.name;if(!(it.extra&&it.extra.scanned)){const c=await compressImage(blob,name);blob=c.blob;name=c.name}
-      const a=await upload(blob,name,it.extra,p=>prog(key,pid,p));s.list.push(a);s.fresh.add(a.id);ok++}
+      const a=await upload(blob,name,it.extra,p=>prog(key,pid,p),s.scope);s.list.push(a);s.fresh.add(a.id);ok++}
     catch(e){say(tr('تعذّر رفع «','Could not upload “')+it.name+tr('»: ','”: ')+(e.code==='permission-denied'?tr('لا تملك صلاحية الرفع (حدّث قواعد Firestore)','permission denied (update Firestore rules)'):(e.message||e.code||'')))}
     s.pending.delete(pid);paint(key);
   }));
@@ -704,7 +711,30 @@ dialog.scn[open]{animation:scnIn .4s cubic-bezier(.2,.8,.2,1)}dialog.scn.out{ani
 
 if(window.I18N&&I18N.add)I18N.add({'المرفقات':'Attachments','ملف العقد والمرفقات':'Contract file & attachments','مرفقات المحضر':'Minutes attachments'});
 
-window.ATT={field,view,val,scan:scanOpen,
+/* One-time migration (admin): stamp a scope on files uploaded before scopes existed, from the record that
+   references each one. Files no record references get an empty unit list (admin and uploader only). */
+const SCOPE_COLS=['contracts','needs','batches','extensions','letters','companies','tickets','notices','records','meetings','assignments'];
+function attIds(v,out){if(Array.isArray(v))v.forEach(x=>attIds(x,out));else if(v&&typeof v==='object'){for(const[k,x]of Object.entries(v)){if(k==='attachments'&&Array.isArray(x))x.forEach(a=>{if(a&&a.id)out.push(String(a.id))});else if(x&&typeof x==='object')attIds(x,out)}}return out}
+function scopeFor(col,id,d){if(col==='records')return {k:'units',u:[d.unit,'gm','board'].filter(Boolean)};
+  if(col==='meetings')return {k:'meeting',id};
+  if(col==='assignments')return {k:'units',u:[d.fromUnit,d.toUnit,'gm','board'].filter(Boolean)};return {k:'all'}}
+async function migrateScopes(force){
+  const fs=FSX();if(!fs||ME().role!=='admin')return null;
+  const flag=fs.collection('config').doc('filesScope');if(!force){const f=await flag.get();if(f.exists&&(f.data().v||0)>=1)return 0}
+  const want=new Map();
+  for(const col of SCOPE_COLS){let snap;try{snap=await fs.collection(col).get()}catch(e){continue}
+    snap.forEach(doc=>{const d=doc.data()||{};const sc=scopeFor(col,doc.id,d);attIds(d,[]).forEach(fid=>{const cur=want.get(fid);if(!cur||sc.k==='all')want.set(fid,sc)})})}
+  const metas=await fs.collection('files').where('n','>=',1).get();
+  let batch=fs.batch(),k=0,n=0;
+  for(const doc of metas.docs){if(doc.data().scope)continue;batch.update(doc.ref,{scope:want.get(doc.id)||{k:'units',u:[]}});n++;
+    if(++k>=400){await batch.commit();batch=fs.batch();k=0}}
+  if(k)await batch.commit();
+  await flag.set({v:1,at:new Date().toISOString(),by:ME().email||'',count:n});
+  return n;
+}
+(function autoMigrate(tries){setTimeout(()=>{if(ME().role==='admin'&&FSX()){migrateScopes().then(n=>{if(n)console.info('files: scoped '+n+' legacy attachments')}).catch(e=>console.warn('files scope migration',e&&e.message))}else if(tries<60)autoMigrate(tries+1)},tries?5000:15000)})(0);
+
+window.ATT={field,view,val,scan:scanOpen,migrateScopes,
   formField:(key,list,opts)=>`<div class="field full">${field(key,list,Object.assign({reset:true},opts||{}))}</div>`,
   _test:{detectQuad,warp,applyFilter,makePDF,grayOf}};
 })();

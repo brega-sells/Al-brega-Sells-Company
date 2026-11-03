@@ -11,3 +11,4 @@ package/
 *.xlsx
 seed*.json
 !tests/fixtures/seed.sample.json
+tests/package-lock.json
