@@ -2,6 +2,9 @@
    Newest first. type: جديد | تحسين | إصلاح | أمان. roles: which roles see the highlight (empty = everyone). */
 "use strict";
 window.RELEASES=[
+ {version:'2.17.1',date:'2026-11-04',highlights:[
+   {type:'تحسين',title:'تنظيم داخلي للكود',desc:'توحيد تسمية طبقة الربط بقاعدة البيانات داخل المنظومة، دون أي تغيير في طريقة العمل.',roles:['admin']}
+ ]},
  {version:'2.17.0',date:'2026-11-04',highlights:[
    {type:'أمان',title:'حماية حساب المدير بخطوتين',desc:'يمكن لمدير النظام أن يقصر صلاحياته على الدخول بحساب Google، فتحميه خطوتا التحقق في Google حتى لو عُرفت كلمة المرور.',roles:['admin']},
    {type:'جديد',title:'نسخة احتياطية كاملة',desc:'من الإعدادات يحفظ مدير النظام كل البيانات في ملف واحد، مع تذكير أسبوعي.',roles:['admin']},
