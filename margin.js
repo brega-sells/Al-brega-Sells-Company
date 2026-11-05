@@ -157,7 +157,7 @@ function toolbar(){const has=src().length;return `<div class="toolbar sm-acts">
   ${has?`<button class="btn" data-pm="export">${I.down}${esc(tr('تصدير التحليل Excel','Export analysis (Excel)'))}</button><button class="btn" data-pm="print">${esc(tr('طباعة / PDF','Print / PDF'))}</button>`:''}
   <button class="btn ghost" data-pm="template">${esc(tr('نموذج قائمة الأسعار','Price-list template'))}</button>
   ${PM.local?`<button class="btn ghost" data-pm="drop-local">${esc(tr('إغلاق العرض المؤقت','Close temporary view'))}</button>`:''}
-  <input type="file" id="pm-file" accept=".xlsx,.csv,.htm,.html" hidden></div>`}
+  <input type="file" id="pm-file" accept="${FileImport.ACCEPT}" hidden></div>`}
 function statusOf(m){const c=PM.cfg;if(m==null)return ['p-neutral',tr('بلا سعر','No price'),''];if(m<0)return ['p-crit',tr('خسارة','Loss'),'c'];if(m<+c.min)return ['p-crit',tr('تحت الحد الأدنى','Below minimum'),'c'];if(m<+c.target)return ['p-warn',tr('تحت المستهدف','Below target'),'w'];return ['p-ok',tr('ضمن المستهدف','On target'),'']}
 const mOf=(price,cost)=>price!=null&&cost!=null&&price>0?(price-cost)*100/price:null;
 const kOf=(price,cost)=>price!=null&&cost!=null&&cost>0?(price-cost)*100/cost:null;
