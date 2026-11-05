@@ -1,122 +1,139 @@
-/* Debts dashboard: imports synthetic workbooks shaped like the monthly «مديونية كاملة» statement (summary sheet with
-   غ / ش categories and sector subtotals, foreign currency, region sheets with customer accounts) and the fuel value
-   statement; checks the saved parts, totals against the stated grand total, KPIs (DSO, collection rate), estimated
-   FIFO aging over three months, continuity between statements, follow-up priorities, account detail, export,
-   replacing a month, refusal of a wrong file, another department, English + dark. */
+/* Debts dashboard: the template (sheets and headers), reading a filled template back, every KPI with the requested formula
+   checked to the dinar on a small portfolio (total receivables, overdue ratio, DSO, collection ratio, credit-limit use,
+   customers over the limit, guarantee cover, top 10), the six aging buckets, government debts kept apart from the
+   private sector, collection actions and settlements, the customer statement, saving / replacing a period, the monthly
+   balances statement still read, a wrong file refused, another department (view only), a large portfolio, English + dark. */
 const { open } = require('./harness');
 const path = require('path');
+const { small, large } = require('./debts-sample');
 const SHOTS = process.env.SHOTS || '';
 const roles = { 'ca@test.ly': { role: 'editor', name: 'CA', unit: 'ca' }, 'w@test.ly': { role: 'editor', name: 'W', unit: 'w' } };
 const data = { roles, config: { main: { t1: 90, t2: 60, t3: 30 } } };
 
-/* entities: [name, region, sector, opening (June), monthly withdrawals, monthly collections] */
-const CATS = [['شركة الكهرباء', 'W', 'الممولة من وزارة المالية', 1000000, 100000, 0], ['شركة الكهرباء', 'E', 'الممولة من وزارة المالية', 500000, 50000, 0],
-  ['شركات التوزيع', 'W', 'شركات توزيع', 300000, 80000, 80000], ['شركات التوزيع', 'E', 'شركات توزيع', 200000, 40000, 60000]];
-const CUST = [['160725', 'ليبيا للنفط المشتركة', 'W', 'شركات التوزيع', 200000, 50000, 50000], ['161500', 'شرارة ذهبية طرابلس', 'W', 'شركات التوزيع', 100000, 30000, 30000],
-  ['262013', 'شركة الشرارة الذهبية', 'E', 'شركات التوزيع', 200000, 40000, 60000], ['167053', 'حسابات بدون حركة', 'W', 'حسابات قديمة', 90000, 0, 0]];
-const MONTHS = [['2026-05-31', '2026-06-30'], ['2026-06-30', '2026-07-31'], ['2026-07-31', '2026-08-31']];
-const bal = (e, m, wi, ci, oi) => { const o = e[oi] + (e[wi] - e[ci]) * m; return [o, e[wi], e[ci], o + e[wi] - e[ci]]; };
-function ledger(m, bump) {
-  const [prev, asOf] = MONTHS[m]; const S = [];
-  const head = ['اسم الزبون', 'الرصيد في', prev, 'المسحوبات', 'التسويات المدينة', 'التحصيلات', 'التسويات الدائنة', 'الرصيد في', asOf];
-  S.push([], ['', '', 'إدارة الشؤون التجارية والتحصيلات\nملخص أرصدة حسابات المدينون التجاريون', '', '', '', '', 'رقم الوثيقة', 'BPMC-FIN-TOC-F38'], ['اولا : ديون حسابات بالعملة المحلية'], ['كما هي في دفاترنا الرئيسية ليوم', '', '', '', '', asOf], head, ['', 'مدين', 'دائن', '', '', '', '', 'مدين', 'دائن']);
-  const T = [0, 0, 0, 0]; let g = [0, 0, 0, 0];
-  CATS.forEach((e, i) => { const [o, w, c, cb] = bal(e, m, 4, 5, 3); const w2 = w + (bump && i === 0 ? bump : 0), cb2 = cb + (bump && i === 0 ? bump : 0);
-    S.push([e[0] + (e[1] === 'W' ? ' غ' : ' ش'), o, i === 2 ? -1500 : 0, w2, 0, -c, 0, cb2, i === 2 ? -1500 : 0]); g = [g[0] + o, g[1] + w2, g[2] + c, g[3] + cb2];
-    if (i % 2) { S.push([' ' + e[2] + ' ', g[0], i === 3 ? -1500 : 0, g[1], 0, -g[2], 0, g[3], i === 3 ? -1500 : 0]); T.forEach((_, k) => T[k] += g[k]); g = [0, 0, 0, 0]; } });
-  S.push(['اجمالي  ديون حسابات بالعملة المحلية', T[0], -3000, T[1], 0, -T[2], 0, T[3], -3000]);
-  S.push([], ['ثانيا : ديون حسابات بالعملة الأجنبية'], ['البيان', 'الرصيد في', prev, 'المسحوبات', 'التسويات المدينة', 'التحصيلات', 'التسويات الدائنة', 'الرصيد في', asOf], ['', 'حسابات مدينة', 'حسابات دائنة', '', '', '', '', 'حسابات مدينة', 'حسابات دائنة'],
-    ['تزويد السفن غ', 1000, 0, 500, 0, -400, 0, 1100, 0], ['تزويد السفن ش', 2000, 0, 0, 0, 0, 0, 2000, 0], ['إجمالي المنطقتين', 3000, 0, 500, 0, -400, 0, 3100, 0], ['اجمالي ديون حسابات بالعملة الأجنبية', 3000, 0, 500, 0, -400, 0, 3100, 0]);
-  const region = (rg, title) => { const R = [[], ['', '', 'إدارة الشؤون التجارية والتحصيلات\nحسابات العملة المحلية ' + title]]; let sec = '';
-    CUST.filter(c => c[2] === rg).forEach(c => { if (c[3] !== sec) { sec = c[3]; R.push(['ديون حسابات ' + sec + ' " ' + title + ' "'], ['اسم الزبون', 'رقم الحساب', 'الرصيد في', prev, 'المسحوبات ', 'التسويات المدينة', 'التحصيلات والتسوية الدائنة', '', 'الرصيد في', asOf], ['', '', 'مدين', '', '', '', '', '', 'مدين ']); }
-      const [o, w, cl, cb] = bal(c, m, 5, 6, 4); R.push([c[1], c[0], o, '0.00', w, 0, -cl, '', cb, 0]); });
-    R.push(['إجمالي حسابات المنطقة', '', 1, '', 1, 1, 1, '', 1], ['اعداد:-', 'فلان']); return R; };
-  return [['ملخص المحلية والأجنبية', S], ['المنطقة الغربية', region('W', 'المنطقة الغربية')], ['المنطقة الشرقية', region('E', 'المنطقة الشرقية')]];
+/* the old monthly balances statement (BPMC-FIN-TOC-F38): summary sheet + one region sheet with customer accounts */
+function ledger() {
+  const head = ['اسم الزبون', 'الرصيد في', '2026-07-31', 'المسحوبات', 'التسويات المدينة', 'التحصيلات', 'التسويات الدائنة', 'الرصيد في', '2026-08-31'];
+  const S = [[], ['', '', 'ملخص أرصدة حسابات المدينون التجاريون', '', '', '', '', 'رقم الوثيقة', 'BPMC-FIN-TOC-F38'], ['اولا : ديون حسابات بالعملة المحلية'], head, ['', 'مدين', 'دائن', '', '', '', '', 'مدين', 'دائن'],
+    ['شركات التوزيع غ', 300000, 0, 80000, 0, -80000, 0, 300000, 0], ['شركات التوزيع ش', 160000, 0, 40000, 0, -60000, 0, 140000, 0], ['اجمالي ديون حسابات بالعملة المحلية', 460000, 0, 120000, 0, -140000, 0, 440000, 0]];
+  const W = [[], ['', '', 'حسابات العملة المحلية المنطقة الغربية'], ['ديون حسابات شركات التوزيع " المنطقة الغربية "'],
+    ['اسم الزبون', 'رقم الحساب', 'الرصيد في', '2026-07-31', 'المسحوبات ', 'التسويات المدينة', 'التحصيلات', '', 'الرصيد في', '2026-08-31'],
+    ['', '', 'مدين', 'دائن', '', '', '', '', 'مدين', 'دائن'],
+    ['ليبيا للنفط المشتركة', '160725', 200000, '0.00', 50000, 0, -50000, '', 200000, 0], ['شرارة ذهبية طرابلس', '161500', 100000, '0.00', 30000, 0, -30000, '', 100000, 0]];
+  return [['ملخص المحلية والأجنبية', S], ['المنطقة الغربية', W]];
 }
-function fuel() { const S = [[], ['', '', 'نموذج تقرير المحروقات'], ['بيان بقيمة المحروقات عن شهر اغسطس لسنة 2026 م وفق كمية المحروقات للجهات الممولة من الدولة'],
-  ['نوع المنتوج', 'اسم الزبون', 'الكمية بالطن', 'الكمية باللتر', 'الكمية بالعدد', 'قيمة المبيعات النقدية', 'قيمة المبيعات الآجلة', 'اجمالي قيمة المبيعات', 'حصة البريقة الجهات الممولة', 'حصة المؤسسة  النقدية والاجلة', 'حصة المؤسسة الجهات الممولة', 'حصة النهر  الجهات الممولة'],
-  [' الديزل', 'الكهرباء', 100, 120000, 0, 0, 150000, 150000, 60000, 0, 60000, 30000], ['المجموع', '', 100, 120000, 0, 0, 150000, 150000, 60000, 0, 60000, 30000],
-  ['بيان بقيمة المحروقات عن شهر اغسطس لسنة 2026 م وفق كمية المحروقات لباقي الزبائن الغير ممولة'],
-  ['نوع المنتوج', 'اسم الزبون', 'الكمية بالطن', 'الكمية باللتر', 'الكمية بالعدد', 'قيمة المبيعات النقدية', 'قيمة المبيعات الآجلة', 'اجمالي قيمة المبيعات', 'حصة البريقة  النقدية والاجلة ', 'حصة المؤسسة  النقدية والاجلة', 'حصة المؤسسة الجهات الممولة', 'حصة النهر النقدية والاجلة '],
-  ['بنزين', 'شركات التوزيع', 400, 540000, 0, 50000, 30000, 80000, 60000, 10000, 0, 10000], ['الإجمالي العام', '', '', '', '', 50000, 180000, 230000]];
-  return [['اغسطس', S]]; }
-const MAKE = `window.__dbXlsx=async(sheets)=>{const L=i=>{let s='';i++;while(i){const r=(i-1)%26;s=String.fromCharCode(65+r)+s;i=Math.floor((i-1)/26)}return s};
+const MAKE = `window.__grid=async(sheets)=>{const L=i=>{let s='';i++;while(i){const r=(i-1)%26;s=String.fromCharCode(65+r)+s;i=Math.floor((i-1)/26)}return s};
   const b=buildXlsx(sheets.map(([n,rows])=>[n,rows.map(r=>{const o={};for(let i=0;i<10;i++)o[L(i)]='';r.forEach((v,i)=>o[L(i)]=v);return o})]));
-  const u8=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s)};`;
-async function upload(page, sheets, name) {
-  const b64 = await page.evaluate(s => __dbXlsx(s), sheets);
-  await page.setInputFiles('#db-file', { name, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from(b64, 'base64') });
-  await page.waitForTimeout(900);
-}
-const out = {};
+  const u8=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s)};
+ window.__book=async(D,opt={})=>{const T=window.__debts.TPL;const sheets=[];
+  T.forEach(sp=>{const rows=D[sp.k];if(!rows)return;const name=(opt.names&&opt.names[sp.k])||sp.ar;
+    sheets.push([name,rows.map(r=>{const o={};sp.cols.forEach(c=>{const h=(opt.heads&&opt.heads[c[1]])||c[1];o[h]=r[c[0]]==null?'':r[c[0]]});return o})])});
+  if(opt.shuffle)sheets.reverse();
+  const b=buildXlsx(sheets);const u8=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s)};`;
+const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+async function put(page, b64, name) { await page.setInputFiles('#db-file', { name, mimeType: XLSX, buffer: Buffer.from(b64, 'base64') }); await page.waitForTimeout(900); }
+const book = (page, D, name, opt) => page.evaluate(([D, o]) => __book(D, o), [D, opt || {}]).then(b => put(page, b, name));
+const grid = (page, sheets, name) => page.evaluate(s => __grid(s), sheets).then(b => put(page, b, name));
 const txt = (page, sel) => page.evaluate(s => (document.querySelector(s) || {}).textContent || '', sel);
+const kpis = page => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#view .db-kpi')].map(k => [k.querySelector('.l').textContent, k.querySelector('.v').textContent + ' | ' + k.textContent])));
+const out = {}; process.on("SIGTERM",()=>{console.log("PARTIAL",JSON.stringify(out));process.exit(2)});
 (async () => {
   { const { browser, page, errors } = await open({ user: { email: 'ca@test.ly', displayName: 'CA' }, data, theme: process.env.THEME || 'light' });
     await page.evaluate(MAKE); await page.evaluate(() => go('debts')); await page.waitForTimeout(600);
-    out.emptyState = await page.evaluate(() => !!document.querySelector('.sm-empty [data-dbt="import"]'));
+    out.emptyState = await page.evaluate(() => !!document.querySelector('.sm-empty [data-dbt="import"]') && !!document.querySelector('#view [data-dbt="template"]'));
     out.powerBiNext = await page.evaluate(() => !!document.querySelector('#view [data-dbt="import"] + .bi-btn[data-bi="imp"]'));
-    // August statement
-    await upload(page, ledger(2), 'مديونية كاملة 8-2026.xlsx');
+    out.newIcon = await page.evaluate(() => /M8 17.5v-2.5/.test(I.debts));
+    // the template: read-me + column guide + 12 data sheets, every requested field present
+    const T = await page.evaluate(() => { const s = window.__debts.templateSheets(); return s.map(([n, r]) => [n, Object.keys(r[0] || {})]); });
+    const heads = Object.fromEntries(T);
+    out.templateSheets = T.length === 14 && ['الفترة', 'الزبائن', 'الضمانات', 'الفواتير', 'التحصيلات', 'الصكوك المرتجعة', 'إجراءات التحصيل', 'الجدولة', 'المخصصات والشطب', 'الإشعارات', 'مقاصة الدعم', 'أعمار الديون'].every(n => heads[n]);
+    out.templateFields = ['كود الزبون', 'اسم الزبون', 'الفئة', 'المنطقة', 'المستودع', 'حالة الحساب', 'سقف الائتمان', 'مدة السداد (يوم)', 'رقم العقد', 'تاريخ العقد'].every(h => heads['الزبائن'].includes(h))
+      && ['نوع الضمان', 'قيمة الضمان', 'تاريخ الانتهاء'].every(h => heads['الضمانات'].includes(h))
+      && ['رقم الفاتورة', 'تاريخ الفاتورة', 'المنتج', 'الكمية', 'قيمة الفاتورة', 'تاريخ الاستحقاق', 'المبلغ المسدد', 'المتبقي'].every(h => heads['الفواتير'].includes(h))
+      && ['تاريخ الدفعة', 'مبلغ الدفعة', 'طريقة الدفع', 'الفواتير المسددة'].every(h => heads['التحصيلات'].includes(h))
+      && ['غير مستحق بعد', '1 – 30 يومًا', '31 – 60 يومًا', '61 – 90 يومًا', '91 – 180 يومًا', 'أكثر من 180 يومًا'].every(h => heads['أعمار الديون'].includes(h));
+    await page.evaluate(() => { const s = S.downloads.save; window.__saved = []; S.downloads.save = a => { window.__saved.push(a.filename); return s(a); }; });
+    await page.click('#view [data-dbt="template"]'); await page.waitForTimeout(500);
+    out.templateDownload = await page.evaluate(() => window.__saved.includes('Debts-data-template.xlsx'));
+    // a filled template
+    await book(page, small(), 'بيانات الديون 10-2026.xlsx');
     const dlg = await txt(page, '#dlg');
-    out.review = /مراجعة الملف/.test(dlg) && /كما في 2026\/08\/31/.test(dlg) && /✓ مجموع الفئات/.test(dlg);
-    out.parsed = await page.evaluate(() => { const P = window.__debts.ST.pending[0]; return P.T === 'ledger' && P.asOf === '2026-08-31' && P.prev === '2026-07-31' && P.cats.filter(c => c.cur === 'L').length === 4 && P.cats.filter(c => c.cur === 'F').length === 2
-      && new Set(P.cats.filter(c => c.cur === 'L').map(c => c.g)).size === 2 && P.cats.filter(c => c.rg === 'W').length === 3 && P.custs.length === 4 && P.custs.find(c => c.a === '262013').rg === 'E' && P.custs.find(c => c.a === '167053').sec === 'حسابات قديمة'; });
+    out.review = /مراجعة الملف/.test(dlg) && /الفترة 2026\/10\/01 – 2026\/10\/31/.test(dlg) && /الفواتير: 7 صف/.test(dlg) && /الزبائن: 4 صف/.test(dlg) && /645 ألف/.test(dlg);
+    out.noFalseWarning = !/يختلف عن مجموع المتبقي/.test(dlg) && !/المسدد \+ المتبقي/.test(dlg);
+    out.parsed = await page.evaluate(() => { const P = window.__debts.ST.pending; const c = k => P.cust.find(x => x.a === k);
+      return P.T === 'ar' && c('C1').cat === 'station' && c('C2').cat === 'private' && c('C3').cat === 'power' && c('C4').cat === 'gov' && c('C2').st === 'stopped'
+        && P.pay.find(p => p.a === 'C3').m === 'off' && P.pay.find(p => p.a === 'C1').m === 'chq' && P.guar[0].gt === 'lg' && P.guar[1].gt === 'cert' && P.bnc[0].rec === false
+        && P.act.filter(a => a.t === 'legal').length === 1 && P.prov.find(x => x.t === 'wo').v === 2000 && P.note[0].t === 'cr' && P.off.filter(o => o.st === 'pend').length === 1; });
     await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(1500);
-    out.savedBatch = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'debts_report' && l[3].kind === 'batch' && l[3].sheet === 'ledger' && l[3].from === '2026-08-01' && l[3].to === '2026-08-31' && l[3].parts === 1));
-    out.savedPart = await page.evaluate(() => { const p = window.__FBLOG.find(l => l[0] === 'set' && l[1] === 'debts_report' && l[3].kind === 'part'); return !!p && JSON.parse(p[3].d).cats.length === 6; });
-    out.logged = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'log' && /^استيراد كشف الديون/.test(l[3].action)));
-    // closing Aug: 1.3M + 0.65M + 0.3M + 0.14M = 2,390,000 ; withdrawals 270,000 ; collections 140,000
-    out.hero = /^2\.4 مليون$/.test(await txt(page, '.sm-hero-v b'));
-    const kpis = await page.evaluate(() => [...document.querySelectorAll('#view .an-kpis .kpi')].map(k => k.textContent));
-    out.kpis = kpis.length >= 8;
-    out.dso = kpis.some(k => /DSO/.test(k) && /274 يوم/.test(k)); // 2,390,000 / 270,000 × 31
-    out.collectionRate = kpis.some(k => /نسبة التحصيل = التحصيلات ÷ المسحوبات = 51.9%/.test(k));
-    out.reading = await page.evaluate(() => document.querySelectorAll('#view .sm-ins li').length >= 8);
-    out.statedOk = await page.evaluate(() => [...document.querySelectorAll('#view .sm-ins li')].some(l => /يطابق «إجمالي ديون الحسابات»/.test(l.textContent)));
-    out.dormant = await page.evaluate(() => [...document.querySelectorAll('#view .sm-ins li')].some(l => /<b>1<\/b> حسابًا عليها رصيد مدين/.test(l.innerHTML)));
-    out.oneMonthAging = await page.evaluate(() => { const s = [...document.querySelectorAll('#view .an-grid > section')].find(x => /أعمار الديون/.test(x.textContent)); return !!s && s.querySelectorAll('.sm-legend span').length === 2 && /أكثر من 30 يومًا/.test(s.textContent); });
-    out.priorities = await page.evaluate(() => { const s = [...document.querySelectorAll('#view .an-grid > section')].find(x => /أولويات المتابعة/.test(x.textContent)); return !!s && s.querySelectorAll('tr[data-db-acct]').length === 4 && /مراجعة الحساب القديم/.test(s.textContent); });
-    // June and July statements → three months: four aging buckets and the continuity check holds
-    await upload(page, ledger(0), 'مديونية كاملة 6-2026.xlsx'); out.noOverlap = await page.evaluate(() => !document.getElementById('db-replace'));
-    await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(1200);
-    await upload(page, ledger(1), 'مديونية كاملة 7-2026.xlsx'); await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(1200);
-    out.latestShown = await page.evaluate(() => document.getElementById('db-at').value === '2026-08-31' && document.querySelectorAll('#db-at option').length === 3);
-    out.aging3 = await page.evaluate(() => { const s = [...document.querySelectorAll('#view .an-grid > section')].find(x => /أعمار الديون/.test(x.textContent)); const L = [...s.querySelectorAll('.sm-legend span')].map(x => x.textContent);
-      // FIFO: 0–30 = 270k drawn in Aug, 31–60 = 270k (July), 61–90 = 270k (June), rest = 2.39M − 0.81M = 1.58M
-      return L.length === 4 && /0–30/.test(L[0]) && /270 ألف/.test(L[0]) && /61–90/.test(L[2]) && /أكثر من 90 يومًا/.test(L[3]) && /1\.6 مليون/.test(L[3]); });
-    out.continuity = await page.evaluate(() => ![...document.querySelectorAll('#view .sm-ins li')].some(l => /لا يطابق الرصيد الختامي/.test(l.textContent)) && [...document.querySelectorAll('#view .sm-ins li')].some(l => /مقارنة بكشف يوليو 2026/.test(l.textContent)));
-    out.trend = await page.evaluate(() => document.querySelectorAll('#view .sm-col').length === 4);
-    // account detail with history
-    await page.click('#view tr[data-db-acct]'); await page.waitForTimeout(300);
-    out.detail = await page.evaluate(() => document.getElementById('dlg').open && /حسب الكشف الشهري/.test(document.getElementById('dlg').textContent) && document.querySelectorAll('#dlg tbody tr').length === 3);
+    out.savedBatch = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'debts_report' && l[3].kind === 'batch' && l[3].sheet === 'ar' && l[3].from === '2026-10-01' && l[3].to === '2026-10-31' && l[3].value === 645000 && l[3].parts === 1));
+    out.logged = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'log' && /^استيراد بيانات الديون/.test(l[3].action)));
+    out.hero = /^645 ألف$/.test(await txt(page, '.sm-hero-v b')) && /القطاع الخاص 135 ألف/.test(await txt(page, '.db-sub')) && /الجهات الحكومية 510 ألف/.test(await txt(page, '.db-sub'));
+    // private sector (default): C1 105,000 + C2 30,000
+    let K = await kpis(page);
+    out.kpiCount = Object.keys(K).length === 8;
+    out.total = /^135 ألف/.test(K['إجمالي الذمم']) && /مجموع أرصدة الزبائن/.test(K['إجمالي الذمم']);
+    out.overdue = /^55\.6%/.test(K['نسبة الديون المتأخرة']) && /المتأخر ÷ إجمالي الذمم/.test(K['نسبة الديون المتأخرة']);               // 75,000 / 135,000
+    out.dso = /^52 ?يوم/.test(K['متوسط فترة التحصيل (DSO)']) && /\(الذمم ÷ المبيعات الآجلة\) × 31 يوم/.test(K['متوسط فترة التحصيل (DSO)']); // 135,000 / 80,000 × 31
+    out.collection = /^21\.1%/.test(K['نسبة التحصيل']) && /محصّل 20 ألف من 95 ألف/.test(K['نسبة التحصيل']);                              // (25,000 − 5,000 returned) / (20,000 + 75,000)
+    out.utilisation = /^90%/.test(K['استخدام سقف الائتمان']);                                                                                 // 135,000 / 150,000
+    out.overLimit = /^1 /.test(K['الزبائن المتجاوزون للسقف']) && /التجاوز 5,000/.test(K['الزبائن المتجاوزون للسقف']);
+    out.cover = /^59\.3%/.test(K['تغطية الضمانات']) && /دون غطاء 55 ألف/.test(K['تغطية الضمانات']);                                        // 80,000 valid / 135,000 (C2's cheque expired)
+    out.top10 = /^100%/.test(K['تركّز أكبر 10 مدينين']);
+    out.aging = await page.evaluate(() => { const r = [...document.querySelectorAll('#view .db-ageT tbody tr')].map(t => [...t.children].map(x => x.textContent.trim()));
+      return r.length === 6 && r[0][1] === 'لم يحل موعد سداده' && r[0][2] === '60,000' && r[3][2] === '45,000' && r[4][2] === '30,000' && r[5][1] === 'مشكوك في تحصيله' && r[5][2] === '0'; });
+    out.sectorPanel = await page.evaluate(() => { const s = [...document.querySelectorAll('#view .an-grid > section')].find(x => /القطاع الخاص والجهات الحكومية/.test(x.textContent)); return !!s && s.querySelectorAll('.db-sector > div').length === 2; });
+    out.top10Panel = await page.evaluate(() => [...document.querySelectorAll('#view .db-top .r')].map(r => r.dataset.dbAcct).join() === 'C1,C2');
+    out.actions = await page.evaluate(() => { const s = [...document.querySelectorAll('#view .an-grid > section')].find(x => /إجراءات التحصيل والتسويات/.test(x.textContent)); if (!s) return false; const t = s.textContent;
+      return /محال للشؤون القانونية · 30 ألف/.test(t) && /25%/.test(t) && /متعثر/.test(t) && /15,000|15 ألف/.test(t) && /2,000/.test(t); });
+    out.noGovPanelInPrivate = await page.evaluate(() => ![...document.querySelectorAll('#view .an-grid > section')].some(x => /ديون الجهات الحكومية/.test(x.querySelector('h3').textContent)));
+    out.reading = await page.evaluate(() => { const t = [...document.querySelectorAll('#view .sm-ins li')].map(l => l.textContent).join('\n'); return /تجاوز سقف الائتمان/.test(t) && /صكوك مرتجعة/.test(t) && /مفصولة عن هذه المؤشرات/.test(t) && /منتهي الصلاحية/.test(t); });
+    out.prio = await page.evaluate(() => { const r = [...document.querySelectorAll('#view .an-grid > section')].find(x => /أولويات المتابعة/.test(x.textContent)); return !!r && /متابعة القضية لدى الشؤون القانونية/.test(r.textContent) && /إنذار كتابي وإيقاف البيع الآجل/.test(r.textContent); });
+    // government sector
+    await page.click('#view [data-db-sec="gov"]'); await page.waitForTimeout(400);
+    K = await kpis(page);
+    out.govKpis = /^510 ألف/.test(K['إجمالي الذمم']) && /^80\.4%/.test(K['نسبة الديون المتأخرة']) && /^10\.9%/.test(K['نسبة التحصيل']);
+    out.govPanel = await page.evaluate(() => { const s = [...document.querySelectorAll('#view .an-grid > section')].find(x => /ديون الجهات الحكومية/.test(x.querySelector('h3').textContent)); if (!s) return false; const t = s.textContent;
+      return /الكهرباء/.test(t) && /الوزارات/.test(t) && /900 ألف/.test(t) && /مقاصّة منفذة/.test(t) && /300 ألف/.test(t) && /210 ألف/.test(t); }); // 510k − 300k pending
+    await page.click('#view [data-db-sec="all"]'); await page.waitForTimeout(400);
+    out.mixWarning = await page.evaluate(() => /تعرض المؤشرات القطاعين معًا/.test(document.getElementById('view').textContent));
+    await page.click('#view [data-db-sec="priv"]'); await page.waitForTimeout(300);
+    // customer statement
+    await page.click('#view .db-top .r[data-db-acct="C1"]'); await page.waitForTimeout(300);
+    out.statement = await page.evaluate(() => { const d = document.getElementById('dlg'); const t = d.textContent; return d.open && /محطة النور للوقود \(C1\)/.test(t) && /105,000/.test(t) && /105%/.test(t) && /الفواتير \(2\)/.test(t) && /عدم كفاية الرصيد/.test(t) && /خطاب ضمان مصرفي/.test(t) && /إشعار دائن/.test(t) && d.classList.contains('db-wide'); });
     await page.click('#dlg [data-act="close-dlg"]'); await page.waitForTimeout(200);
-    // filters: east region only
-    await page.selectOption('#db-rg', 'E'); await page.waitForTimeout(400);
-    out.regionFilter = /790 ألف/.test(await txt(page, '.sm-hero-v b')); // electricity E 650k + distribution E 140k
+    out.wideCleared = await page.evaluate(() => !document.getElementById('dlg').classList.contains('db-wide'));
+    // filters and sorting
+    await page.selectOption('#db-st', 'stopped'); await page.waitForTimeout(400);
+    out.statusFilter = /^30,000|^30 ألف/.test((await kpis(page))['إجمالي الذمم']);
     await page.click('#view [data-dbt="clear"]'); await page.waitForTimeout(300);
-    // foreign currency
-    await page.selectOption('#db-cur', 'F'); await page.waitForTimeout(400);
-    out.foreign = /3,100|3100/.test(await txt(page, '.sm-hero-v b')) && /عملة أجنبية/.test(await txt(page, '.sm-hero-v span'));
-    await page.selectOption('#db-cur', 'L'); await page.waitForTimeout(300);
+    await page.click('#view th[data-db-sort="name"]'); await page.waitForTimeout(300);
+    out.sort = await page.evaluate(() => { const s = [...document.querySelectorAll('#view .an-grid > section')].pop(); return [...s.querySelectorAll('tbody tr')].map(r => r.dataset.dbAcct).join() === 'C2,C1'; });
     // export
     const dl = page.waitForEvent('download').then(d => d.suggestedFilename());
-    await page.click('#view [data-dbt="export"]'); out.exportFile = /^Debts-analysis-2026-08-31\.xlsx$/.test(await dl);
-    // fuel statement of August → reconciliation line
-    await upload(page, fuel(), 'نسخة معدلة شهر08-2026.xlsx');
-    out.fuelReview = /بيان قيمة المحروقات/.test(await txt(page, '#dlg')) && /✓ مجموع الصفوف/.test(await txt(page, '#dlg'));
-    await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(1200);
-    out.fuelSaved = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'debts_report' && l[3].kind === 'batch' && l[3].sheet === 'fuel' && l[3].value === 230000));
-    out.fuelCheck = await page.evaluate(() => [...document.querySelectorAll('#view .sm-ins li')].some(l => /مطابقة مع «بيان قيمة المحروقات»/.test(l.textContent)));
-    out.fuelPanel = await page.evaluate(() => [...document.querySelectorAll('#view .an-grid > section')].some(x => /بيان قيمة المحروقات — أغسطس 2026/.test(x.textContent)));
-    // a corrected August statement replaces the saved one
-    await upload(page, ledger(2, 5000), 'مديونية كاملة 8-2026 معدلة.xlsx');
+    await page.click('#view [data-dbt="export"]'); const ef = await dl; out.exportFile = /^(تحليل-الديون|Debts-analysis)-2026-10-31\.xlsx$/.test(ef) || ef;
+    // the same period again, with other sheet names, other headers and sheets in another order → replaces the saved one
+    const D2 = small(); D2.inv[0].rem = 50000; D2.inv[0].paid = 10000;
+    await book(page, D2, 'بيانات الديون 10-2026 معدلة.xlsx', { shuffle: true, names: { cust: 'بيانات الزبائن', inv: 'Invoices' }, heads: { 'كود الزبون': 'رقم الزبون', 'قيمة الفاتورة': 'القيمة', 'سقف الائتمان': 'الحد الائتماني' } });
+    out.aliases = await page.evaluate(() => { const P = window.__debts.ST.pending; return P.inv.length === 7 && P.cust.find(c => c.a === 'C1').lim === 100000; });
     out.overlapWarn = await page.evaluate(() => !!document.getElementById('db-replace') && document.getElementById('db-replace').checked);
     await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(1500);
-    out.replaced = await page.evaluate(() => window.__debts.ST.batches.filter(b => b.sheet === 'ledger').length === 3 && window.__debts.ST.batches.some(b => /معدلة/.test(b.file)) && window.__FBLOG.some(l => l[0] === 'delete' && l[1] === 'debts_report'));
-    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'debts-dashboard-' + (process.env.THEME || 'light') + '.png'), fullPage: true });
+    out.replaced = await page.evaluate(() => window.__debts.ST.batches.length === 1 && /معدلة/.test(window.__debts.ST.batches[0].file) && window.__FBLOG.some(l => l[0] === 'delete' && l[1] === 'debts_report'));
+    out.replacedValue = /^125 ألف/.test((await kpis(page))['إجمالي الذمم']);
+    // a large realistic month: a second period, trend panel, no errors
+    const big = large(); big.per = [{ from: '2026-11-01', to: '2026-11-30' }];
+    await book(page, big, 'بيانات الديون 11-2026.xlsx'); await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(2000);
+    out.largeShown = await page.evaluate(() => document.getElementById('db-at').value === '2026-11-30' && document.querySelectorAll('#db-at option').length === 2 && document.querySelectorAll('#view .db-top .r').length === 10);
+    out.trend = await page.evaluate(() => [...document.querySelectorAll('#view .an-grid > section')].some(x => /تطوّر الذمم/.test(x.textContent)) && document.querySelectorAll('#view .sm-col').length === 2);
+    if (SHOTS) { await page.selectOption('#db-at', '2026-11-30'); await page.waitForTimeout(400); await page.screenshot({ path: path.join(SHOTS, 'debts-dashboard-' + (process.env.THEME || 'light') + '.png'), fullPage: true }); }
+    // the monthly balances statement is still read (balances, no aging)
+    await grid(page, ledger(), 'مديونية كاملة 8-2026.xlsx');
+    out.ledger = await page.evaluate(() => { const P = window.__debts.ST.pending; return !!P && P.src === 'ledger' && P.to === '2026-08-31' && P.cust.length === 2 && P.cust[0].bal === 200000 && P.cust[0].w === 50000; })
+      && /لا يحوي الفواتير/.test(await txt(page, '#dlg'));
+    await page.click('#dlg [data-dbt="view-local"]'); await page.waitForTimeout(500);
+    out.ledgerView = /^300 ألف$/.test(await txt(page, '.sm-hero-v b')) && await page.evaluate(() => /لا تتوفر أعمار/.test(document.getElementById('view').textContent));
+    await page.click('#view [data-dbt="drop-local"]'); await page.waitForTimeout(300);
     // a wrong file is refused
-    await upload(page, [['Sheet1', [['التاريخ', 'الكمية', 'المنتج'], ['2026-08-01', 5, 'بنزين']]]], 'other.xlsx');
-    out.refused = /تعذّر الاستيراد/.test(await txt(page, '#dlg')) && /لم نتعرّف على الملف/.test(await txt(page, '#dlg'));
+    await grid(page, [['Sheet1', [['التاريخ', 'الكمية', 'المنتج'], ['2026-08-01', 5, 'بنزين']]]], 'other.xlsx');
+    out.refused = /تعذّر الاستيراد/.test(await txt(page, '#dlg')) && /قالب بيانات الديون/.test(await txt(page, '#dlg'));
     await page.click('#dlg [data-act="close-dlg"]'); await page.waitForTimeout(200);
     // placement
     out.orgTask = await page.evaluate(() => ORG_TASKS.ca.includes('debts') && VIEWS.some(v => v.id === 'debts' && v.group === 'مهام إدارة الشؤون التجارية والتحصيلات'));
@@ -129,19 +146,28 @@ const txt = (page, sel) => page.evaluate(s => (document.querySelector(s) || {}).
   // another department: cannot save, can view locally
   { const { browser, page } = await open({ user: { email: 'w@test.ly', displayName: 'W' }, data, theme: 'light' });
     await page.evaluate(MAKE); await page.evaluate(() => go('debts')); await page.waitForTimeout(700);
-    await upload(page, ledger(2), 'debts.xlsx');
+    await book(page, small(), 'debts.xlsx');
     out.otherNoSave = await page.evaluate(() => !document.querySelector('#dlg [data-dbt="save"]') && !!document.querySelector('#dlg [data-dbt="view-local"]'));
     await page.click('#dlg [data-dbt="view-local"]'); await page.waitForTimeout(500);
-    out.otherLocal = await page.evaluate(() => !!document.querySelector('#view .banner.info') && document.querySelectorAll('#view .an-kpis .kpi').length >= 6);
+    out.otherLocal = await page.evaluate(() => !!document.querySelector('#view .banner.info') && document.querySelectorAll('#view .db-kpi').length === 8);
     await browser.close(); }
   // English + dark
   { const { browser, page, errors } = await open({ user: { email: 'ca@test.ly', displayName: 'CA' }, data, lang: 'en', theme: 'dark' });
     await page.evaluate(MAKE); await page.evaluate(() => go('debts')); await page.waitForTimeout(700);
-    await upload(page, ledger(2), 'debts-8-2026.xlsx'); await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(1200);
-    out.english = await page.evaluate(() => { const t = document.getElementById('view').textContent; return /Debts dashboard/.test(t) && /Days sales outstanding/.test(t) && /Import Excel file/.test(t) && /Debt aging \(estimated\)/.test(t); });
+    await book(page, large(), 'debts-10-2026.xlsx'); await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(1500);
+    out.english = await page.evaluate(() => { const t = document.getElementById('view').textContent; return /Debts dashboard/.test(t) && /Days sales outstanding/.test(t) && /Import Excel file/.test(t) && /Debt aging/.test(t) && /Over 180 days/.test(t) && /Credit-limit use/.test(t); });
     out.englishMenu = await page.evaluate(() => { const b = document.querySelector('#o-menu button[data-hm="debts"]'); return !!b && /Debts/.test(b.textContent); });
     out.englishErrors = errors.filter(e => !/favicon|manifest|fonts/.test(e));
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'debts-dashboard-en-dark.png'), fullPage: true });
+    await browser.close(); }
+  // screenshots: a realistic October in Arabic, light theme
+  if (SHOTS) { const { browser, page } = await open({ user: { email: 'ca@test.ly', displayName: 'CA' }, data, theme: 'light' });
+    await page.evaluate(MAKE); await page.evaluate(() => go('debts')); await page.waitForTimeout(700);
+    await book(page, large(), 'بيانات الديون 10-2026.xlsx'); await page.screenshot({ path: path.join(SHOTS, 'debts-import-review-ar.png') });
+    await page.click('#dlg [data-dbt="save"]'); await page.waitForTimeout(1500);
+    await page.screenshot({ path: path.join(SHOTS, 'debts-dashboard-ar.png'), fullPage: true });
+    await page.click('#view [data-db-sec="gov"]'); await page.waitForTimeout(400); await page.screenshot({ path: path.join(SHOTS, 'debts-government-ar.png'), fullPage: true });
+    await page.click('#view [data-db-sec="priv"]'); await page.waitForTimeout(300); await page.click('#view .db-top .r'); await page.waitForTimeout(400); await page.screenshot({ path: path.join(SHOTS, 'debts-customer-ar.png') });
     await browser.close(); }
   console.log(JSON.stringify(out, null, 1));
   const ok = Object.values(out).every(v => Array.isArray(v) ? v.length === 0 : v === true);
