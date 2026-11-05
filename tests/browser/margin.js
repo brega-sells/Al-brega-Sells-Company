@@ -102,6 +102,16 @@ const near = (a, b) => Math.abs(a - b) <= Math.max(0.02, Math.abs(b) * 1e-6);
   { const { browser, page } = await open({ user: { email: 'w@test.ly', displayName: 'W' }, data, fail: { margin: { n: 5, code: 'permission-denied' } } });
     await page.evaluate(() => go('margin')); await page.waitForTimeout(700); await quick(page);
     out.otherDenied = await page.evaluate(() => /هذه اللوحة لإدارة الشؤون التجارية/.test(document.getElementById('view').textContent));
+    // no read permission: a profit file can still be imported and analysed on this device, without a save button
+    out.deniedLocal = await page.evaluate(async () => {
+      const wb = [['الاستلامات والتكلفة', [{ 'تاريخ الاستلام': '2026-08-05', 'المنتج': 'ديزل', 'المستودع': 'مستودع طرابلس', 'الكمية المستلمة': 2000000, 'قيمة الشراء': 1000000 }]],
+        ['حركة الكميات', [{ 'الشهر': '2026-08', 'المنتج': 'ديزل', 'المستودع': 'مستودع طرابلس', 'رصيد أول المدة': 0, 'الوارد': 2000000, 'المبيعات': 1800000, 'الرصيد الفعلي (الجرد)': 199000 }]],
+        ['المبيعات', [{ 'الشهر': '2026-08', 'المنتج': 'ديزل', 'المستودع': 'مستودع طرابلس', 'فئة الزبون': 'محطات وقود', 'الكمية المباعة': 1800000 }]]];
+      const hasImport = !!document.querySelector('#view [data-pm="import"]');
+      const f = new File([buildXlsx(wb)], 'Brega_Profit.xlsx'); await window.__pmx.tryImport(await FileImport.readGrids(f), f);
+      const noSave = !document.querySelector('#dlg [data-px="save"]'); document.querySelector('#dlg [data-px="view-local"]').click();
+      await new Promise(r => setTimeout(r, 700)); const v = document.getElementById('view').innerText;
+      return hasImport && noSave && /بانتظار أسعار المنتجات/.test(v) && /عرض مؤقت/.test(v); });
     await browser.close(); }
   // stored XSS: payloads in the saved prices and in the imported names render as text
   { const X = t => `"'><img src=x data-p="${t}" onerror="window.__xss=(window.__xss||0)+1">`;
