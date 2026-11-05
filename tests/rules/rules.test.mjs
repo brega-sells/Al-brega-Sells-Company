@@ -301,6 +301,27 @@ await T('editor writes access-review denied',W.doc('config/access-review').set({
   await T('margin: products must be a list',CA.doc('margin/prices').set(mp({products:'x'})),0);
   await T('margin: ca editor cannot delete',CA.doc('margin/prices').delete(),0);
   await T('margin: admin deletes',A.doc('margin/prices').delete(),1);}
+ // --- profit margin, full model: the Brega workbook (reference, one document per month, sales in parts)
+ {const em=(o)=>Object.assign({updatedBy:'ca@b.ly',by:'CA',at:'2026-11-05T00:00:00Z'},o);
+  const ref=em({prods:[{p:'44347',pn:'ديزل',d15:835}],struct:[],segs:[],src:'brega.xlsx'});
+  const mon=em({m:'2026-09',recv:[],dep:[],stock:[{w:'طرابلس',p:'44347',op:10,rc:100,sd:95,cl:14}],sub:[],opex:[],ar:[],sp:1,src:'brega.xlsx'});
+  const sal=em({m:'2026-09',k:0,sales:[{c:'1',p:'44347',q:5,v:100}]});
+  await T('econ: ca editor saves the reference',CA.doc('margin/econ_ref').set(ref),1);
+  await T('econ: ca editor saves a month',CA.doc('margin/econ_2026-09').set(mon),1);
+  await T('econ: ca editor saves a sales part',CA.doc('margin/econs_2026-09_0').set(sal),1);
+  await T('econ: gm editor saves a month',G.doc('margin/econ_2026-09').set(Object.assign({},mon,{updatedBy:'gm@b.ly'})),1);
+  await T('econ: board reads a month',B.doc('margin/econ_2026-09').get(),1);
+  await T('econ: ca viewer lists the collection',CAV.collection('margin').get(),1);
+  await T('econ: w cannot read',W.doc('margin/econ_2026-09').get(),0);
+  await T('econ: ca viewer cannot write',CAV.doc('margin/econ_2026-09').set(Object.assign({},mon,{updatedBy:'cav@b.ly'})),0);
+  await T('econ: month field must match the id',CA.doc('margin/econ_2026-10').set(mon),0);
+  await T('econ: sales part month must match',CA.doc('margin/econs_2026-10_0').set(sal),0);
+  await T('econ: bad month id',CA.doc('margin/econ_2026-9').set(Object.assign({},mon,{m:'2026-9'})),0);
+  await T('econ: extra field denied',CA.doc('margin/econ_2026-09').set(Object.assign({},mon,{x:1})),0);
+  await T('econ: sales not allowed in the month document',CA.doc('margin/econ_2026-09').set(Object.assign({},mon,{sales:[]})),0);
+  await T('econ: must be signed by the writer',CA.doc('margin/econ_ref').set(Object.assign({},ref,{updatedBy:'gm@b.ly'})),0);
+  await T('econ: list fields must be lists',CA.doc('margin/econ_ref').set(Object.assign({},ref,{prods:'x'})),0);
+  await T('econ: ca editor cannot delete',CA.doc('margin/econ_2026-09').delete(),0);}
  // the wildcard match must not open other collections
  await T('wildcard does not open the log to ca',CA.collection('log').get(),0);
  await T('wildcard does not allow a batch in another collection',CA.doc('companies/B9').set(bt()),0);}
