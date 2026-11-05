@@ -29,10 +29,11 @@ function lib(){if(window.Tesseract)return Promise.resolve(window.Tesseract);if(!
   s.onload=()=>window.Tesseract?res(window.Tesseract):rej(new Error('tesseract'));s.onerror=()=>{libP=null;s.remove();rej(new Error('tesseract'))};document.head.appendChild(s)});return libP}
 /* two readers: Arabic + English for every cell, and a digits-only one that reads every figure a second time */
 const KINDS={text:['ara+eng',{tessedit_pageseg_mode:'7',preserve_interword_spaces:'1',user_defined_dpi:'300'}],
+  block:['ara+eng',{tessedit_pageseg_mode:'6',preserve_interword_spaces:'1',user_defined_dpi:'300'}],
   raw:['ara+eng',{tessedit_pageseg_mode:'13',preserve_interword_spaces:'1',user_defined_dpi:'300'}],
   page:['ara+eng',{tessedit_pageseg_mode:'6',preserve_interword_spaces:'1',user_defined_dpi:'300'}],
   digits:['eng',{tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789.,-()/%',user_defined_dpi:'300'}]};
-function worker(kind){const k=kind==='page'||kind==='raw'?'text':kind;if(!workers[k])workers[k]=(async()=>{const T=await lib();
+function worker(kind){const k=kind==='page'||kind==='raw'||kind==='block'?'text':kind;if(!workers[k])workers[k]=(async()=>{const T=await lib();
   const w=await T.createWorker(KINDS[k][0],1,{workerPath:'vendor/tesseract/worker.min.js',corePath:'vendor/tesseract/core',langPath:'vendor/tesseract/lang',gzip:true,workerBlobURL:false,errorHandler:e=>console.warn('OCR',e)});
   w._mode=null;return w})().catch(e=>{delete workers[k];throw e});
   return workers[k].then(async w=>{if(w._mode!==kind){await w.setParameters(KINDS[kind][1]);w._mode=kind}return w})}
@@ -98,6 +99,16 @@ function invertDark(g,w,h){const B=16,bw=Math.ceil(w/B),bh=Math.ceil(h/B);const 
       if(ys.length)for(let y=ys[0];y<=ys[ys.length-1];y++){let l=Math.max(0,x0-B),r=Math.min(w,x1+B)-1;while(l<r&&g[y*w+l]>=128&&!(y>ys[0]&&y<ys[ys.length-1]&&l>=x0))l++;while(r>l&&g[y*w+r]>=128&&!(y>ys[0]&&y<ys[ys.length-1]&&r<x1))r--;
         for(let x=l;x<=r;x++){const i=y*w+x;if(!done[i]){g[i]=255-g[i];done[i]=1}}any=true}a=-1}}}
   return any}
+/* a page scanned sideways or upside down: turned by k quarter turns (clockwise) before anything else */
+function turned(src,w,h,k){if(!k)return {src,w,h};const c=document.createElement('canvas');const side=k%2===1;c.width=side?h:w;c.height=side?w:h;const x=c.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.translate(c.width/2,c.height/2);x.rotate(k*Math.PI/2);x.drawImage(src,-w/2,-h/2,w,h);return {src:c,w:c.width,h:c.height}}
+/* lines of writing make the ink jump from row to row; on a page lying on its side the jumps run across the columns */
+function sideways(src,w,h){const k=Math.min(1,700/Math.max(w,h));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+  const x=c.getContext('2d',{willReadFrequently:true});x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(src,0,0,c.width,c.height);
+  const g=greyOf(c),W=c.width,Hh=c.height;let m=0;for(const v of g)m+=v;m/=g.length;const rows=new Float64Array(Hh),cols=new Float64Array(W);
+  for(let y=0;y<Hh;y++)for(let x2=0;x2<W;x2++)if(g[y*W+x2]<m*0.75){rows[y]++;cols[x2]++}
+  const jump=a=>{let s=0,t=0;for(let i=1;i<a.length;i++){s+=(a[i]-a[i-1])**2;t+=a[i]}return t?s/(t*t)*a.length:0};
+  return jump(cols)>1.4*jump(rows)}
 function prepare(src,w,h){let c=canvasOf(src,w,h);let g=greyOf(c);invertDark(g,c.width,c.height);let b=binarize(g,c.width,c.height);
   const sk=skewOf(b,c.width,c.height);if(sk){c=rotated(c,sk);g=greyOf(c);invertDark(g,c.width,c.height);b=binarize(g,c.width,c.height)}
   const W=c.width,Ht=c.height;const r=rules(b,W,Ht);const clean=despeckle(r.clean,W,Ht);
@@ -157,7 +168,7 @@ function tight(pg,box){const W=pg.width;let [x0,y0,x1,y1]=box.map(Math.round);
   for(let y=Math.max(0,y0|0);y<Math.min(pg.height,y1);y++)for(let x=Math.max(0,x0|0);x<Math.min(W,x1);x++)if(pg.ink[y*W+x]){if(x<a)a=x;if(x>c)c=x;if(y<b)b=y;if(y>d)d=y}
   return c<0?null:[a,b,c+1,d+1]}
 /* crop of a cell, enlarged so the text is about 48 px high, with a white margin */
-function crop(pg,box){const [x0,y0,x1,y1]=box;const w=x1-x0,h=y1-y0;const k=Math.max(1,Math.min(4,48/Math.max(1,h)));const pad=Math.round(12);
+function crop(pg,box,lineH){const [x0,y0,x1,y1]=box;const w=x1-x0,h=y1-y0;const k=Math.max(1,Math.min(4,48/Math.max(1,lineH||h)));const pad=Math.round(12);
   const c=document.createElement('canvas');c.width=Math.round(w*k)+pad*2;c.height=Math.round(h*k)+pad*2;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
   x.imageSmoothingQuality='high';x.drawImage(pg.ocr,x0,y0,w,h,pad,pad,c.width-pad*2,c.height-pad*2);return c}
 /* ---------- words → table ---------- */
@@ -196,26 +207,65 @@ function toSheet(pages,name){const rows=[];let head=null;
   return {name,cells,numCol}}
 const needsCheck=c=>!c.empty&&(c.t!==''||c.blank)&&c.c<(c.num?NUM_OK:TEXT_OK);
 
+/* ---------- a table, or running text? ---------- */
+/* in an Arabic page, short Latin "words" read with low confidence are smudges, stamps and frame lines, not text */
+function cleanWords(ws){const ar=ws.filter(w=>w.ar).length;if(ar<0.6*ws.length)return ws;
+  return ws.filter(w=>w.ar||/[\d٠-٩]/.test(w.t)||w.c>=50)}
+const NUMW=/^[-+(]?[\d٠-٩][\d٠-٩,٬.٫\/\-]*\)?%?$/;
+function pageKind(pg,words){if(words.length<6)return {kind:'empty'};
+  const hs=words.map(w=>w.y1-w.y0).sort((a,b)=>a-b);const med=hs[hs.length>>1]||20;
+  const nums=words.filter(w=>NUMW.test(w.t)).length;
+  /* a ruled grid counts when most of the page's words are inside it and its cells hold single lines, not paragraphs */
+  const ruled=ruledCells(pg);
+  if(ruled){const bx=ruled.flat().map(c=>c.box);const X0=Math.min(...bx.map(b=>b[0])),Y0=Math.min(...bx.map(b=>b[1])),X1=Math.max(...bx.map(b=>b[2])),Y1=Math.max(...bx.map(b=>b[3]));
+    const inside=words.filter(w=>(w.x0+w.x1)/2>=X0&&(w.x0+w.x1)/2<=X1&&(w.y0+w.y1)/2>=Y0&&(w.y0+w.y1)/2<=Y1);
+    const ch=ruled.map(r=>r[0].box[3]-r[0].box[1]).sort((a,b)=>a-b);const cols=Math.max(...ruled.map(r=>r.length));
+    /* words in cells taller than eight lines: a paragraph in a frame (a contract page), not a table cell */
+    const cellOf=w=>{const m=(w.x0+w.x1)/2,y=(w.y0+w.y1)/2;for(const r of ruled)for(const c of r){const b=c.box;if(m>=b[0]-3&&m<=b[2]+3&&y>=b[1]-3&&y<=b[3]+3)return c}return null};
+    const tall=inside.filter(w=>{const c=cellOf(w);return c&&c.box[3]-c.box[1]>8*med}).length;
+    if(inside.length>=0.4*words.length&&ch[ch.length>>1]<=5*med&&tall<0.6*inside.length&&cols>=2&&ruled.length>=3&&inside.filter(w=>NUMW.test(w.t)).length>=3)return {kind:'table',ruled:true,rows:ruled,med}}
+  /* no rules: at least three columns, filled on a good share of the lines, and figures among the words */
+  const rows=riverCells(pg,words);const cols=rows.length?rows[0].length:0;
+  const filled=rows.map(r=>r.filter(c=>words.some(w=>{const m=(w.x0+w.x1)/2,y=(w.y0+w.y1)/2;return m>=c.box[0]&&m<=c.box[2]&&y>=c.box[1]&&y<=c.box[3]})).length);
+  const wide=filled.filter(n=>n>=3).length;
+  if(cols>=3&&wide>=3&&wide>=0.4*rows.length&&nums>=Math.max(3,0.05*words.length))return {kind:'table',ruled:false,rows,med};
+  return {kind:'text'}}
+const notTable=()=>fail('هذا الملف نص مكتوب (مثل عقد أو كتاب رسمي) وليس جدول أرقام، فلا تُستخرج منه بيانات للوحة. لوحات المؤشرات تحتاج تقريرًا على شكل جدول: تحليل المبيعات، أو حركة التحويلات، أو أذونات الاستلام، أو SMS055، أو كشف الديون، أو ملف هامش الربح. وإن أردت حفظ العقد نفسه فافتحه من صفحة «العقود» ← تعديل العقد ← «ملف العقد والمرفقات»، واستخدم «رفع ملف» أو «مسح ضوئي».',
+  'This file is running text (such as a contract or a letter), not a table of figures, so there is nothing to import into a dashboard. Dashboards need a report laid out as a table: sales analysis, transfers, receipts, SMS055, the debts statement or the profit-margin file. To keep the contract itself, open it in «Contracts» → edit → «Contract file and attachments» and use «Upload file» or «Scan».',{notTable:true});
 /* ---------- reading ---------- */
 const readText=async(kind,cv)=>{const w=await worker(kind);const {data}=await w.recognize(cv,{},{text:true,blocks:true});
   const ws=wordsOf(data);const t=ws.length?joinCell(ws):String(data.text||'').replace(/[‎‏]/g,'').trim();
   return {t:t.replace(/\s+/g,' ').trim(),c:ws.length?Math.min(...ws.map(x=>x.c)):Math.round(data.confidence||0)}};
 const normNum=t=>DIG(t).replace(/[\s]/g,'');
 const DATE=/^(?:\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}(?:[\/\-.]\d{1,2})?)$/;
-async function recognisePages(srcs,onProgress){const pages=[];
+async function recognisePages(srcs,onProgress){const pages=[],prose=[];
   try{for(let i=0;i<srcs.length;i++){const s=srcs[i];onProgress&&onProgress(i,0,tr('تجهيز الصفحة','Preparing the page'));
-      const pg=prepare(s.src,s.w,s.h);
+      /* the right way up: a page on its side is tried both ways, an upright page that reads badly also upside down */
+      const tryTurn=async k=>{const t=turned(s.src,s.w,s.h,k);const p=prepare(t.src,t.w,t.h);let ink=0;for(let q=0;q<p.ink.length;q+=7)ink+=p.ink[q];
+        if(ink*7<0.0015*p.ink.length)return {pg:p,words:[],score:-1,blank:true};
+        const w=await worker('page');const {data}=await w.recognize(p.ocr,{},{blocks:true});const words=cleanWords(wordsOf(data));
+        return {k,pg:p,words,score:words.reduce((a,x)=>a+(x.c>=60?x.c:0),0),mean:words.length?words.reduce((a,x)=>a+x.c,0)/words.length:0}};
+      onProgress&&onProgress(i,0.02,tr('تحديد اتجاه الصفحة','Finding the page orientation'));
+      let best;if(sideways(s.src,s.w,s.h)){/* the ink test is only a hint (frames, logos and tables mislead it): upright is tried too */
+        const c0=await tryTurn(0),a=await tryTurn(1),b=await tryTurn(3);best=[c0,a,b].reduce((p,q)=>q.score>p.score*(p===c0?1.15:1)?q:p)}
+      else{best=await tryTurn(0);if(!best.blank&&best.mean<55&&best.words.length>=6){const b=await tryTurn(2);if(b.score>best.score*1.3)best=b}}
+      const pg=best.pg;
       /* a blank page (the back of a sheet, an empty end page) is skipped */
-      let ink=0;for(let k=0;k<pg.ink.length;k+=7)ink+=pg.ink[k];if(ink*7<0.0015*pg.ink.length){pg.blank=true;continue}
-      let rows=ruledCells(pg);pg.ruled=!!rows;
-      if(!rows){/* no table rules: find the words on the whole page, then the cells from how they line up */
-        onProgress&&onProgress(i,0.05,tr('تحديد أعمدة الجدول','Finding the table columns'));
-        const w=await worker('page');const {data}=await w.recognize(pg.ocr,{},{blocks:true});rows=riverCells(pg,wordsOf(data))}
+      if(best.blank)continue;
+      /* the words of the whole page tell a table from running text (a contract, a letter) */
+      onProgress&&onProgress(i,0.08,tr('تحديد أعمدة الجدول','Finding the table columns'));
+      const words=best.words;
+      const kind=pageKind(pg,words);pg.kind=kind.kind;
+      if(kind.kind!=='table'){if(kind.kind==='text')prose.push(i);if(!pages.length&&prose.length>=Math.min(2,srcs.length))break;continue}
+      let rows=kind.rows;pg.ruled=kind.ruled;
+      /* an Arabic page: a cell read as a few Latin letters with low confidence is a smudge — left empty to be filled by hand */
+      const arPage=words.filter(x=>x.ar).length>=0.6*words.length;
       const todo=[];rows.forEach(r=>r.forEach(c=>{if(!c.box)return;const tb=tight(pg,c.box);if(tb&&inked(pg,tb)>12)todo.push([c,tb]);else c.box=c.first?c.box:null}));
       let done=0;const step=()=>onProgress&&onProgress(i,0.1+0.9*(done/Math.max(1,todo.length*1.6)),tr('قراءة الخلايا','Reading the cells'));
-      for(const [c,tb] of todo){const cv=crop(pg,tb);let r=await readText('text',cv);
+      const lineH=kind.med||20;
+      for(const [c,tb] of todo){const cv=crop(pg,tb,tb[3]-tb[1]>1.8*lineH?lineH:0);let r=await readText(tb[3]-tb[1]>1.8*lineH?'block':'text',cv);
         /* a doubtful or empty read: once more as a raw line (some short Arabic cells are only found that way), the surer read wins */
-        if(r.c<60||!r.t){const r2=await readText('raw',cv);if(r2.t&&(!r.t||r2.c>r.c))r=r2}c.t=r.t;c.c=r.c;c.box=tb;if(!c.t&&c.first){c.t=c.first.t;c.c=Math.min(c.first.c,50)}if(!c.t){c.c=0;c.blank=true}done++;step()}
+        if(r.c<60||!r.t){const r2=await readText('raw',cv);if(r2.t&&(!r.t||r2.c>r.c))r=r2}c.t=r.t;c.c=r.c;c.box=tb;if(!c.t&&c.first){c.t=c.first.t;c.c=Math.min(c.first.c,50)}if(arPage&&c.t&&!AR.test(c.t)&&!/[\d٠-٩]/.test(c.t)&&c.c<45)c.t='';if(!c.t){c.c=0;c.blank=true}done++;step()}
       /* every figure is read a second time by a digits-only reader: two different reads → the cell has to be checked */
       const ncol=Math.max(0,...rows.map(r=>r.length));
       const numCol=Array.from({length:ncol},(_,j)=>{const v=rows.map(r=>r[j]).filter(c=>c&&c.t);return v.length>=2&&v.filter(c=>looksNum(c.t)||DATE.test(normNum(c.t))).length>=0.6*v.length});
@@ -225,6 +275,7 @@ async function recognisePages(srcs,onProgress){const pages=[];
         done+=0.6;step()}
       pg.table={rows:rows.map(r=>r.map(c=>c&&(c.t||c.blank)?{t:c.t||'',c:c.c,box:c.box,alt:c.alt||null,blank:!!c.blank}:null)),cols:ncol};pages.push(pg)}}
   finally{release()}
+  if(!pages.length&&prose.length)throw notTable();
   return pages}
 const loaderFail=()=>fail('تعذّر تحميل قارئ الملفات الممسوحة ضوئيًا. تحقق من الاتصال ثم أعد المحاولة.','Could not load the scanned-file reader. Check the connection and try again.');
 async function run(srcs,name,meta){const ui=Review.progress(name,srcs.length);let pages;

@@ -96,7 +96,21 @@ const REVIEW = `window.__review=(truth,headKey)=>{const d=document.querySelector
     const ok = /مراجعة ملف/.test(d.textContent) && [...d.querySelectorAll('.sm-cols-map span')].every(s => s.classList.contains('ok'));
     const lines = (d.querySelector('.sm-mini b') || {}).textContent || ''; return ok && lines.replace(/[^\d]/g, '') === String(n) ? true : d.textContent.slice(0, 300); }, rows.length);
   await page.evaluate(() => dlg.close());
-  // 4. every dashboard import input accepts pictures
+  // 4. a photo of a written contract (running Arabic text with a few numbers) is not a table: a clear message, no review
+  const para = ['تم الاتفاق بين الطرف الأول شركة البريقة لتسويق النفط والطرف الثاني على أن يورد الطرف الأول الغاز المسال وفق الكميات المتفق عليها في هذا العقد.',
+    'يلتزم الطرف الثاني بسداد قيمة كل شحنة خلال 30 يومًا من تاريخ الاستلام، وفي حال التأخير تطبق غرامة قدرها 2% عن كل شهر.',
+    'مدة هذا العقد سنة واحدة تبدأ من 01/01/2026 وتتجدد تلقائيًا ما لم يخطر أحد الطرفين الآخر كتابيًا قبل انتهائها بستين يومًا.',
+    'تخضع جميع النزاعات الناشئة عن هذا العقد للقانون الليبي، ويحاول الطرفان حلها وديًا قبل اللجوء إلى المحاكم المختصة.',
+    'حرر هذا العقد من نسختين أصليتين بيد كل طرف نسخة للعمل بموجبها، وقد وقع عليه الطرفان بعد قراءته والموافقة على جميع بنوده.'];
+  const doc = await ctx.newPage({ viewport: { width: 900, height: 1200 }, deviceScaleFactor: 2 });
+  await doc.setContent(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>body{margin:50px;font:17px/1.9 "DejaVu Sans",Arial,sans-serif;background:#fff;color:#111}h2{text-align:center}</style></head>
+    <body><h2>عقد بيع غاز مسال</h2>${para.map((t, i) => `<p><b>المادة ${i + 1}:</b> ${t}</p>`).join('')}</body></html>`);
+  const letter = await doc.screenshot({ fullPage: true, type: 'jpeg', quality: 75 }); await doc.close();
+  await start('contract.jpg', letter, 'image/jpeg');
+  await page.waitForFunction(() => window.__res, null, { timeout: 180000 }).catch(() => {});
+  out.contractNotTable = await page.evaluate(() => { const r = window.__res; return !!r && !r.sheets && /ليس جدول أرقام/.test(r.err) && /العقود/.test(r.err) && !document.querySelector('.ocr-review') ? true : JSON.stringify(r).slice(0, 200); });
+  log('contract', out.contractNotTable);
+  // 5. every dashboard import input accepts pictures
   const accepts = {};
   for (const v of ['sms055', 'sales', 'transfers', 'receipts', 'debts', 'margin']) {
     await page.evaluate(v => go(v), v); await page.waitForTimeout(500);
