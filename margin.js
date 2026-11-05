@@ -79,8 +79,9 @@ const curName=c=>{const x=CURS.find(k=>k[0]===c);return x?tr(x[1],x[2]):c};
 
 /* ---------- units: fuels in m³ ---------- */
 /* the shared converter (units.js, window.FuelUnits) when present, else litres ÷ 1000, tonnes × 1000 ÷ typical density15 */
-const DENS=[[/بنزين|جازولين|gasoline|petrol/i,740],[/كيروسين|طائرات|jet|kero/i,800],[/ديزل|سولار|diesel|gas ?oil/i,835],[/مازوت|زيت وقود|fuel oil|hfo/i,970],[/غاز|مسال|lpg/i,540]];
-function m3Of(q,u,p,pn){const F=window.FuelUnits;if(F&&F.toM3){try{const x=F.toM3(q,u,p,pn);return x?x.q:null}catch(e){}}
+const DENS=[[/سفن|بحري|marine|bunker|mgo/i,890],[/بنزين|gasoline|petrol/i,740],[/ديزل|سولار|diesel|gas ?oil/i,835],[/كيروسين|kerosene|jet/i,800],[/ثقيل|مازوت|زيت وقود|fuel oil|hfo/i,970],[/غاز|مسال|lpg/i,540]];
+const SERVICE=/خدمات|خدمة|صيانة|نقل وتشغيل|توريد|service|maintenance|transport/i;
+function m3Of(q,u,p,pn){const F=window.FuelUnits;if(!F&&SERVICE.test(pn||'')&&!DENS.some(x=>x[0].test(pn||'')))return null;if(F&&F.toM3){try{const x=F.toM3(q,u,p,pn);return x?x.q:null}catch(e){}}
   const k=String(u||'').toLowerCase();if(/م3|م³|مكعب|m3|m³|cbm/.test(k))return +q;if(/لتر|ليتر|litre|liter|ltr/.test(k))return q/1000;
   if(/طن|ton/.test(k)){const d=(DENS.find(x=>x[0].test(pn||''))||[])[1];return d?q*1000/d:null}return null}
 function baseOf(r){const m=m3Of(r.q,r.u,r.p,r.pn);return m==null?{q:r.q,u:r.u||'',m3:false}:{q:m,u:'م³',m3:true}}

@@ -22,6 +22,11 @@ const near = (a, b) => Math.abs(a - b) <= Math.max(0.02, Math.abs(b) * 1e-6);
   { const { browser, page, errors } = await open({ user: { email: 'ca@test.ly', displayName: 'CA' }, data, theme: process.env.THEME || 'light' });
     await page.evaluate(MAKE);
     out.inApps = await page.evaluate(() => !!window.__appIcon && VIEWS.some(v => v.id === 'margin') && ORG_TASKS.ca.includes('margin'));
+    // the company's product types: densities per type, kerosene kept, marine fuel added, service types never converted
+    out.productTypes = await page.evaluate(() => { const F = window.FuelUnits, t = (n, u) => F.toM3(10, u || 'طن', '', n);
+      const ok = (n, d) => { const x = t(n); return !!x && x.d === d; };
+      return ok('بيع البنزين', 740) && ok('بيع وقود الديزل', 835) && ok('بيع منتج غاز مسال', 540) && ok('بيع منتج الزيت الثقيل', 970) && ok('بيع وقود السفن', 890) && ok('كيروسين', 800)
+        && ['تقديم خدمات', 'صيانة', 'نقل وتشغيل', 'توريد منتجات نفطية'].every(n => t(n, 'لتر') === null) && t('وقود الديزل', 'لتر').q === 0.01; });
     await page.evaluate(() => go('margin')); await page.waitForTimeout(700);
     out.emptyState = await page.evaluate(() => !!document.querySelector('.sm-empty [data-pm="import"]'));
     out.powerBiImport = await page.evaluate(() => !!document.querySelector('#view [data-pm="import"] + .bi-btn[data-bi="imp"]'));
