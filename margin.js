@@ -116,7 +116,7 @@ let FXSET=new Set();
 const isFx=c=>FXSET.has(String(c));
 
 /* ---------- data ---------- */
-function UI(){return S.ui.pm||(S.ui.pm={pre:'all',from:'',to:'',prod:'',seg:'',rgn:'',wn:'',q:'',sort:'gp',dir:'desc',lim:25,sim:{p:'',seg:'loc',chg:5},calc:{cost:'',m:'',price:''}})}
+function UI(){return S.ui.pm||(S.ui.pm={tab:'full',pre:'all',from:'',to:'',prod:'',seg:'',rgn:'',wn:'',q:'',sort:'gp',dir:'desc',lim:25,sim:{p:'',seg:'loc',chg:5},calc:{cost:'',m:'',price:''}})}
 function src(){const cx=CX();if(PM.local)return PM.local.rows;return cx&&cx.ST&&cx.ST.sales?cx.ST.sales.rows:[]}
 function rowsAll(){return src().map(r=>{const b=baseOf(r);return {d:r.d,c:r.c||r.cn||'',cn:r.cn||r.c||'',p:r.p||r.pn||'',pn:r.pn||r.p||'',u0:r.u||'',q0:r.q,q:b.q,u:b.u,m3:b.m3,wn:r.wn||'',rgn:r.rgn||''}})}
 function bounds(rows){if(!rows.length)return null;let a=rows[0].d,b=a;rows.forEach(r=>{if(r.d<a)a=r.d;if(r.d>b)b=r.d});return {min:a,max:b}}
@@ -148,11 +148,16 @@ function agg(rows){const A={n:rows.length,rev:0,cogs:0,gp:0,fxRev:0,loc:{rev:0,c
   A.prods=[...A.prod.values()].sort((a,b)=>b.gp-a.gp);A.custs=[...A.cust.values()];return A}
 
 /* ---------- page parts ---------- */
-I.pm='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h16"/><path d="M7 16V9M12 16V5M17 16v-4"/><path d="m5 8 5-4 4 3 5-4"/></svg>';
+I.pm='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 3.5c2.7 3.5 4.2 5.8 4.2 8a4.2 4.2 0 0 1-8.4 0c0-2.2 1.5-4.5 4.2-8z"/><rect x="14.5" y="4" width="6.5" height="16" rx="1.6"/><path d="M14.5 9.5h6.5M14.5 14h6.5"/><path d="M3 20.5h9"/></svg>';
 function heroHtml(sub,A,delta,units){return `<div class="sm-hero"><div><span class="sm-eyebrow">${esc(tr('إدارة الشؤون التجارية والتحصيلات','Commercial Affairs & Collections'))}</span>
   <h2>${esc(tr('لوحة مؤشرات هامش الربح','Profit margin dashboard'))}</h2><p>${sub}</p>${units||''}</div>
   ${A?`<div class="pm-hero-m"><div class="sm-hero-v"><b>${qs(A.gp)}</b><span>${esc(tr('إجمالي الربح · د.ل','Gross profit · LYD'))}</span>${delta||''}</div><div class="sm-hero-v"><b>${pc(A.m)}</b><span>${esc(tr('هامش الربح','Gross margin'))}</span></div></div>`:''}</div>`}
-function toolbar(){const has=src().length;return `<div class="toolbar sm-acts">
+function toolbar(){const has=src().length;const T=window.__pmx;if(T&&UI().tab==='full')return `<div class="toolbar sm-acts">
+  <button class="btn primary" data-pm="import">${I.up}${esc(tr('استيراد ملف Excel','Import Excel file'))}</button>
+  ${T.has()?`<button class="btn" data-px="export">${I.down}${esc(tr('تصدير التحليل Excel','Export analysis (Excel)'))}</button><button class="btn" data-pm="print">${esc(tr('طباعة / PDF','Print / PDF'))}</button>`:''}
+  <button class="btn ghost" data-px="template">${esc(tr('قالب بيانات البريقة','Brega data template'))}</button>
+  <input type="file" id="pm-file" accept="${FileImport.ACCEPT}" hidden></div>`;
+  return `<div class="toolbar sm-acts">
   <button class="btn primary" data-pm="import">${I.up}${esc(tr('استيراد ملف Excel','Import Excel file'))}</button>
   ${has?`<button class="btn" data-pm="export">${I.down}${esc(tr('تصدير التحليل Excel','Export analysis (Excel)'))}</button><button class="btn" data-pm="print">${esc(tr('طباعة / PDF','Print / PDF'))}</button>`:''}
   <button class="btn ghost" data-pm="template">${esc(tr('نموذج قائمة الأسعار','Price-list template'))}</button>
@@ -233,8 +238,10 @@ function viewMargin(){
   if(!PM.loaded){load().then(()=>{if(S.view===VIEW)render()});return `<div class="pm-page">`+heroHtml(esc(tr('جارٍ تحميل البيانات…','Loading data…')),null)+'<div class="panel muted">'+esc(tr('جارٍ التحميل…','Loading…'))+'</div></div>'}
   FXSET=new Set(PM.cfg.foreign.map(String));
   const all=rowsAll();
-  const head=`<div class="page-head" style="margin-bottom:8px"><div><h2 style="margin:0">${esc(tr('هامش الربح','Profit margin'))}</h2></div>${toolbar()}</div>`;
+  const T=window.__pmx,tab=T?(UI().tab||'full'):'prices';
+  const head=`<div class="page-head" style="margin-bottom:8px"><div><h2 style="margin:0">${esc(tr('هامش الربح','Profit margin'))}</h2></div>${toolbar()}</div>`+(T&&PM.err!=='denied'?`<div class="px-tabs" role="tablist" aria-label="${esc(tr('طريقة العرض','View'))}">${[['full',tr('الربحية الشاملة (بيانات البريقة)','Full profitability (Brega data)')],['prices',tr('الأسعار والتحليل السريع','Prices & quick analysis')]].map(([k,l])=>`<button type="button" role="tab" data-pm-tab="${k}" aria-selected="${tab===k}">${esc(l)}</button>`).join('')}</div>`:'');
   if(PM.err==='denied')return `<div class="pm-page">`+head+heroHtml(esc(tr('الربحية حسب المنتج والكمية والفترة، بسعرين: محلي للمستهلكين وبالعملة الأجنبية للأجانب.','Profitability by product, quantity and period, with two price lists.')),null)+`<div class="panel sm-empty">${I.pm.replace('<svg','<svg style="width:46px;height:46px;color:var(--accent)"')}<h3>${esc(tr('هذه اللوحة لإدارة الشؤون التجارية والتحصيلات','This dashboard belongs to Commercial Affairs & Collections'))}</h3><p>${esc(tr('الأسعار والتكاليف بيانات مالية يطّلع عليها الإدارة والإدارة العامة ومجلس الإدارة ومدير النظام فقط.','Prices and costs are financial data for the department, the General Administration, the board and the administrator only.'))}</p></div></div>`;
+  if(T&&tab==='full')return `<div class="pm-page">`+head+T.view()+'</div>';
   if(!all.length)return `<div class="pm-page">`+head+heroHtml(esc(tr('حوّل كميات المبيعات إلى ربحية: الإيرادات والتكلفة وإجمالي الربح وهامشه لكل منتج وكمية وفترة، بسعرين — محلي بالدينار للمستهلكين وبالعملة الأجنبية للأجانب.','Turn sales quantities into profitability: revenue, cost, gross profit and margin by product, quantity and period, with two price lists — local in LYD and foreign currency for foreign customers.')),null)+
     `<div class="panel sm-empty">${I.pm.replace('<svg','<svg style="width:46px;height:46px;color:var(--accent)"')}<h3>${esc(tr('لا توجد كميات مبيعات بعد','No sales quantities yet'))}</h3>
      <p>${esc(tr('تُقرأ الكميات من تقرير «تحليل المبيعات» (Sales_Report) في مركز تقارير الإقفال. استورده هنا أو من لوحة تحليل المبيعات، ثم حدّد تكلفة كل منتج وسعريه. يمكنك أيضًا استيراد قائمة أسعار Excel (رمز المنتج، التكلفة، السعر المحلي، سعر الأجانب).','Quantities come from the “Sales analysis” report (Sales_Report). Import it here or in the sales analysis dashboard, then set each product’s cost and two prices. You can also import an Excel price list (product code, cost, local price, foreign price).'))}</p>
@@ -327,7 +334,7 @@ function viewMargin(){
     <li>${tr('<b>تاريخ السريان</b>: كل تغيير سعر يُحفظ بتاريخ سريان، فتُحسب كل فترة بأسعارها ولا يتغير ربح الأشهر الماضية عند تعديل السعر.','<b>Effective date</b>: every price change is saved with an effective date, so each period uses its own prices and past months do not change.')}</li></ul></section>
   </div>`}</div>`}
 
-function after(){const u=UI();
+function after(){const u=UI();if(window.__pmx&&u.tab==='full')window.__pmx.after();
   [['pm-prod','prod'],['pm-seg','seg'],['pm-rgn','rgn'],['pm-wn','wn']].forEach(([id,k])=>{const e=document.getElementById(id);if(e)e.addEventListener('change',()=>{u[k]=e.value;u.lim=25;render()})});
   [['pm-from','from'],['pm-to','to']].forEach(([id,k])=>{const e=document.getElementById(id);if(e)e.addEventListener('change',()=>{u[k]=e.value?e.value+'-01':'';render()})});
   const q=document.getElementById('pm-q');if(q)q.addEventListener('input',debounce(()=>{u.q=q.value;u.lim=25;const p=q.selectionStart;render();const n=document.getElementById('pm-q');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(e){}}},250));
@@ -389,6 +396,7 @@ function priceList(grids){for(const s of grids){const g=s.grid;for(let i=0;i<Mat
       rows.push(o)});if(rows.length)return {rows,map:m,sheet:s.name}}}}return null}
 async function importFile(file){toast(tr('جارٍ قراءة الملف…','Reading the file…'));let grids;
   try{grids=await readGrids(file)}catch(e){fail(e.message||String(e));return}
+  if(window.__pmx&&await window.__pmx.tryImport(grids,file))return;
   const pl=priceList(grids);if(pl){pl.file=file.name;PM.pendingPrices=pl;priceReview(pl);return}
   const cx=CX();if(!cx){fail(tr('تعذّر قراءة الملف.','Could not read the file.'));return}
   let P;try{P=await cx.parseFile('sales',file)}catch(e){fail(tr('الملف ليس قائمة أسعار (رمز المنتج + التكلفة أو السعر) ولا تقرير «تحليل المبيعات».','The file is neither a price list (product code + cost or price) nor a “Sales analysis” report.')+' '+(e.message||''));return}
@@ -430,6 +438,7 @@ function template(){const c=PM.cfg;const rows=boardProducts(rowsAll()).map(x=>{c
 /* ---------- events ---------- */
 document.addEventListener('click',async e=>{if(S.view!==VIEW&&!(document.getElementById('dlg')||{}).open)return;
   const pre=e.target.closest('[data-pm-pre]');if(pre){const u=UI();u.pre=pre.dataset.pmPre;if(u.pre==='custom'){const R=range(rowsAll());if(R){u.from=u.from||R.from;u.to=u.to||R.to}}u.lim=25;render();return}
+  const tb=e.target.closest('[data-pm-tab]');if(tb){UI().tab=tb.dataset.pmTab;render();window.scrollTo(0,0);return}
   const so=e.target.closest('[data-pm-sort]');if(so){const u=UI(),k=so.dataset.pmSort;if(u.sort===k)u.dir=u.dir==='asc'?'desc':'asc';else{u.sort=k;u.dir=k==='cn'?'asc':'desc'}render();return}
   const fx=e.target.closest('[data-pm-fx]');if(fx){e.stopPropagation();fx.disabled=true;await toggleFx(fx.dataset.pmFx);return}
   const hs=e.target.closest('[data-pm-hist]');if(hs){histDlg(hs.dataset.pmHist);return}

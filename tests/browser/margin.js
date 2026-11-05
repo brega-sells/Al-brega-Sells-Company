@@ -16,6 +16,8 @@ const MAKE = `(function(){
 })()`;
 async function put(page, name, b64) { await page.setInputFiles('#pm-file', { name, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from(b64, 'base64') }); await page.waitForTimeout(900); }
 const out = {};
+/* these checks cover the quick mode (prices and the sales report); the full Brega model is tests/browser/margin-econ.js */
+const quick = page => page.evaluate(() => { const b = document.querySelector('[data-pm-tab="prices"]'); if (b) b.click(); });
 const near = (a, b) => Math.abs(a - b) <= Math.max(0.02, Math.abs(b) * 1e-6);
 (async () => {
   const data = { roles, config: { main: { t1: 90, t2: 60, t3: 30 } } };
@@ -27,7 +29,7 @@ const near = (a, b) => Math.abs(a - b) <= Math.max(0.02, Math.abs(b) * 1e-6);
       const ok = (n, d) => { const x = t(n); return !!x && x.d === d; };
       return ok('بيع البنزين', 740) && ok('بيع وقود الديزل', 835) && ok('بيع منتج غاز مسال', 540) && ok('بيع منتج الزيت الثقيل', 970) && ok('بيع وقود السفن', 890) && ok('كيروسين', 800)
         && ['تقديم خدمات', 'صيانة', 'نقل وتشغيل', 'توريد منتجات نفطية'].every(n => t(n, 'لتر') === null) && t('وقود الديزل', 'لتر').q === 0.01; });
-    await page.evaluate(() => go('margin')); await page.waitForTimeout(700);
+    await page.evaluate(() => go('margin')); await page.waitForTimeout(700); await quick(page);
     out.emptyState = await page.evaluate(() => !!document.querySelector('.sm-empty [data-pm="import"]'));
     out.powerBiImport = await page.evaluate(() => !!document.querySelector('#view [data-pm="import"] + .bi-btn[data-bi="imp"]'));
     // Sales_Report through the margin page
@@ -94,18 +96,18 @@ const near = (a, b) => Math.abs(a - b) <= Math.max(0.02, Math.abs(b) * 1e-6);
   // a viewer of the department reads but cannot edit; another department cannot read
   const saved = { products: [{ p: '44347', pn: 'وقود الديزل', u: 'م³', h: [{ from: '2026-01-01', cost: 120, loc: 150, fx: 40 }] }], rates: [{ from: '2026-01-01', rate: 4.8 }], cur: 'USD', target: 15, min: 5, foreign: [] };
   { const { browser, page } = await open({ user: { email: 'v@test.ly', displayName: 'V' }, data: Object.assign({}, data, { margin: { prices: saved } }) });
-    await page.evaluate(() => go('margin')); await page.waitForTimeout(700);
+    await page.evaluate(() => go('margin')); await page.waitForTimeout(700); await quick(page);
     out.viewerNoEdit = await page.evaluate(() => !document.querySelector('#view [data-pm="edit"]') && /150/.test(document.getElementById('pm-board').textContent));
     await browser.close(); }
   { const { browser, page } = await open({ user: { email: 'w@test.ly', displayName: 'W' }, data, fail: { margin: { n: 5, code: 'permission-denied' } } });
-    await page.evaluate(() => go('margin')); await page.waitForTimeout(700);
+    await page.evaluate(() => go('margin')); await page.waitForTimeout(700); await quick(page);
     out.otherDenied = await page.evaluate(() => /هذه اللوحة لإدارة الشؤون التجارية/.test(document.getElementById('view').textContent));
     await browser.close(); }
   // stored XSS: payloads in the saved prices and in the imported names render as text
   { const X = t => `"'><img src=x data-p="${t}" onerror="window.__xss=(window.__xss||0)+1">`;
     const bad = { products: [{ p: '44347', pn: X('pn'), u: X('u'), h: [{ from: '2026-01-01', cost: 120, loc: 150, fx: 40, by: X('by'), why: X('why') }] }], rates: [{ from: '2026-01-01', rate: 4.8 }], cur: X('cur'), target: 15, min: 5, foreign: [] };
     const { browser, page } = await open({ user: { email: 'ca@test.ly', displayName: 'CA' }, data: Object.assign({}, data, { margin: { prices: bad } }) });
-    await page.evaluate(MAKE); await page.evaluate(() => go('margin')); await page.waitForTimeout(600);
+    await page.evaluate(MAKE); await page.evaluate(() => go('margin')); await page.waitForTimeout(600); await quick(page);
     const f = await page.evaluate(async x => { const rows = __pmBook([[2026, 9]], 3).map((r, i) => Object.assign(r, { 'اسم الزبون': x + i, 'المستودع': x, 'اسم المنتج': i % 2 ? x : r['اسم المنتج'] })); return __pmXlsx('Sales_Report', 'Sales_Report', rows); }, X('row'));
     await put(page, 'Sales_Report.xlsx', f); await page.click('#dlg [data-pm="view-local"]'); await page.waitForTimeout(600);
     await page.click('#view [data-pm-hist="44347"]').catch(() => {}); await page.waitForTimeout(300); await page.click('#dlg [data-act="close-dlg"]').catch(() => {});
@@ -114,7 +116,7 @@ const near = (a, b) => Math.abs(a - b) <= Math.max(0.02, Math.abs(b) * 1e-6);
     await browser.close(); }
   // English + dark
   { const { browser, page } = await open({ user: { email: 'ca@test.ly', displayName: 'CA' }, data: Object.assign({}, data, { margin: { prices: saved } }), lang: 'en', theme: 'dark' });
-    await page.evaluate(MAKE); await page.evaluate(() => go('margin')); await page.waitForTimeout(700);
+    await page.evaluate(MAKE); await page.evaluate(() => go('margin')); await page.waitForTimeout(700); await quick(page);
     const f = await page.evaluate(async () => __pmXlsx('Sales_Report', 'Sales_Report', __pmBook([[2026, 9]], 5)));
     await put(page, 'Sales_Report.xlsx', f); await page.click('#dlg [data-pm="save-sales"]'); await page.waitForTimeout(1200);
     out.english = await page.evaluate(() => { const t = document.getElementById('view').textContent; return /Profit margin dashboard/.test(t) && /Gross margin/.test(t) && /Pricing calculator/.test(t); });
