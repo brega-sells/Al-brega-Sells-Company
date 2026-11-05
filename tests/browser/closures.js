@@ -17,14 +17,14 @@ const MAKE = `(function(){
         rows.push({'المنطقة رقم':1,'المنطقة':'المنطقة الغربية والجنوبية','الشهر':y+'-'+mm,'رقم المستودع':w[0],'المستودع':w[1],'رقم الحساب':c[0],'اسم الزبون':c[1],'TRNSFR_THRU':2,'رمز المنتج':p[0],'اسم المنتج':p[1],'PACK_CD':p[3],'الوحدة':p[2],'إجمالي الكمية':Math.round(pi?3000+rnd()*120000:50+rnd()*2000)})})});return}
       for(let d=1;d<=nd;d++){const ds=m+'/'+d+'/'+y+' 0:00';
         if(kind==='transfers'){WH.forEach((w,wi)=>{if(drop&&wi<drop)return;P.forEach((p,pi)=>{if(rnd()<.5)return;
-          rows.push({'رقم المستودع':w[0],'اسم المستودع':w[1],'رقم المخزن':String(wi*10+pi+1),'وصف المخزن':'خزان '+(pi+1)+' '+p[1],'رمز المنتج':p[0],'اسم المنتج':p[1],'PRD_IND':1,'PACK_CD':p[3],'وحدة القياس':p[2],'التاريخ':ds,'نوع الحركة':rnd()<.7?21:35,'وصف الحركة':rnd()<.7?'المبيعات':'الواردات','رقم المستند':1.01083e12+d*1000+wi,'ITEM_NO':1,'الكمية السابقة':0,'الكمية':Math.round(pi?2000+rnd()*40000:30+rnd()*800),'PROCESS_COUNTER':0})})});}
+          const ton=pi===2;rows.push({'رقم المستودع':w[0],'اسم المستودع':w[1],'رقم المخزن':String(wi*10+pi+1),'وصف المخزن':'خزان '+(pi+1)+' '+p[1],'رمز المنتج':p[0],'اسم المنتج':p[1],'PRD_IND':1,'PACK_CD':p[3],'وحدة القياس':ton?'طن':p[2],'التاريخ':ds,'نوع الحركة':rnd()<.7?21:35,'وصف الحركة':rnd()<.7?'المبيعات':'الواردات','رقم المستند':1.01083e12+d*1000+wi,'ITEM_NO':1,'الكمية السابقة':0,'الكمية':ton?Math.round((2+rnd()*30)*100)/100:Math.round(pi?2000+rnd()*40000:30+rnd()*800),'PROCESS_COUNTER':0})})});}
         else{for(let k=0;k<4;k++){const sp=['مصفاة الزاوية','شركة ليبيا للنقل','شركة البحر للشحن'][(k+d)%3];if(drop&&(k+d)%3<drop)continue;const p=P[k===0?0:1+(k%2)];const arr=m+'/'+Math.min(nd,d+1+(k%2))+'/'+y+' 0:00';
-          rows.push({'رقم المستند':1.3e13+d*100+k,'التاريخ':ds,'رقم المستودع':WH[k%3][0],'اسم المستودع':WH[k%3][1],'تاريخ المغادرة':ds,'تاريخ الوصول':arr,'رقم الإذن':String(1000+d*10+k),'نوع الاستلام':k%3===0?'محلي':'خارجي','رقم المورد':String(10+(k+d)%3),'اسم المورد':sp,'رمز المنتج':p[0],'المنتج':p[1],'وحدة القياس':p[2],'الكمية':Math.round(k%3?20000+rnd()*400000:100+rnd()*1500)})}}}});
+          const ton=p[0]==='44347';rows.push({'رقم المستند':1.3e13+d*100+k,'التاريخ':ds,'رقم المستودع':WH[k%3][0],'اسم المستودع':WH[k%3][1],'تاريخ المغادرة':ds,'تاريخ الوصول':arr,'رقم الإذن':String(1000+d*10+k),'نوع الاستلام':k%3===0?'محلي':'خارجي','رقم المورد':String(10+(k+d)%3),'اسم المورد':sp,'رمز المنتج':p[0],'المنتج':p[1],'وحدة القياس':ton?'طن':p[2],'الكمية':ton?Math.round((20+rnd()*300)*100)/100:Math.round(k%3?20000+rnd()*400000:100+rnd()*1500)})}}}});
     return rows};
   window.__cxXlsx=async(name,rows)=>{const b=buildXlsx([[name,rows]]);const u8=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s)};
 })()`;
 async function upload(page, id, kind, months, name, seed, drop) {
-  const r = await page.evaluate(async ({ kind, months, seed, drop, name }) => { const rows = __cxBook(kind, months, seed, drop); const litres = rows.filter(r => /لتر/.test(r['الوحدة'] || r['وحدة القياس'])).reduce((a, r) => a + (+r['الكمية'] || +r['إجمالي الكمية'] || 0), 0); return { b64: await __cxXlsx(name.replace(/\.xlsx$/, ''), rows), n: rows.length, litres }; }, { kind, months, seed, drop, name });
+  const r = await page.evaluate(async ({ kind, months, seed, drop, name }) => { const rows = __cxBook(kind, months, seed, drop); const q = r => +r['الكمية'] || +r['إجمالي الكمية'] || 0, un = r => r['الوحدة'] || r['وحدة القياس']; const m3 = rows.reduce((a, r) => a + (/لتر/.test(un(r)) ? q(r) / 1000 : /طن/.test(un(r)) ? q(r) * 1000 / 835 : 0), 0); const tons = rows.filter(r => /طن/.test(un(r))).length; return { b64: await __cxXlsx(name.replace(/\.xlsx$/, ''), rows), n: rows.length, m3, tons }; }, { kind, months, seed, drop, name });
   await page.setInputFiles('#cx-file-' + id, { name, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from(r.b64, 'base64') });
   await page.waitForTimeout(900); return r;
 }
@@ -48,10 +48,12 @@ const num = s => +String(s).replace(/[^\d.-]/g, '');
       o.savedParts = await page.evaluate(c => { const b = window.__FBLOG.find(l => l[0] === 'set' && l[1] === c && l[3].kind === 'batch'); const p = window.__FBLOG.filter(l => l[0] === 'set' && l[1] === c && l[3].kind === 'part' && l[3].batch === b[2]); return p.length === b[3].parts && p.every(x => JSON.parse(x[3].d).R.length > 0); }, col);
       o.logged = await page.evaluate(c => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'log' && /^استيراد /.test(l[3].action) && l[3].col === c), col);
       o.rowsLoaded = await page.evaluate(({ id, n }) => window.__cx.ST[id].rows.length === n, { id, n: f1.n });
-      // default unit = the unit with most lines (litres); the hero total equals the litres in the file
-      o.unitLitres = await page.evaluate(() => /لتر/.test(document.querySelector('.sm-hero-v span').textContent));
+      // quantities in cubic metres: litres ÷ 1000 and diesel tonnes ÷ 0.835 share one unit (م³); the hero total equals the file
+      o.unitM3 = await page.evaluate(() => /م³/.test(document.querySelector('.sm-hero-v span').textContent));
       o.heroTotal = await page.evaluate(() => { const t = document.querySelector('.sm-hero-v b').textContent; return t; });
-      o.heroMatches = Math.abs(num(o.heroTotal) * (/مليون/.test(o.heroTotal) ? 1e6 : /ألف/.test(o.heroTotal) ? 1e3 : 1) - f1.litres) / f1.litres < 0.06;
+      o.heroMatches = Math.abs(num(o.heroTotal) * (/مليون/.test(o.heroTotal) ? 1e6 : /ألف/.test(o.heroTotal) ? 1e3 : 1) - f1.m3) / f1.m3 < 0.06;
+      o.unitNote = await page.evaluate(tons => { const n = document.querySelector('#view .sm-note'); return !!n && /لتر ÷ 1000/.test(n.textContent) && (!tons || /طن ÷ 0\.835/.test(n.textContent)); }, f1.tons);
+      o.rawKept = await page.evaluate(id => window.__cx.ST[id].rows.every(r => r.u !== 'م³') && window.__cx.data(id).some(r => r.u === 'م³' && r.u0 && r.q0 != null), id);
       o.kpis = await page.evaluate(() => document.querySelectorAll('#view .an-kpis .kpi').length >= 5);
       o.chart = await page.evaluate(() => document.querySelectorAll('#view .sm-col').length > 0);
       o.reading = await page.evaluate(() => document.querySelectorAll('#view .sm-ins li').length >= 3);
@@ -61,7 +63,7 @@ const num = s => +String(s).replace(/[^\d.-]/g, '');
       o.noPrev = await page.evaluate(() => !document.querySelector('.sm-delta'));
       // switch the unit to cylinders: one product, hero changes
       const hasUnit = await page.evaluate(() => !!document.getElementById('cx-unit'));
-      if (hasUnit) { await page.selectOption('#cx-unit', { index: 0 }); await page.waitForTimeout(400); const u0 = await page.evaluate(() => document.getElementById('cx-unit').value); if (!/لتر/.test(u0)) { o.unitSwitch = await page.evaluate(() => document.querySelectorAll('#view .sm-pc').length === 1 && /اسطوانة/.test(document.querySelector('.sm-hero-v span').textContent)); } else { await page.selectOption('#cx-unit', { index: 1 }); await page.waitForTimeout(400); o.unitSwitch = await page.evaluate(() => document.querySelectorAll('#view .sm-pc').length === 1); } }
+      if (hasUnit) { await page.selectOption('#cx-unit', { index: 0 }); await page.waitForTimeout(400); const u0 = await page.evaluate(() => document.getElementById('cx-unit').value); if (!/م³/.test(u0)) { o.unitSwitch = await page.evaluate(() => document.querySelectorAll('#view .sm-pc').length === 1 && /اسطوانة/.test(document.querySelector('.sm-hero-v span').textContent)); } else { await page.selectOption('#cx-unit', { index: 1 }); await page.waitForTimeout(400); o.unitSwitch = await page.evaluate(() => document.querySelectorAll('#view .sm-pc').length === 1); } }
       else o.unitSwitch = true;
       await page.click('#view [data-cx="clear"]'); await page.waitForTimeout(400);
       // entity detail
@@ -91,6 +93,9 @@ const num = s => +String(s).replace(/[^\d.-]/g, '');
       o.refused = await page.evaluate(() => /تعذّر الاستيراد/.test(document.getElementById('dlg').textContent) && /لم نجد أعمدة/.test(document.getElementById('dlg').textContent));
       await page.click('#dlg [data-act="close-dlg"]'); await page.waitForTimeout(200);
     }
+    // densities: the settings panel is for the administrator only; a config/units override is applied live
+    await page.evaluate(() => go('settings')); await page.waitForTimeout(500);
+    out.noPanelForEditor = await page.evaluate(() => !document.getElementById('fu-panel'));
     // placement: org page card, duties shortcut, home tiles, app menu
     await page.evaluate(() => go('org')); await page.waitForTimeout(600);
     out.orgTask = await page.evaluate(() => ['sales', 'transfers', 'receipts'].every(id => ORG_TASKS.ca.includes(id)));
@@ -107,6 +112,19 @@ const num = s => +String(s).replace(/[^\d.-]/g, '');
     out.otherNoSave = await page.evaluate(() => !document.querySelector('#dlg [data-cx="save"]') && !!document.querySelector('#dlg [data-cx="view-local"]'));
     await page.click('#dlg [data-cx="view-local"]'); await page.waitForTimeout(500);
     out.otherLocal = await page.evaluate(() => !!document.querySelector('#view .banner.info') && document.querySelectorAll('#view .sm-pc').length > 0);
+    await browser.close(); }
+  // administrator: densities panel, override changes the conversion
+  { const { browser, page } = await open({ user: { email: 'admin@test.ly', displayName: 'A' }, data: { roles: Object.assign({ 'admin@test.ly': { role: 'admin', name: 'Admin' } }, roles), config: { main: { t1: 90, t2: 60, t3: 30 } } }, theme: 'light' });
+    await page.evaluate(MAKE); await page.evaluate(() => go('transfers')); await page.waitForTimeout(700);
+    const f = await upload(page, 'transfers', 'transfers', [[2026, 9, 30]], 'Transfers_Report.xlsx', 4); await page.click('#dlg [data-cx="save"]'); await page.waitForTimeout(1200);
+    const before = await page.evaluate(() => window.__cx.data('transfers').filter(r => r.p === '44347').reduce((a, r) => a + r.q, 0));
+    await page.evaluate(() => go('settings')); await page.waitForTimeout(500);
+    out.adminPanel = await page.evaluate(() => !!document.getElementById('fu-panel') && !!document.querySelector('#fu-panel [data-fu-d="44347"]') && document.querySelector('#fu-panel [data-fu-d="44347"]').value === '835');
+    await page.fill('#fu-panel [data-fu-d="44347"]', '850'); await page.click('#fu-panel [data-fu="save"]'); await page.waitForTimeout(800);
+    out.densitySaved = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'config' && l[2] === 'units' && l[3].densities['44347'] === 850));
+    await page.evaluate(() => { FuelUnits.state.over['44347'] = 850; FuelUnits.state.ver++; go('transfers'); }); await page.waitForTimeout(500);
+    const after = await page.evaluate(() => window.__cx.data('transfers').filter(r => r.p === '44347').reduce((a, r) => a + r.q, 0));
+    out.densityApplied = Math.abs(after / before - 835 / 850) < 0.001 && f.tons > 0;
     await browser.close(); }
   // English + dark
   { const { browser, page } = await open({ user: { email: 'ca@test.ly', displayName: 'CA' }, data, lang: 'en', theme: 'dark' });
