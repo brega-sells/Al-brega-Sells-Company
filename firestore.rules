@@ -137,10 +137,10 @@ service cloud.firestore {
       allow create: if smsWriter() && (validBatch() || validPart());
       allow delete: if smsWriter();
     }
-    // لوحات مركز تقارير الإقفال الأخرى (تحليل المبيعات sales_report، حركة التحويلات transfers_report، أذونات الاستلام receipts_report):
+    // لوحات مركز تقارير الإقفال الأخرى (تحليل المبيعات sales_report، حركة التحويلات transfers_report، أذونات الاستلام receipts_report) ولوحة الديون debts_report:
     // الشكل نفسه والصلاحيات نفسها كـ sms055 — ملف مستورد (batch) وأجزاء صفوفه (part)، لا تُعدَّل بعد الحفظ.
     match /{col}/{id} {
-      function isClosures() { return col in ['sales_report', 'transfers_report', 'receipts_report']; }
+      function isClosures() { return col in ['sales_report', 'transfers_report', 'receipts_report', 'debts_report']; }
       function clxWriter() { return isAdmin() || (canWrite() && myUnit() in ['ca', 'gm']); }
       function validClxBatch() { return request.resource.data.kind == 'batch'
         && request.resource.data.keys().hasOnly(['kind', 'file', 'sheet', 'from', 'to', 'rows', 'parts', 'value', 'returns', 'createdBy', 'by', 'at'])
