@@ -340,12 +340,23 @@ function parseTemplate(sheets,file){const F=readTemplate(sheets);
   return {T:'ar',v:2,src:'tpl',from,to,cust,guar,inv,pay,bnc,act,sch,prov,note,off,age,warn:W,sheets:sheetsRead}}
 
 /* the monthly balances statement becomes customers with a balance and the month's withdrawals / collections (no aging) */
-function fromLedger(P){const list=(P.custs&&P.custs.length?P.custs:P.cats.map(c=>Object.assign({a:c.n+(c.rg?' '+c.rg:''),sec:c.g},c))).filter(c=>c.cur!=='F');
+/* The region sheets list accounts one by one, but some groups exist only on the summary sheet (the ministry-funded
+   sector: electricity, desalination, army, air ambulance). A summary group none of whose categories matches a section of the
+   region sheets is added from the summary, so the total equals the statement's total. */
+const LG_STOP=new Set(['شركه','شركات','الشركه','الشركات','العامه','عام','حسابات','ديون','قطاع','القطاع','م','ش','غ','و','من','في','ال']);
+const lgTok=s=>new Set(hn(String(s||'')).replace(/[.()«»"\-–_\/]/g,' ').split(/\s+/).map(w=>w.replace(/^(ال|وال)/,'')).filter(w=>w.length>2&&!LG_STOP.has(w)));
+function ledgerList(P){const sumCats=P.cats.map(c=>Object.assign({a:c.n+(c.rg?' '+c.rg:''),sec:c.g},c));if(!(P.custs&&P.custs.length))return {list:sumCats,added:[]};
+  const covered=new Set();const secs=new Map();P.custs.forEach(c=>secs.set(c.rg+'|'+c.cur+'|'+c.sec,c));
+  secs.forEach(c=>{const t=lgTok(c.sec);let best=null,bn=0;P.cats.forEach(k=>{if(k.cur!==c.cur||(k.rg&&c.rg&&k.rg!==c.rg))return;const kt=lgTok(k.n);let n=0;t.forEach(w=>{if(kt.has(w))n++});if(n>bn){bn=n;best=k}});if(best)covered.add(best.cur+'|'+best.g)});
+  const added=sumCats.filter(c=>!covered.has(c.cur+'|'+c.g)&&Math.abs((c.cb||0)-(c.cc||0))>0.0005);return {list:[...P.custs,...added],added}}
+/* the section of a region sheet tells the category when the account name does not */
+const secCat=s=>{const t=hn(String(s||''));if(/القطاع العام|قطاع عام|ممول/.test(t))return 'gov';if(/محطات|بيع مباشر/.test(t))return 'station';if(/طيران|خطوط|جوي/.test(t))return 'aviation';if(/نفطي|خدمي|توزيع|تزويد/.test(t))return 'private';return ''};
+function fromLedger(P){const LL=ledgerList(P);const list=LL.list.filter(c=>c.cur!=='F');
   const RGN={W:tr('المنطقة الغربية','Western region'),E:tr('المنطقة الشرقية','Eastern region')};
-  const cust=list.map(c=>({a:String(c.a),n:c.n,cat:window.custCat((c.sec||'')+' '+c.n)||window.custCat(c.n),pub:'',rg:RGN[c.rg]||'',wh:'',st:'active',lim:0,terms:0,ctr:'',ctrd:'',
+  const cust=list.map(c=>({a:String(c.a),n:c.n,cat:window.custCat(c.n)||window.custCat(c.sec||'')||secCat(c.sec)||secCat(c.n),pub:'',rg:RGN[c.rg]||'',wh:'',st:'active',lim:0,terms:0,ctr:'',ctrd:'',
     bal:r2((c.cb||0)-(c.cc||0)),w:r2((c.w||0)+(c.da||0)),c:r2((c.c||0)+(c.ca||0)),ob:r2((c.ob||0)-(c.oc||0)),sec:c.sec||''}));
   const from=P.prev?addDays(P.prev,1):P.asOf.slice(0,8)+'01';
-  return {T:'ar',v:2,src:'ledger',from,to:P.asOf,cust,guar:[],inv:[],pay:[],bnc:[],act:[],sch:[],prov:[],note:[],off:[],age:[],warn:[['i',tr('كشف الأرصدة الشهري لا يحوي الفواتير ولا تواريخ الاستحقاق، فلا تظهر أعمار الديون ولا السقوف والضمانات. استعمل قالب بيانات الديون للصورة الكاملة.','The monthly balances statement has no invoices or due dates, so aging, limits and guarantees are not shown. Use the debts data template for the full picture.')]],sheets:[{k:'ledger',sheet:P.sheet||'',rows:cust.length,missing:[]}],file:P.file}}
+  return {T:'ar',v:2,src:'ledger',from,to:P.asOf,cust,guar:[],inv:[],pay:[],bnc:[],act:[],sch:[],prov:[],note:[],off:[],age:[],warn:[...(LL.added.length?[['i',tr(`${LL.added.filter(c=>c.cur!=='F').length} فئة غير مفصّلة في أوراق المناطق أُخذت من الخلاصة (${[...new Set(LL.added.map(c=>c.g))].join('، ')})، ليطابق الإجمالي الكشف.`,`${LL.added.filter(c=>c.cur!=='F').length} categories not itemised on the region sheets were taken from the summary so the total matches the statement.`)]]:[]),['i',tr('كشف الأرصدة الشهري لا يحوي الفواتير ولا تواريخ الاستحقاق، فلا تظهر أعمار الديون ولا السقوف والضمانات. استعمل قالب بيانات الديون للصورة الكاملة.','The monthly balances statement has no invoices or due dates, so aging, limits and guarantees are not shown. Use the debts data template for the full picture.')]],sheets:[{k:'ledger',sheet:P.sheet||'',rows:cust.length,missing:[]}],file:P.file}}
 
 /* ---------- analysis ---------- */
 const by=(arr,k)=>{const m=new Map();arr.forEach(x=>{const v=x[k];if(!m.has(v))m.set(v,[]);m.get(v).push(x)});return m};
