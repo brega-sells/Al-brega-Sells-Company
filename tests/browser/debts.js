@@ -58,6 +58,7 @@ const out = {}; process.on("SIGTERM",()=>{console.log("PARTIAL",JSON.stringify(o
     await book(page, small(), 'بيانات الديون 10-2026.xlsx');
     const dlg = await txt(page, '#dlg');
     out.review = /مراجعة الملف/.test(dlg) && /الفترة 2026\/10\/01 – 2026\/10\/31/.test(dlg) && /الفواتير: 7 صف/.test(dlg) && /الزبائن: 4 صف/.test(dlg) && /645 ألف/.test(dlg);
+    out.noFalseWarning = !/يختلف عن مجموع المتبقي/.test(dlg) && !/المسدد \+ المتبقي/.test(dlg);
     out.parsed = await page.evaluate(() => { const P = window.__debts.ST.pending; const c = k => P.cust.find(x => x.a === k);
       return P.T === 'ar' && c('C1').cat === 'station' && c('C2').cat === 'private' && c('C3').cat === 'power' && c('C4').cat === 'gov' && c('C2').st === 'stopped'
         && P.pay.find(p => p.a === 'C3').m === 'off' && P.pay.find(p => p.a === 'C1').m === 'chq' && P.guar[0].gt === 'lg' && P.guar[1].gt === 'cert' && P.bnc[0].rec === false

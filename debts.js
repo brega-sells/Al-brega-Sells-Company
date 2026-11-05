@@ -266,7 +266,7 @@ const isTotal=s=>/^(الاجمالي|اجمالي|المجموع|الاجمال�
 function readTemplate(sheets){const found={};const used=new Set();
   const tryRead=(sh,spec)=>{const g=sh.grid||[];for(let i=0;i<Math.min(g.length,15);i++){const hm=headerMap(g[i]||[],spec);if(!hm.ok)continue;
       const rows=[];for(let j=i+1;j<g.length;j++){const r=g[j]||[];if(!r.some(x=>txt(x)!==''))continue;const o={};
-        spec.cols.forEach(c=>{const ix=hm.m[c[0]];if(ix==null)return;const v=r[ix];o[c[0]]=c[3]==='n'?num(v):c[3]==='d'?cellDate(v):txt(v)});
+        spec.cols.forEach(c=>{const ix=hm.m[c[0]];if(ix==null)return;const v=r[ix];o[c[0]]=c[3]==='n'?(txt(v)===''?null:num(v)):c[3]==='d'?cellDate(v):txt(v)});
         if(spec.k!=='per'){if(!o.a||isTotal(o.a)||isTotal(o.n||''))continue}rows.push(o)}
       return {rows,sheet:sh.name,m:hm.m,hits:hm.hits,missing:hm.missing.map(c=>c[1])}}return null};
   TPL.forEach(spec=>{const names=[spec.ar,...spec.names].map(hk);const sh=sheets.find(s=>!used.has(s)&&names.includes(hk(s.name)));if(!sh)return;const r=tryRead(sh,spec);if(r){found[spec.k]=r;used.add(sh)}});
@@ -288,14 +288,14 @@ function parseTemplate(sheets,file){const F=readTemplate(sheets);
   const C=new Map();let noCat=0;
   R('cust').forEach(r=>{if(C.has(r.a)){W.push(['w',tr(`كود الزبون ${r.a} مكرر في ورقة الزبائن؛ أُخذ أول صف.`,`Customer code ${r.a} repeats; the first row was kept.`)]);return}
     const cat=window.custCat(r.cat)||window.custCat(r.n);if(!cat)noCat++;
-    C.set(r.a,{a:r.a,n:(r.n||r.a).replace(/\s+/g,' '),cat,pub:r.pub||'',rg:r.rg||'',wh:r.wh||'',st:statusOf(r.st),lim:r2(r.lim),terms:Math.round(r.terms||0),ctr:r.ctr||'',ctrd:r.ctrd||'',bal:F.cust.m.bal!=null&&String(r.bal)!==''?r2(r.bal):null})});
+    C.set(r.a,{a:r.a,n:(r.n||r.a).replace(/\s+/g,' '),cat,pub:r.pub||'',rg:r.rg||'',wh:r.wh||'',st:statusOf(r.st),lim:r2(r.lim),terms:Math.round(r.terms||0),ctr:r.ctr||'',ctrd:r.ctrd||'',bal:r.bal!=null?r2(r.bal):null})});
   const auto=new Set();
   const ensure=(a,n)=>{if(!C.has(a)){C.set(a,{a,n:(n||a).replace(/\s+/g,' '),cat:window.custCat(n),pub:'',rg:'',wh:'',st:'active',lim:0,terms:0,ctr:'',ctrd:'',bal:null});auto.add(a)}return C.get(a)};
   /* invoices */
   const inv=[];const seen=new Set();let dup=0,calcDue=0,mism=0,neg=0;
   R('inv').forEach(r=>{const c=ensure(r.a,r.n);if(!r.no&&!r.v)return;const key=r.a+'|'+r.no;if(r.no&&seen.has(key)){dup++;return}seen.add(key);
-    let v=r2(r.v),paid=r2(r.paid),rem=F.inv.m.rem!=null&&String(r.rem)!==''?r2(r.rem):r2(v-paid);if(F.inv.m.paid==null)paid=r2(v-rem);
-    if(rem<-0.01||rem>v+0.01)neg++;else if(F.inv.m.paid!=null&&F.inv.m.rem!=null&&Math.abs(v-paid-rem)>Math.max(1,v*0.001))mism++;
+    let v=r2(r.v),paid=r2(r.paid),rem=r.rem!=null?r2(r.rem):r2(v-paid);if(r.paid==null)paid=r2(v-rem);
+    if(rem<-0.01||rem>v+0.01)neg++;else if(r.paid!=null&&r.rem!=null&&Math.abs(v-paid-rem)>Math.max(1,v*0.001))mism++;
     let due=r.due;if(!due&&r.d){due=addDays(r.d,c.terms||30);calcDue++}
     inv.push({a:r.a,no:r.no||'',d:r.d||'',p:r.p||'',q:r3(r.q),u:r.u||'',v,due:due||'',paid,rem})});
   if(dup)W.push(['w',tr(`${dup} فاتورة مكررة (الزبون ورقم الفاتورة نفساهما) أُهملت.`,`${dup} duplicate invoices (same customer and number) were skipped.`)]);
