@@ -57,6 +57,14 @@ const { open } = require('./harness');
     const LD = await window.__debts.parseFile(file([['ملخص المحلية والأجنبية', asObj(SUM)], ['المنطقة الغربية', asObj(WR)]], 'مديونية كاملة 8-2026.xlsx'));
     const tot = LD.cust.reduce((a, c) => a + c.bal, 0);
     o.ledgerSummaryOnly = LD.src === 'ledger' && LD.cust.length === 5 && Math.abs(tot - 1950000) < 0.01 && LD.cust.some(c => c.a === 'شركة الكهرباء غ') && LD.cust.find(c => /التحلية/.test(c.n)).cat === 'gov' && LD.cust.filter(c => /الكهرباء/.test(c.n)).every(c => c.cat === 'power') && LD.warn.some(w => /أُخذت من الخلاصة/.test(w[1]));
+    // profit margin before Brega sends prices: an «awaiting prices» page, never a loss equal to the cost
+    { const wb = [['الاستلامات والتكلفة', [{ 'تاريخ الاستلام': '2026-08-05', 'المنتج': 'ديزل', 'المستودع': 'مستودع طرابلس', 'الكمية المستلمة': 2000000, 'قيمة الشراء': 1000000 }]],
+        ['حركة الكميات', [{ 'الشهر': '2026-08', 'المنتج': 'ديزل', 'المستودع': 'مستودع طرابلس', 'رصيد أول المدة': 0, 'الوارد': 2000000, 'المبيعات': 1800000, 'الرصيد الفعلي (الجرد)': 199000 }]],
+        ['المبيعات', [{ 'الشهر': '2026-08', 'المنتج': 'ديزل', 'المستودع': 'مستودع طرابلس', 'فئة الزبون': 'محطات وقود', 'الكمية المباعة': 1800000, 'رمز الزبون': '120170' }]]];
+      const f = file(wb, 'Brega_Profit.xlsx'); await window.__pmx.tryImport(await FileImport.readGrids(f), f);
+      document.querySelector('#dlg [data-px="view-local"]').click(); go('margin'); await new Promise(r => setTimeout(r, 900));
+      const v = document.getElementById('view').innerText;
+      o.awaitingPrices = /بانتظار أسعار المنتجات من شركة البريقة/.test(v) && /أسعار الفئات/.test(v) && /تكلفة البضاعة لكل م³/.test(v) && !/-1\.\d+ مليون|NaN/.test(v); }
     o.ledgerNoCollRatio = window.__debts.analyze(LD, { sec: 'all' }).collR === null;
     return o;
   });
