@@ -7,6 +7,7 @@
      text → .csv .tsv .tab .txt (comma, semicolon, tab or pipe; UTF-8, UTF-16 or Windows-1256 Arabic)
             .htm .html (tables, including the «.xls» files that are really HTML), Excel 2003 XML (.xml),
             flat OpenDocument (.fods) and .json (array of rows, array of arrays, or {sheet:[rows]})
+     PDF  → .pdf printed reports, rebuilt from the text layer (pdf.js, loaded on demand); scans get a clear message
    FileImport.readGrids(file) → [{name, grid}] where grid is rows of cells: number, string, boolean, or {serial:n}
    for a date-formatted cell (Excel serial day, 1900 system). FileImport.readWorkbook(file) → {SheetNames, rows(name)}
    with the first row as the header (dates as yyyy-mm-dd). Errors are thrown with a clear message in the page language. */
@@ -14,9 +15,9 @@
 (function(){
 const EN=()=>{if(window.I18N&&I18N.lang)return I18N.lang==='en';try{return localStorage.getItem('cm_lang')==='en'}catch(e){return false}};
 const tr=(ar,en)=>EN()&&en?en:ar;
-const ACCEPT='.xlsx,.xlsm,.xltx,.xltm,.xlsb,.xls,.xlt,.et,.ett,.ods,.ots,.fods,.csv,.tsv,.tab,.txt,.htm,.html,.xml,.json,'+
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/tab-separated-values';
-const LIST='Excel (xlsx · xlsm · xlsb · xls) · WPS (et · ett) · OpenDocument (ods) · CSV · TSV · TXT · HTML · XML · JSON';
+const ACCEPT='.xlsx,.xlsm,.xltx,.xltm,.xlsb,.xls,.xlt,.et,.ett,.ods,.ots,.fods,.csv,.tsv,.tab,.txt,.htm,.html,.xml,.json,.pdf,'+
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/tab-separated-values,application/pdf';
+const LIST='Excel (xlsx · xlsm · xlsb · xls) · WPS (et · ett) · OpenDocument (ods) · PDF · CSV · TSV · TXT · HTML · XML · JSON';
 const MAX=200*1024*1024,MAX_CELLS=5e6;
 const fail=(ar,en)=>{const e=new Error(tr(ar,en));e.importError=true;return e};
 const unsupported=()=>fail('صيغة الملف غير مدعومة. الصيغ المقبولة: '+LIST+'. افتح الملف في Excel أو WPS واحفظه بإحدى هذه الصيغ ثم أعد المحاولة.','This file type is not supported. Accepted: '+LIST+'. Open the file in Excel or WPS, save it in one of these formats and try again.');
@@ -219,6 +220,153 @@ function jsonGrids(text,name){let j;try{j=JSON.parse(text)}catch(e){throw fail('
   if(j&&typeof j==='object'){const out=Object.entries(j).map(([k,v])=>{const gg=toGrid(v);return gg?{name:k,grid:trimGrid(gg)}:null}).filter(Boolean);if(out.length)return out}
   throw fail('ملف JSON لا يحتوي جدولًا: المطلوب مصفوفة صفوف مثل [{"العمود":"القيمة"}].','The JSON file has no table: expected an array of rows such as [{"column":"value"}].')}
 
+/* ---------- PDF (.pdf): tables rebuilt from the text layer ----------
+   pdf.js (vendor/pdfjs, loaded only when a PDF is chosen) gives every glyph with its position. Glyphs are placed on
+   the page, grouped into lines by baseline, split into cells at wide gaps, and the cells are lined up into columns
+   from the gaps shared by all the lines. Arabic is rebuilt from the visual order on the page: each glyph keeps its own
+   text (so ligatures such as «لا» stay right), runs of Arabic are read right to left and numbers, codes and dates left
+   to right. An Arabic page gives its columns from right to left, as the report reads. Pages that start with a
+   different header become a separate sheet; repeated headers, page numbers and running titles are dropped.
+   A PDF with no text layer (a scan or photo) gets a clear message instead. */
+let pdfjsP=null;
+function pdfjs(){if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);if(!pdfjsP)pdfjsP=new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/pdfjs/pdf.min.js';s.integrity='sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e';s.crossOrigin='anonymous';
+  s.onload=()=>{if(!window.pdfjsLib)return rej(new Error('pdfjs'));pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs/pdf.worker.min.js';res(pdfjsLib)};s.onerror=()=>{pdfjsP=null;s.remove();rej(new Error('pdfjs'))};document.head.appendChild(s)});return pdfjsP}
+const PDF_MAX_PAGES=400;
+const AR=/[֐-ࣿיִ-﷿ﹰ-﻿]/,LTRC=/[A-Za-z0-9٠-٩۰-۹À-ɏ]/,MARK=/^[ؐ-ًؚ-ٰٟۖ-ۭ̀-ͯ]+$/;
+const MIRROR={'(':')',')':'(','[':']',']':'[','{':'}','}':'{','<':'>','>':'<','«':'»','»':'«'};
+const mxMul=(m,n)=>[m[0]*n[0]+m[2]*n[1],m[1]*n[0]+m[3]*n[1],m[0]*n[2]+m[2]*n[3],m[1]*n[2]+m[3]*n[3],m[0]*n[4]+m[2]*n[5]+m[4],m[1]*n[4]+m[3]*n[5]+m[5]];
+/* every visible glyph of a page: {x (left), y (baseline), w, s (size), u (text)} in page units, y downwards */
+async function pdfGlyphs(lib,page){const O=lib.OPS;const ol=await page.getOperatorList();const vt=page.getViewport({scale:1}).transform;
+  const out=[];let ctm=[1,0,0,1,0,0],runs=0;const stack=[];const forms=[];
+  let st={font:null,size:0,cs:0,ws:0,hs:1,lead:0,rise:0,tm:[1,0,0,1,0,0],x:0,y:0,lx:0,ly:0};
+  const fontOf=name=>{try{return page.commonObjs.has(name)?page.commonObjs.get(name):null}catch(e){return null}};
+  const show=glyphs=>{if(!st.font||!Array.isArray(glyphs))return;const fm=(st.font.fontMatrix||[0.001])[0]||0.001,size=st.size,vert=!!st.font.vertical;if(vert)return;
+    const M=mxMul(vt,mxMul(ctm,st.tm));const sx=Math.hypot(M[0],M[1]),sy=Math.hypot(M[2],M[3]);const flat=Math.abs(M[1])<0.2*sx&&Math.abs(M[2])<0.2*sy;
+    let x=0,prev=null;const run=++runs;
+    for(const g of glyphs){if(typeof g==='number'){x-=g*size/1000;continue}if(!g)continue;
+      const adv=(g.width||0)*fm*size+st.cs+(g.isSpace?st.ws:0);const u=g.unicode==null?'':String(g.unicode);
+      if(flat&&u.trim()){const tx=(st.x+x*st.hs),ty=st.y+st.rise;const px=M[0]*tx+M[2]*ty+M[4],py=M[1]*tx+M[3]*ty+M[5];
+        const w=Math.abs((g.width||0)*fm*size*st.hs*sx),s=Math.abs(size*sy);
+        if(MARK.test(u)&&prev)prev.u+=u;else{const x0=M[0]<0?px-w:px;prev={x:x0,y:py,w,s,u,r:run};out.push(prev)}}
+      else if(!u.trim())prev=null;
+      x+=adv}
+    st.x+=x*st.hs};
+  /* vertical table rules (cell borders), drawn as thin lines or thin filled rectangles */
+  const rules=[];const PAINT=new Set([O.stroke,O.closeStroke,O.fill,O.eoFill,O.fillStroke,O.eoFillStroke,O.closeFillStroke,O.closeEOFillStroke]);
+  const vline=(x0,y0,x1,y1)=>{const M=mxMul(vt,ctm);const p=(x,y)=>[M[0]*x+M[2]*y+M[4],M[1]*x+M[3]*y+M[5]];const A=p(x0,y0),B=p(x1,y1);
+    if(Math.abs(A[0]-B[0])<=2&&Math.abs(A[1]-B[1])>4)rules.push({x:(A[0]+B[0])/2,y0:Math.min(A[1],B[1]),y1:Math.max(A[1],B[1])})};
+  const path=(ops,c)=>{let k=0,cx=0,cy=0;for(const op of ops){
+    if(op===O.rectangle){const [x,y,w,h]=c.slice(k,k+4);k+=4;if(Math.abs(w)<=2)vline(x+w/2,y,x+w/2,y+h);else if(Math.abs(h)>4&&Math.abs(w)>4){vline(x,y,x,y+h);vline(x+w,y,x+w,y+h)}}
+    else if(op===O.moveTo){cx=c[k++];cy=c[k++]}
+    else if(op===O.lineTo){const x=c[k++],y=c[k++];vline(cx,cy,x,y);cx=x;cy=y}
+    else if(op===O.curveTo){k+=6}else if(op===O.curveTo2||op===O.curveTo3){k+=4}}};
+  const fa=ol.fnArray,aa=ol.argsArray;
+  for(let i=0;i<fa.length;i++){const f=fa[i],a=aa[i]||[];
+    switch(f){
+      case O.constructPath:if(PAINT.has(fa[i+1])&&Array.isArray(a[0]))path(a[0],a[1]||[]);break;
+      case O.save:stack.push({ctm,st:Object.assign({},st)});break;
+      case O.restore:{const p=stack.pop();if(p){ctm=p.ctm;st=p.st}break}
+      case O.transform:ctm=mxMul(ctm,a);break;
+      case O.paintFormXObjectBegin:forms.push(ctm);if(Array.isArray(a[0])&&a[0].length===6)ctm=mxMul(ctm,a[0]);break;
+      case O.paintFormXObjectEnd:if(forms.length)ctm=forms.pop();break;
+      case O.beginText:st.tm=[1,0,0,1,0,0];st.x=st.y=st.lx=st.ly=0;break;
+      case O.setFont:st.font=fontOf(a[0]);st.size=a[1];break;
+      case O.setGState:(a[0]||[]).forEach(e=>{if(e&&e[0]==='Font'&&e[1]){st.font=fontOf(e[1][0]);st.size=e[1][1]}});break;
+      case O.setCharSpacing:st.cs=a[0];break;
+      case O.setWordSpacing:st.ws=a[0];break;
+      case O.setHScale:st.hs=a[0]/100;break;
+      case O.setLeading:st.lead=-a[0];break;
+      case O.setTextRise:st.rise=a[0];break;
+      case O.setTextMatrix:st.tm=a.slice(0,6);st.x=st.y=st.lx=st.ly=0;break;
+      case O.moveText:st.x=st.lx+=a[0];st.y=st.ly+=a[1];break;
+      case O.setLeadingMoveText:st.lead=a[1];st.x=st.lx+=a[0];st.y=st.ly+=a[1];break;
+      case O.nextLine:st.x=st.lx;st.y=st.ly+=st.lead;break;
+      case O.nextLineShowText:st.x=st.lx;st.y=st.ly+=st.lead;show(a[0]);break;
+      case O.nextLineSetSpacingShowText:st.ws=a[0];st.cs=a[1];st.x=st.lx;st.y=st.ly+=st.lead;show(a[2]);break;
+      case O.showText:case O.showSpacedText:show(a[0]);break}}
+  const v1=page.getViewport({scale:1});return {glyphs:out,rules,width:Math.abs(v1.width),height:Math.abs(v1.height)}}
+/* the text of one cell from its glyphs in visual (left to right) order */
+function cellText(gs){const units=[];let last=null;
+  for(const g of gs){if(last&&g.x-(last.x+last.w)>0.2*Math.max(g.s,last.s))units.push(' ');units.push(g.u);last=g}
+  let s;
+  if(!units.some(u=>AR.test(u)))s=units.join('');
+  else{const ty=units.map(u=>AR.test(u)?'R':LTRC.test(u)?'L':'N');
+    for(let i=0;i<ty.length;i++)if(ty[i]==='N'){let a=i-1;while(a>=0&&ty[a]==='N')a--;let b=i+1;while(b<ty.length&&ty[b]==='N')b++;ty[i]=a>=0&&b<ty.length&&ty[a]==='L'&&ty[b]==='L'?'L':'R'}
+    const runs=[];for(let i=0;i<units.length;i++){const t=ty[i];if(runs.length&&runs[runs.length-1].t===t)runs[runs.length-1].u.push(units[i]);else runs.push({t,u:[units[i]]})}
+    s=runs.reverse().map(r=>r.t==='L'?r.u.join(''):r.u.reverse().map(u=>u.length===1&&MIRROR[u]?MIRROR[u]:u).join('')).join('')}
+  if(/[ﭐ-﷿ﹰ-﻿ﬀ-ﬆ]/.test(s))s=s.normalize('NFKC');
+  return s.replace(/\s+/g,' ').trim()}
+/* lines → pieces of text: a new piece where the text run changes (writers draw one run per cell) or at a wide gap */
+const seg_x1=seg=>seg?seg.x1:0;
+function pdfLines(glyphs,rules){const gs=glyphs.slice().sort((a,b)=>a.y-b.y||a.x-b.x);const lines=[];let cur=null;
+  for(const g of gs){if(cur&&Math.abs(g.y-cur.y)<=0.4*Math.max(g.s,cur.s))cur.g.push(g);else{cur={y:g.y,s:g.s,g:[g]};lines.push(cur)}}
+  return lines.map(l=>{l.g.sort((a,b)=>a.x-b.x);const mid=l.y-0.3*l.s;
+    /* the cell borders that cross this line: text between two borders is one cell, whatever its gaps */
+    const bx=[];(rules||[]).forEach(r=>{if(r.y0-1<=mid&&r.y1+1>=mid&&!bx.some(x=>Math.abs(x-r.x)<1.5))bx.push(r.x)});bx.sort((a,b)=>a-b);
+    const cellOf=x=>{let k=0;while(k<bx.length&&bx[k]<x)k++;return k};const ruled=bx.length>=2;
+    const segs=[];let seg=null;
+    for(const g of l.g){const c=ruled?cellOf(g.x+g.w/2):0;const gap=g.x-seg_x1(seg),sz=seg?Math.max(g.s,seg.s):g.s;
+      const same=seg&&(ruled&&c>0&&c<bx.length?seg.c===c:gap>=-0.5*sz&&(g.r===seg.r?gap<=0.9*sz:gap<=0.25*sz)&&(!ruled||seg.c===c));
+      if(same){seg.g.push(g);seg.x1=Math.max(seg.x1,g.x+g.w);seg.s=Math.max(seg.s,g.s);seg.r=g.r}
+      else{seg={x0:g.x,x1:g.x+g.w,s:g.s,r:g.r,c,g:[g]};segs.push(seg)}}
+    segs.forEach(c=>c.t=cellText(c.g));return {y:l.y,s:l.s,bx,segs:segs.filter(c=>c.t)}}).filter(l=>l.segs.length)}
+const isNumText=t=>/^[-+(]?[\d٠-٩۰-۹][\d٠-٩۰-۹,٬.٫\s]*\)?-?%?$/.test(t);
+const headerLike=l=>l.segs.length>=3&&l.segs.filter(c=>!isNumText(c.t)).length>=0.6*l.segs.length;
+const lineKey=l=>l.segs.map(c=>c.t).join(' ').replace(/\s+/g,' ');
+const FOOT=/^(?:(?:page|صفحة|الصفحة)\s*[\d٠-٩]+(?:\s*(?:of|من|\/)\s*[\d٠-٩]+)?|[\d٠-٩]+\s*(?:\/|of|من)\s*[\d٠-٩]+|[\d٠-٩]{1,4})$/i;
+/* numbers printed as text: thousands separators, Arabic-Indic digits, (negative) or trailing minus; codes with a leading zero stay text */
+function pdfCell(t){const s=t.replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/٫/g,'.').replace(/٬/g,',');
+  const z=s.replace(/\s/g,'');if(/^-?\d+(?:\.\d+)?E[+-]?\d+$/i.test(z))return Number(z); // Excel prints long numbers as 1.01083E+12
+  const m=z.match(/^(\()?([-+])?(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?(\))?(-)?$/);
+  if(!m||(!!m[1]!==!!m[5]))return t;if(/^0\d/.test(m[3])&&!m[4])return t;
+  const n=Number(m[3].replace(/,/g,'')+(m[4]||''));if(!isFinite(n))return t;return (m[1]||m[2]==='-'||m[6])?-n:n}
+/* a group of lines that share one header → one sheet. Columns are the stretches of the page covered by the pieces of
+   text of the table's lines (from its header down); the gaps no line crosses separate them. */
+function pdfSheet(lines,pageW,head,name){
+  const start=Math.max(0,head?lines.findIndex(l=>lineKey(l)===head):0);
+  const multi=lines.slice(start).filter(l=>l.segs.length>=2);if(!multi.length)return {name,grid:lines.map(l=>[pdfCell(l.segs.map(c=>c.t).join(' '))]),text:true};
+  const W=Math.ceil(Math.max(pageW,...multi.map(l=>l.segs[l.segs.length-1].x1)))+2;const cov=new Uint16Array(W);
+  multi.forEach(l=>l.segs.forEach(c=>{if(c.x1-c.x0>0.45*pageW)return;for(let x=Math.max(0,Math.floor(c.x0));x<Math.min(W,Math.ceil(c.x1));x++)cov[x]++}));
+  let cols=[];let a=-1;
+  for(let x=0;x<=W;x++){const on=x<W&&cov[x]>0;if(on&&a<0)a=x;else if(!on&&a>=0){cols.push([a,x]);a=-1}}
+  /* a ruled table: its columns are the spaces between the borders that most of its lines share */
+  const ruledL=multi.filter(l=>l.bx.length>=2);
+  if(ruledL.length>=0.5*multi.length){const bs=[];ruledL.forEach(l=>l.bx.forEach(x=>{const b=bs.find(b=>Math.abs(b.x-x)<1.5);if(b)b.n++;else bs.push({x,n:1})}));
+    const xs=bs.filter(b=>b.n>=Math.max(2,0.3*ruledL.length)).map(b=>b.x).sort((a,b)=>a-b);
+    const rc=[];for(let i=0;i+1<xs.length;i++)if(xs[i+1]-xs[i]>2&&multi.some(l=>l.segs.some(c=>{const m=(c.x0+c.x1)/2;return m>xs[i]&&m<xs[i+1]})))rc.push([xs[i],xs[i+1]]);
+    if(rc.length>=2)cols=rc}
+  if(!cols.length)cols.push([0,W]);
+  let ar=0,lt=0;lines.forEach(l=>l.segs.forEach(c=>{if(AR.test(c.t))ar++;else if(/[A-Za-z]/.test(c.t))lt++}));const rtl=ar>=lt;
+  const order=rtl?cols.map((_,i)=>cols.length-1-i):cols.map((_,i)=>i);const pos=new Map(order.map((ci,k)=>[ci,k]));
+  const colOf=c=>{let best=-1,bo=0;cols.forEach(([x0,x1],i)=>{const o=Math.min(x1,c.x1)-Math.max(x0,c.x0);if(o>bo){bo=o;best=i}});
+    if(best<0){const mid=(c.x0+c.x1)/2;let d=1e9;cols.forEach(([x0,x1],i)=>{const dd=Math.abs((x0+x1)/2-mid);if(dd<d){d=dd;best=i}})}return best};
+  const grid=lines.map(l=>{const row=new Array(cols.length).fill(null);
+    l.segs.forEach(c=>{const k=pos.get(colOf(c));row[k]=row[k]?row[k].concat(c.g):c.g.slice()});
+    return row.map(gs=>gs?pdfCell(cellText(gs.sort((a,b)=>a.x-b.x))):'')});
+  return {name,grid:trimGrid(grid),text:true}}
+/* the header of a page: among its first lines, the one with the most cells that has no numbers in it */
+const pageHeader=(lines,rep)=>{let h=null,hs=0;lines.slice(0,6).forEach(l=>{const sc=l.segs.length-(rep(l)?100:0);if(headerLike(l)&&!l.segs.some(c=>isNumText(c.t))&&(!h||sc>hs)){h=l;hs=sc}});return h};
+async function readPdf(buf,base){let lib;try{lib=await pdfjs()}catch(e){throw fail('تعذّر تحميل قارئ ملفات PDF. تحقق من الاتصال ثم أعد المحاولة.','Could not load the PDF reader. Check the connection and try again.')}
+  let doc;try{doc=await lib.getDocument({data:new Uint8Array(buf),isEvalSupported:false,disableFontFace:true,useSystemFonts:false,verbosity:0}).promise}
+  catch(e){if(e&&e.name==='PasswordException')throw fail('ملف PDF محمي بكلمة مرور. افتحه واحفظه بدون كلمة مرور (أو صدّر التقرير بصيغة Excel) ثم أعد الاستيراد.','The PDF is password-protected. Save it without a password (or export the report as Excel) and import again.');throw damaged()}
+  try{const n=Math.min(doc.numPages,PDF_MAX_PAGES);const pages=[];let chars=0;
+    for(let i=1;i<=n;i++){const pg=await doc.getPage(i);const {glyphs,rules,width,height}=await pdfGlyphs(lib,pg);chars+=glyphs.length;pages.push({lines:pdfLines(glyphs,rules),width,height});pg.cleanup()}
+    if(chars<8)throw fail('ملف PDF هذا صورة ممسوحة ضوئيًا (أو صورة من الهاتف) ولا يحتوي نصًا يمكن قراءته، فلا تُستخرج منه الأرقام بدقة. صدّر التقرير من النظام بصيغة Excel (أو احفظه PDF من Excel نفسه) ثم استورده.',
+      'This PDF is a scanned image (or a phone photo) with no text layer, so its figures cannot be read reliably. Export the report as Excel (or save it as PDF from Excel itself) and import that file.');
+    /* running titles and footers: lines in the top or bottom margin that come back on several pages (page numbers aside) */
+    const edge=(l,p)=>l.y<0.09*p.height||l.y>0.91*p.height;const shape=l=>l.segs.length<=4&&l.segs.reduce((n,c)=>n+c.t.length,0)<=40?lineKey(l).replace(/[\d٠-٩]+/g,'#'):lineKey(l);const seen={};
+    pages.forEach(p=>new Set(p.lines.filter(l=>edge(l,p)).map(shape)).forEach(k=>seen[k]=(seen[k]||0)+1));
+    const groups=[];let g=null;
+    const PAGENO=/^(?:page|صفحة|الصفحة)\s*[\d٠-٩]+\s*(?:of|من|\/)\s*[\d٠-٩]+$/i;
+    pages.forEach(p=>{const l0=p.lines.filter(l=>!(l.segs.length===1&&(PAGENO.test(l.segs[0].t)||(edge(l,p)&&FOOT.test(l.segs[0].t)))));
+      const rep=l=>edge(l,p)&&seen[shape(l)]>1;const h=pageHeader(l0,rep),hk=h&&lineKey(h);const lines=l0.filter(l=>l===h||!rep(l));
+      if(!g||(hk&&hk!==g.head)){g={head:hk,hasHead:false,lines:[],width:p.width};groups.push(g)}
+      lines.forEach(l=>{if(g.head&&lineKey(l)===g.head){if(g.hasHead)return;g.hasHead=true}g.lines.push(l)});g.width=Math.max(g.width,p.width)});
+    const out=groups.filter(x=>x.lines.length).map((x,i,all)=>pdfSheet(x.lines,x.width,x.head,all.length>1?base+' '+(i+1):base));
+    if(doc.numPages>PDF_MAX_PAGES)console.warn('PDF import: only the first '+PDF_MAX_PAGES+' pages were read');
+    return out}
+  finally{try{doc.destroy()}catch(e){}}}
+
 /* ---------- entry points ---------- */
 const EXT=f=>(String(f&&f.name||'').match(/\.([a-z0-9]+)$/i)||['',''])[1].toLowerCase();
 async function readGrids(file){
@@ -244,9 +392,10 @@ async function readGrids(file){
     const wb=c.get('Workbook')||c.get('Book');
     if(!wb){if(lower.includes('worddocument'))throw fail('هذا مستند Word وليس جدول بيانات.','This is a Word document, not a spreadsheet.');throw unsupported()}
     try{out=readBiff(wb)}catch(e){if(e.importError)throw e;console.error(e);throw damaged()}}
+  else if(u8[0]===0x25&&u8[1]===0x50&&u8[2]===0x44&&u8[3]===0x46)out=await readPdf(buf,base);
   else{
-    /* binary that is none of the above (pdf, images, archives…) */
-    const bin=[[0x25,0x50,0x44,0x46],[0x89,0x50,0x4E,0x47],[0xFF,0xD8,0xFF],[0x52,0x61,0x72,0x21],[0x37,0x7A,0xBC,0xAF],[0x1F,0x8B]];
+    /* binary that is none of the above (images, archives…) */
+    const bin=[[0x89,0x50,0x4E,0x47],[0xFF,0xD8,0xFF],[0x52,0x61,0x72,0x21],[0x37,0x7A,0xBC,0xAF],[0x1F,0x8B]];
     if(bin.some(m=>m.every((x,i)=>u8[i]===x)))throw unsupported();
     if(!wideText(u8)){let ctrl=0;const k=Math.min(u8.length,4000);for(let i=0;i<k;i++){const x=u8[i];if(x<9||(x>13&&x<32&&x!==27))ctrl++}if(ctrl>k*0.02)throw unsupported()}
     const text=decodeText(u8);
@@ -271,7 +420,7 @@ async function readWorkbook(file){const sheets=await readGrids(file);const names
       h.forEach((k,i)=>{if(!k)return;let v=r[i]??'';if(v&&typeof v==='object'&&'serial' in v)v=serialIso(v.serial);else if(s.text)v=cellIn(v);o[k]=v});out.push(o)})}
     names.push(nm);rows[nm]=out});
   return {SheetNames:names,rows:n=>rows[n]||[]}}
-window.FileImport={ACCEPT,LIST,readGrids,readWorkbook,decodeText,_:{readBiff,cfbStreams,readOdsXml,delimGrid,htmlGrids,spreadsheetMl,jsonGrids,isDateCode}};
+window.FileImport={ACCEPT,LIST,readGrids,readWorkbook,decodeText,pdfjs,_:{readPdf,pdfCell,cellText,pdfGlyphs,pdfLines,readBiff,cfbStreams,readOdsXml,delimGrid,htmlGrids,spreadsheetMl,jsonGrids,isDateCode}};
 /* the contracts and needs import in Settings (app.js) calls readWorkbook() */
 window.readWorkbook=readWorkbook;
 })();
