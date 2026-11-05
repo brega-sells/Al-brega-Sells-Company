@@ -113,37 +113,38 @@ const S_=v=>String(v==null?'':(typeof v==='object'&&v.serial?serialIso(v.serial)
 const SH=[
  {k:'prods',ref:1,ar:'المنتجات',en:'Products',al:['products','المنتجات والوحدات'],why:['المنتج ووحدته وكثافته عند 15°م، لتحويل الطن واللتر إلى متر مكعب','Product, unit and density at 15 °C, to convert tonnes and litres to m³'],
   f:[['p','رمز المنتج',['كود المنتج','رقم المنتج','product code','product_no','code'],'s'],['pn','اسم المنتج',['المنتج','product','product name'],'s',1],['cat','الفئة',['category','نوع المنتج'],'s'],
-     ['u','وحدة القياس',['الوحدة','unit','uom'],'s'],['d15','الكثافة عند 15°م',['الكثافة','الكثافة كغم/م3','density','density15','density at 15'],'n']]},
+     ['u','وحدة القياس',['الوحدة','وحدة الأساس','unit','uom'],'s'],['d15','الكثافة عند 15°م',['الكثافة','الكثافة كغم/م3','density','density15','density at 15'],'n']]},
  {k:'struct',ref:1,ar:'هيكل السعر',en:'Price structure',al:['price structure','هيكل الاسعار','هيكل الأسعار'],why:['السعر الرسمي وتفصيله وهامش البريقة الرسمي','Official price, its build-up and the official Brega margin'],
-  f:[['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],['from','تاريخ السريان',['ساري من','effective from','from'],'d'],['pu','وحدة السعر',['price unit'],'s'],
+  f:[['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],['from','تاريخ السريان',['ساري من','effective from','from'],'d'],['pu','وحدة السعر',['الوحدة','price unit'],'s'],
      ['cost','تكلفة المنتج',['تكلفة المصفاة او الاستيراد','تكلفة المصفاة','تكلفة الاستيراد','product cost'],'n'],['trans','النقل',['تكلفة النقل','transport'],'n'],['dist','هامش توزيع البريقة',['هامش التوزيع','هامش البريقة','distribution margin'],'n'],
-     ['stn','هامش المحطة',['station margin'],'n'],['fees','الرسوم',['الضرائب والرسوم','fees'],'n'],['price','السعر النهائي',['السعر الرسمي','السعر الرسمي النهائي','official price','final price'],'n']]},
- {k:'segs',ref:1,ar:'أسعار الفئات',en:'Category prices',al:['segment prices','اسعار الفئات','أسعار البيع حسب الفئة','اسعار البيع حسب الفئه'],why:['سعر البيع لكل فئة زبائن بالدينار والعملة الأجنبية، والخصم والعمولة','Selling price per customer category, local and foreign, with discount and commission'],
+     ['stn','هامش المحطة',['station margin'],'n'],['fees','الرسوم',['الضرائب والرسوم','رسوم للدولة','رسوم الدولة','fees'],'n'],['price','السعر النهائي',['السعر الرسمي','السعر الرسمي النهائي','السعر الرسمي المعتمد','official price','final price'],'n']]},
+ {k:'segs',ref:1,ar:'أسعار الفئات',en:'Category prices',al:['segment prices','اسعار الفئات','أسعار البيع حسب الفئة','اسعار البيع حسب الفئه','أسعار البيع','أسعار البيع حسب فئة الزبون'],why:['سعر البيع لكل فئة زبائن بالدينار والعملة الأجنبية، والخصم والعمولة','Selling price per customer category, local and foreign, with discount and commission'],
   f:[['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],['seg','فئة الزبون',['الفئة','customer category','segment'],'c',1],['from','تاريخ السريان',['ساري من','effective from','from'],'d'],['pu','وحدة السعر',['price unit'],'s'],
-     ['loc','السعر المحلي',['السعر بالدينار','local price','price lyd'],'n'],['fx','سعر الأجانب',['السعر بالعملة الأجنبية','foreign price'],'n'],['cur','العملة',['currency'],'s'],['rate','سعر الصرف',['exchange rate'],'n'],
-     ['disc','نسبة الخصم %',['الخصم %','نسبة الخصم','discount %','discount'],'n'],['comm','العمولة للوحدة',['عمولة الموزع','commission per unit','commission'],'n']]},
- {k:'recv',ar:'الاستلامات والتكلفة',en:'Receipts & cost',al:['receipts cost','الشحنات','المشتريات','الاستلامات'],why:['تكلفة الشراء والشحن والتأمين والموانئ والجمارك لكل شحنة: أساس متوسط التكلفة المرجح','Purchase, freight, insurance, port and customs per shipment: the basis of the weighted average cost'],
-  f:[['m','الشهر',['month','الفترة'],'m',1],['w','المستودع',['depot','warehouse'],'s'],['rg','المنطقة',['region'],'s'],['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],
-     ['src','المصدر',['source','الجهة الموردة'],'s'],['ship','رقم الشحنة',['shipment','shipment no'],'s'],['q','الكمية',['quantity','qty'],'n',1],['u','الوحدة',['unit','uom'],'s'],['tc','درجة الحرارة',['temperature','temp'],'n'],
-     ['val','قيمة الشراء',['القيمة','purchase value','value'],'n'],['fr','الشحن البحري',['freight','sea freight'],'n'],['ins','التأمين',['insurance'],'n'],['port','رسوم الموانئ',['port fees'],'n'],['cus','الجمارك',['customs'],'n']]},
+     ['loc','السعر المحلي',['السعر بالدينار','سعر البيع للوحدة','سعر البيع','local price','price lyd'],'n'],['fx','سعر الأجانب',['السعر بالعملة الأجنبية','foreign price'],'n'],['cur','العملة',['currency'],'s'],['rate','سعر الصرف',['exchange rate'],'n'],
+     ['disc','نسبة الخصم %',['الخصم %','نسبة الخصم','نسبة الخصم أو العمولة','discount %','discount'],'n'],['comm','العمولة للوحدة',['عمولة الموزع','commission per unit','commission'],'n']]},
+ {k:'recv',ar:'الاستلامات والتكلفة',en:'Receipts & cost',al:['receipts cost','الشحنات','المشتريات','الاستلامات','الاستلامات وتكلفة الشراء'],why:['تكلفة الشراء والشحن والتأمين والموانئ والجمارك لكل شحنة: أساس متوسط التكلفة المرجح','Purchase, freight, insurance, port and customs per shipment: the basis of the weighted average cost'],
+  f:[['m','الشهر',['month','الفترة','تاريخ الاستلام','التاريخ'],'m',1],['w','المستودع',['depot','warehouse'],'s'],['rg','المنطقة',['region'],'s'],['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],
+     ['src','المصدر',['source','الجهة الموردة'],'s'],['ship','رقم الشحنة',['رقم الشحنة / الفاتورة','رقم الفاتورة','shipment','shipment no'],'s'],['q','الكمية',['الكمية المستلمة','quantity','qty'],'n',1],['u','الوحدة',['unit','uom'],'s'],['tc','درجة الحرارة',['temperature','temp'],'n'],
+     ['val','قيمة الشراء',['القيمة','purchase value','value'],'n'],['fr','الشحن البحري',['freight','sea freight'],'n'],['ins','التأمين',['insurance'],'n'],['port','رسوم الموانئ',['رسوم الموانئ والجمارك','port fees'],'n'],['cus','الجمارك',['customs'],'n'],
+     ['oth','تكاليف مباشرة أخرى',['other direct costs'],'n',0,1],['road','النقل البري',['road transport'],'n',0,1],['stor','التخزين والمناولة',['storage'],'n',0,1]]},
  {k:'dep',po:1,ar:'تكاليف المستودعات',en:'Depot costs',al:['depot costs','تكاليف النقل والتخزين'],why:['النقل البري والتخزين والمناولة لكل مستودع','Road transport, storage and handling per depot'],
   f:[['m','الشهر',['month'],'m',1],['w','المستودع',['depot','warehouse'],'s',1],['rg','المنطقة',['region'],'s'],['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],
      ['road','النقل البري',['نقل الشاحنات','road transport'],'n'],['stor','التخزين والمناولة',['التخزين','storage'],'n']]},
- {k:'stock',ar:'الكميات والمخزون',en:'Quantities & stock',al:['stock','الكميات','المخزون'],why:['المخزون والمستلم والمباع والتحويلات: أساس الفاقد والكمية المباعة','Stock, received, sold and transfers: the basis of losses and sold quantity'],
+ {k:'stock',ar:'الكميات والمخزون',en:'Quantities & stock',al:['stock','الكميات','المخزون','حركة الكميات','حركة الكميات والفاقد'],why:['المخزون والمستلم والمباع والتحويلات: أساس الفاقد والكمية المباعة','Stock, received, sold and transfers: the basis of losses and sold quantity'],
   f:[['m','الشهر',['month'],'m',1],['w','المستودع',['depot','warehouse'],'s',1],['rg','المنطقة',['region'],'s'],['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],['u','الوحدة',['unit','uom'],'s'],['tc','درجة الحرارة',['temperature','temp'],'n'],
-     ['op','مخزون أول المدة',['رصيد اول المدة','opening stock'],'n'],['rc','الكمية المستلمة',['المستلم','received'],'n'],['sd','الكمية المباعة',['المباع','sold'],'n'],['ti','تحويلات واردة',['transfers in'],'n'],['to','تحويلات صادرة',['transfers out'],'n'],
-     ['cl','مخزون آخر المدة',['رصيد اخر المدة','closing stock'],'n'],['al','الفاقد المسموح %',['نسبة الفاقد المسموح','allowed loss %'],'n']]},
+     ['op','مخزون أول المدة',['رصيد اول المدة','opening stock'],'n'],['rc','الكمية المستلمة',['المستلم','الوارد','received'],'n'],['sd','الكمية المباعة',['المباع','المبيعات','sold'],'n'],['ti','تحويلات واردة',['transfers in'],'n'],['to','تحويلات صادرة',['transfers out'],'n'],
+     ['cl','مخزون آخر المدة',['رصيد اخر المدة','الرصيد الفعلي','الرصيد الفعلي (الجرد)','closing stock'],'n'],['al','الفاقد المسموح %',['نسبة الفاقد المسموح','نسبة الفاقد المسموح بها','allowed loss %'],'n']]},
  {k:'sales',ar:'المبيعات حسب الزبون',en:'Sales by customer',al:['sales','المبيعات','sales by customer'],why:['الكمية والقيمة والخصومات لكل زبون: أفضل وأضعف الزبائن والفئات','Quantity, value and discounts per customer: best and worst customers and categories'],
   f:[['m','الشهر',['month'],'m',1],['w','المستودع',['depot','warehouse'],'s'],['rg','المنطقة',['region'],'s'],['c','رمز الزبون',['رقم الحساب','رقم الزبون','customer code','account'],'s'],['cn','اسم الزبون',['الزبون','customer','customer name'],'s'],
-     ['seg','فئة الزبون',['الفئة','customer category','segment'],'c'],['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],['q','الكمية',['quantity','qty'],'n',1],['u','الوحدة',['unit','uom'],'s'],['tc','درجة الحرارة',['temperature','temp'],'n'],
-     ['v','قيمة البيع',['القيمة','sales value','value'],'n'],['disc','الخصومات',['الخصم','discounts'],'n'],['comm','العمولات',['العمولة','commissions'],'n'],['fx','زبون أجنبي',['أجنبي','foreign'],'b']]},
+     ['seg','فئة الزبون',['الفئة','customer category','segment'],'c'],['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],['q','الكمية',['الكمية المباعة','quantity','qty'],'n',1],['u','الوحدة',['unit','uom'],'s'],['tc','درجة الحرارة',['temperature','temp'],'n'],
+     ['v','قيمة البيع',['القيمة','قيمة المبيعات قبل الخصم','قيمة المبيعات','sales value','value'],'n'],['disc','الخصومات',['الخصم','الخصومات والعمولات','discounts'],'n'],['comm','العمولات',['العمولة','commissions'],'n'],['fx','زبون أجنبي',['أجنبي','foreign'],'b']]},
  {k:'sub',ar:'الدعم الحكومي',en:'Government subsidy',al:['subsidy','الدعم','التعويض'],why:['الدعم لكل وحدة والمستحق والمحصّل؛ بدونه تظهر منتجات مدعومة بربح سالب','Subsidy per unit, due and collected; without it subsidised products show a loss'],
   f:[['m','الشهر',['month'],'m',1],['p','رمز المنتج',['كود المنتج','product code','code'],'s'],['pn','اسم المنتج',['المنتج','product'],'s'],['pu','وحدة الدعم',['وحدة السعر','unit'],'s'],['rate','الدعم للوحدة',['قيمة الدعم للوحدة','subsidy per unit'],'n'],
-     ['due','المستحق',['المبلغ المستحق','due'],'n'],['col','المحصل',['المبلغ المحصل','المحصّل','collected'],'n'],['cd','تاريخ التحصيل',['collection date'],'d']]},
+     ['due','المستحق',['المبلغ المستحق','الدعم المستحق','due'],'n'],['col','المحصل',['المبلغ المحصل','المحصّل','المحصل فعلا','collected'],'n'],['cd','تاريخ التحصيل',['collection date'],'d']]},
  {k:'opex',ar:'المصروفات التشغيلية',en:'Operating expenses',al:['opex','المصروفات','expenses'],why:['الرواتب والصيانة والإهلاك والكهرباء والإدارية: للانتقال من الربح الإجمالي إلى الصافي','Salaries, maintenance, depreciation, electricity, admin: from gross to net profit'],
-  f:[['m','الشهر',['month'],'m',1],['w','المستودع',['depot','warehouse'],'s'],['k','البند',['نوع المصروف','item'],'s',1],['a','المبلغ',['amount'],'n',1]]},
+  f:[['m','الشهر',['month'],'m',1],['w','المستودع',['المستودع / الإدارة','الإدارة','depot','warehouse'],'s'],['k','البند',['نوع المصروف','بند المصروف','item'],'s',1],['a','المبلغ',['amount'],'n',1]]},
  {k:'ar',ar:'الذمم',en:'Receivables',al:['receivables','المديونية','الديون'],why:['المبيعات الآجلة والمتأخرات لكل زبون: الربح على الورق مقابل المحصّل','Credit sales and overdue per customer: profit on paper vs collected'],
-  f:[['m','الشهر',['month','حتى شهر'],'m',1],['c','رمز الزبون',['رقم الحساب','customer code','account'],'s'],['cn','اسم الزبون',['الزبون','customer'],'s'],['cr','المبيعات الآجلة',['الرصيد','credit sales','balance'],'n'],
+  f:[['m','الشهر',['month','حتى شهر'],'m',1],['c','رمز الزبون',['رقم الحساب','customer code','account'],'s'],['cn','اسم الزبون',['الزبون','customer'],'s'],['cr','المبيعات الآجلة',['الرصيد','الرصيد المستحق','credit sales','balance'],'n'],
      ['od','المتأخر',['الديون المتأخرة','overdue'],'n'],['days','أيام التأخر',['days overdue'],'n']]}];
 const SHK=Object.fromEntries(SH.map(s=>[s.k,s]));
 const MONTHLY=['recv','dep','stock','sales','sub','opex','ar'];
@@ -165,6 +166,10 @@ function perM3(pu,p,pn,RP){const k=kindOf(String(pu||'').trim()||'لتر');if(k=
 
 /* ---------- import ---------- */
 const hx=s=>hn(String(s==null?'':s));
+/* the grey sample row of a data-request workbook («(مثال) بنزين», «مثال-001») is never data */
+const isSample=x=>typeof x==='string'&&/^\(?\s*مثال/.test(hx(x));
+/* a percentage column whose header has no «%» (Excel 5% is stored 0.05) is read as a fraction: 0.05 becomes 5 */
+const PCT=['disc','al'];
 function headerMap(H,def){const m={};const used=new Set();
   def.f.forEach(([k,h,al])=>{const cand=[h,...al].map(hx);let j=H.findIndex((x,i)=>!used.has(i)&&x&&cand.includes(x));if(j<0)j=H.findIndex((x,i)=>!used.has(i)&&x&&cand.some(a=>x.startsWith(a+' (')||x.startsWith(a+' ('.replace(' ',''))));if(j>=0){m[k]=j;used.add(j)}});return m}
 function fitSheet(grid,def){let best=null;for(let i=0;i<Math.min(grid.length,15);i++){const H=(grid[i]||[]).map(x=>hx(typeof x==='object'&&x?'':x));const m=headerMap(H,def);
@@ -178,10 +183,10 @@ function parse(found,file){const P={file:file.name,sheets:{},months:new Set(),wa
   /* reference first: densities and units of the workbook win over the saved ones */
   const prods0=found.get('prods');const RP=refMap(X.ref.prods);
   const rowsOf=k=>{const o=found.get(k);if(!o)return null;const out=[];let skip=0;
-    o.sheets.forEach((s,si)=>{const fit=o.fits[si];s.grid.slice(fit.row+1).forEach(r=>{if(!r||!r.some(x=>x!==''&&x!=null))return;const v=k2=>fit.m[k2]==null?'':r[fit.m[k2]];const o2={};
+    o.sheets.forEach((s,si)=>{const fit=o.fits[si];const H=s.grid[fit.row]||[];const frac=PCT.filter(k2=>(k2==='disc'?k==='segs':k==='stock')&&fit.m[k2]!=null&&!/[%٪]/.test(String(H[fit.m[k2]]||'')));s.grid.slice(fit.row+1).forEach(r=>{if(!r||!r.some(x=>x!==''&&x!=null))return;if(r.some(isSample)){skip++;return}const v=k2=>fit.m[k2]==null?'':r[fit.m[k2]];const o2={};
       o.def.f.forEach(([k2,,, t])=>{const x=v(k2);if(t==='n')o2[k2]=num(x);else if(t==='m')o2[k2]=monthOf(x);else if(t==='d')o2[k2]=dateOf(x);else if(t==='b')o2[k2]=isFxText(x)?1:null;else o2[k2]=S_(x)});
-      out.push(o2)})});return {rows:out,skip}};
-  if(prods0){const R=rowsOf('prods');const rows=[];R.rows.forEach(o=>{const p=o.p||o.pn;if(!p)return;const x=clean({p,pn:o.pn||p,cat:o.cat,u:o.u,d15:o.d15>0&&o.d15<2000?o.d15:null});rows.push(x);RP.set(p,Object.assign({},RP.get(p)||{},x))});P.sheets.prods=rows}
+      frac.forEach(k2=>{if(o2[k2]!=null&&o2[k2]>0&&o2[k2]<1)o2[k2]*=100});out.push(o2)})});return {rows:out,skip}};
+  if(prods0){const R=rowsOf('prods');const rows=[];R.rows.forEach(o=>{const p=o.p||o.pn;if(!p)return;const d=o.d15>0&&o.d15<5?o.d15*1000:o.d15;const x=clean({p,pn:o.pn||p,cat:o.cat,u:o.u,d15:d>0&&d<2000?d:null});rows.push(x);RP.set(p,Object.assign({},RP.get(p)||{},x))});P.sheets.prods=rows}
   const pid=o=>{if(o.p)return o.p;if(!o.pn)return '';const n=window.norm?norm(o.pn):o.pn;for(const [k,x] of RP)if((window.norm?norm(x.pn||''):x.pn)===n)return k;return o.pn};
   const priceRows=(k,keys)=>{const R=rowsOf(k);if(!R)return null;const rows=[];R.rows.forEach(o=>{const p=pid(o);if(!p)return;const f=perM3(o.pu,p,o.pn,RP);if(f==null){w('pu-'+k,tr(`«${SHK[k].ar}»: وحدة سعر لا تُحوَّل (طن بلا كثافة؟)`,`“${SHK[k].en}”: a price unit that cannot be converted (tonnes without a density?)`));return}
     const x={p,pn:o.pn||(RP.get(p)||{}).pn||p,from:o.from||'2000-01-01',pu:o.pu||'لتر'};keys.forEach(kk=>{if(o[kk]!=null)x[kk]=['disc','rate'].includes(kk)?o[kk]:o[kk]*f});
@@ -196,7 +201,9 @@ function parse(found,file){const P={file:file.name,sheets:{},months:new Set(),wa
         Object.assign(x,{p,q:c.q,q0:num(o.q),u0:o.u||'',tc:o.tc,vf:c.vf!==1?c.vf:null})}
       if(k==='stock'){let vf=null;const cv=key=>{if(o[key]==null)return null;const c=qM3(o[key],o.u,p,o.pn,o.tc,RP);if(c&&c.bad)w(c.bad+'-'+p,tr(`${o.pn||p}: كميات المخزون بوحدة لا تُحوَّل`,`${o.pn||p}: stock quantities in a unit that cannot be converted`));if(c&&c.vf!==1)vf=c.vf;return c?c.q:null};
         Object.assign(x,{p,op:cv('op'),rc:cv('rc'),sd:cv('sd'),ti:cv('ti'),to:cv('to'),cl:cv('cl'),al:o.al,u0:o.u||'',tc:o.tc});x.vf=vf}
-      if(k==='recv')Object.assign(x,{w:o.w,rg:o.rg,src:o.src,ship:o.ship,val:o.val,fr:o.fr,ins:o.ins,port:o.port,cus:o.cus});
+      if(k==='recv'){Object.assign(x,{w:o.w,rg:o.rg,src:o.src,ship:o.ship,val:o.val,fr:o.fr,ins:o.ins,port:o.port,cus:o.oth!=null?(o.cus||0)+o.oth:o.cus});
+        /* road transport and storage written on the receipts sheet are depot costs of that month, depot and product */
+        if(o.road!=null||o.stor!=null)(P.recvDep=P.recvDep||[]).push(clean({m:o.m,w:o.w,rg:o.rg,p,road:o.road,stor:o.stor}))}
       if(k==='sales'){const raw=String(o.seg||'');const fx=o.fx||/اجانب|أجانب|اجنبي|أجنبي|foreign/i.test(raw)?1:null;Object.assign(x,{w:o.w,rg:o.rg,c:o.c||o.cn,cn:o.cn||o.c,seg:window.custCat(raw)||(fx?'':raw.slice(0,40)),v:o.v,disc:o.disc,comm:o.comm,fx})}
       if(k==='stock'||k==='dep')Object.assign(x,{w:o.w,rg:o.rg});
       if(k==='dep'){Object.assign(x,{p:o.p||o.pn?p:'',road:o.road,stor:o.stor});if(x.road==null&&x.stor==null){skip++;return}}
@@ -205,6 +212,7 @@ function parse(found,file){const P={file:file.name,sheets:{},months:new Set(),wa
       if(k==='ar'){if(!o.c&&!o.cn){skip++;return}Object.assign(x,{c:o.c||o.cn,cn:o.cn||o.c,cr:o.cr,od:o.od,days:o.days})}
       rows.push(clean(x));P.months.add(o.m)});
     P.sheets[k]=rows;P.counts[k]={n:rows.length,skip}});
+  if(P.recvDep){if(!P.sheets.dep){P.sheets.dep=P.recvDep;P.counts.dep={n:P.recvDep.length,skip:0}}delete P.recvDep}
   ['prods','struct','segs'].forEach(k=>{if(P.sheets[k])P.counts[k]={n:P.sheets[k].length,skip:0}});
   return P}
 async function tryImport(grids,file){const found=detect(grids);if(!found)return false;let P;try{P=parse(found,file)}catch(e){console.error(e);return false}
@@ -495,10 +503,10 @@ function template(){const RP=refMap(X.ref.prods);const base=[['33500','بنزي�
     ['','زيت الوقود الثقيل','وقود','طن',970],['','وقود السفن','وقود','طن',890],['','الزيوت والشحوم','زيوت وشحوم','لتر',890],['','الأسفلت','أسفلت','طن',1020]];
   const prods=(X.ref.prods&&X.ref.prods.length?X.ref.prods.map(x=>[x.p===x.pn?'':x.p,x.pn,x.cat||'',x.u||'',x.d15||'']):base).map(r=>({'رمز المنتج':r[0],'اسم المنتج':r[1],'الفئة':r[2],'وحدة القياس':r[3],'الكثافة عند 15°م':r[4]}));
   const first=new Date().toISOString().slice(0,7)+'-01';const plist=prods.map(x=>[x['رمز المنتج'],x['اسم المنتج']]);
-  const blank=def=>{const o={};def.f.forEach(f=>o[f[1]]='');return [o]};
+  const blank=def=>{const o={};def.f.filter(f=>!f[5]).forEach(f=>o[f[1]]='');return [o]};
   const struct=plist.map(([p,n])=>({'رمز المنتج':p,'اسم المنتج':n,'تاريخ السريان':first,'وحدة السعر':'لتر','تكلفة المنتج':'','النقل':'','هامش توزيع البريقة':'','هامش المحطة':'','الرسوم':'','السعر النهائي':''}));
   const segs=[];plist.forEach(([p,n])=>(window.CUSTOMER_CATS||[]).forEach(cg=>segs.push({'رمز المنتج':p,'اسم المنتج':n,'فئة الزبون':cg.ar,'تاريخ السريان':first,'وحدة السعر':'لتر','السعر المحلي':'','سعر الأجانب':'','العملة':(PMa.PM.cfg||{}).cur||'USD','سعر الصرف':'','نسبة الخصم %':'','العمولة للوحدة':''})));
-  const readme=[...SH.map(d=>({'الورقة':d.ar,'الغرض':d.why[0],'الأعمدة':d.f.map(f=>f[1]+(f[4]?' (إلزامي)':'')).join('، ')})),
+  const readme=[...SH.map(d=>({'الورقة':d.ar,'الغرض':d.why[0],'الأعمدة':d.f.filter(f=>!f[5]).map(f=>f[1]+(f[4]?' (إلزامي)':'')).join('، ')})),
     {'الورقة':'قواعد عامة','الغرض':'كل رقم لكل منتج ولكل مستودع أو منطقة ولكل شهر. الشهر بصيغة 2026-09 أو تاريخ داخل الشهر.','الأعمدة':''},
     {'الورقة':'الوحدات','الغرض':'الوحدة: لتر أو م³ أو طن أو كغم أو برميل. تُحوَّل كل الكميات إلى م³ عند 15°م؛ اللتر والمتر المكعب يُصحَّحان بدرجة الحرارة إن وُجدت، والطن بالكثافة عند 15°م من ورقة المنتجات. إن تُركت الوحدة فارغة تُؤخذ وحدة المنتج.','الأعمدة':''},
     {'الورقة':'وحدة السعر','الغرض':'الأسعار والتكاليف والدعم بالدينار لكل وحدة السعر (لتر افتراضيًا، أو م³ أو طن). سعر الأجانب بالعملة الأجنبية ويُحوَّل بسعر الصرف.','الأعمدة':''},
