@@ -391,5 +391,5 @@ recPanel=function(unit){const h=__rp(unit);if(unit!==UNIT)return h;
 const __vod=viewOrgDuties;
 viewOrgDuties=function(el){__vod(el);const sec=el.querySelector('#od-'+UNIT+' .od-acts');if(!sec)return;
   IDS.slice().reverse().forEach(id=>{if(!sec.querySelector(`[data-org-go="${id}"]`))sec.insertAdjacentHTML('afterbegin',`<button type="button" class="btn sm" data-org-go="${id}">${esc(tr(REPORTS[id].label[0],REPORTS[id].label[1]))}</button>`)})};
-window.__cx={ST,REPORTS,data,parseFile:(id,f)=>parseFile(REPORTS[id],f)};
+window.__cx={ST,REPORTS,data,parseFile:(id,f)=>parseFile(REPORTS[id],f),load:(id,force)=>load(id,force),save:(id,P,replace)=>saveImport(id,P,replace)};
 })();
