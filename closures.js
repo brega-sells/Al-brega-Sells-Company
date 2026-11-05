@@ -43,6 +43,8 @@ const F_WH=[['w',['رقم المستودع','مستودع رقم','رمز الم
 const F_UNIT=['u',['الوحدة','وحدة القياس','وحده','uom','unit','unit of measure'],'الوحدة','Unit','s'];
 const F_PACK=['k',['pack_cd','pack','العبوه','كود العبوه'],'PACK_CD','PACK_CD','s'];
 const F_QTY=['q',['الكمية','qty','quantity','الكميه الاجماليه','إجمالي الكمية','total qty','total_qty','total quantity'],'الكمية','Quantity','n'];
+/* optional: the product temperature at reading (°C), used to correct litres / m³ to 15 °C (units.js) */
+const F_TEMP=['tc',['درجة الحرارة','درجه الحراره','الحراره','الحرارة','temperature','temp','temp_c','obs temp','observed temperature'],'درجة الحرارة','Temperature','n'];
 const REPORTS={
  sales:{col:'sales_report',file:'Sales_Report',color:['#6d3fd3','#ddd6fe'],grain:'month',
   label:['تحليل المبيعات','Sales analysis'],head:['مخرجات تحليل المبيعات','Sales analysis outputs'],title:['لوحة مؤشرات تحليل المبيعات','Sales analysis dashboard'],
@@ -53,7 +55,7 @@ const REPORTS={
     ['mo',['الشهر','month','الفترة','period','yyyy-mm'],'الشهر','Month','m'],...F_WH,
     ['c',['رقم الحساب','رقم العميل','رقم الزبون','كود العميل','account_no','account no','acct_no','customer_no','cust_no','customer_id'],'رقم الحساب','Account no.','s'],
     ['cn',['اسم الزبون','اسم العميل','الزبون','العميل','customer','customer_name','cust_name'],'اسم الزبون','Customer','s'],
-    ['th',['trnsfr_thru','transfer thru','trnsfr thru','transfer_thru'],'TRNSFR_THRU','TRNSFR_THRU','s'],...F_PROD,F_PACK,F_UNIT,F_QTY],
+    ['th',['trnsfr_thru','transfer thru','trnsfr thru','transfer_thru'],'TRNSFR_THRU','TRNSFR_THRU','s'],...F_PROD,F_PACK,F_UNIT,F_QTY,F_TEMP],
   date:'mo',need:r=>!!(r.c||r.cn),
   ent:{k:'c',n:'cn',ar:'الزبون',en:'Customer',pl:['زبون','customers'],search:['بحث باسم الزبون أو رقم الحساب…','Search by customer name or account…']},
   filters:[{k:'rgn',ar:'المنطقة',en:'Region',all:['كل المناطق','All regions']},{k:'wn',ar:'المستودع',en:'Warehouse',all:['كل المستودعات','All warehouses']}],
@@ -74,7 +76,7 @@ const REPORTS={
     ['doc',['رقم المستند','رقم الوثيقة','رقم السند','doc_no','document no','document_no','voucher no'],'رقم المستند','Document no.','s'],
     ['it',['item_no','رقم البند','رقم السطر','line_no'],'ITEM_NO','ITEM_NO','s'],
     ['pq',['الكمية السابقة','الكميه السابقه','prev_qty','previous qty','previous quantity','opening qty'],'الكمية السابقة','Previous qty','n'],
-    F_QTY,['pc',['process_counter','process counter'],'PROCESS_COUNTER','PROCESS_COUNTER','s']],
+    F_QTY,F_TEMP,['pc',['process_counter','process counter'],'PROCESS_COUNTER','PROCESS_COUNTER','s']],
   date:'d',need:r=>!!(r.p||r.pn),
   ent:{k:'s',n:'sn',ar:'المخزن',en:'Store',pl:['مخزن','stores'],search:['بحث باسم المخزن أو رقمه…','Search by store name or number…'],parent:'wn'},
   filters:[{k:'mn',ar:'نوع الحركة',en:'Movement',all:['كل الحركات','All movements']},{k:'wn',ar:'المستودع',en:'Warehouse',all:['كل المستودعات','All warehouses']}],
@@ -94,7 +96,7 @@ const REPORTS={
     ['rt',['نوع الاستلام','نوع الإذن','نوع المصدر','نوع','receipt type','receipt_type','source type','type'],'نوع الاستلام','Receipt type','s'],
     ['sp',['رقم المورد','رقم المصدر','رمز المورد','كود المورد','supplier_no','supplier no','vendor_no','vendor no','source_no'],'رقم المورد','Supplier no.','s'],
     ['spn',['اسم المورد','المورد','اسم المصدر','المصدر','الجهة الموردة','supplier','supplier_name','vendor','vendor_name','source'],'اسم المورد','Supplier','s'],
-    ...F_PROD,F_UNIT,F_QTY],
+    ...F_PROD,F_UNIT,F_QTY,F_TEMP],
   date:'d',need:r=>!!(r.p||r.pn),
   ent:{k:'sp',n:'spn',ar:'المورد',en:'Supplier',pl:['مورد','suppliers'],search:['بحث باسم المورد أو رقمه…','Search by supplier name or number…']},
   filters:[{k:'rt',ar:'نوع الاستلام',en:'Receipt type',all:['كل الأنواع','All types']},{k:'wn',ar:'المستودع',en:'Warehouse',all:['كل المستودعات','All warehouses']}],
@@ -319,7 +321,7 @@ async function importFile(id,file){const cfg=REPORTS[id],s=ST[id];toast(tr('جا
     ${[...byU.entries()].sort((a,b)=>b[1]-a[1]).slice(0,2).map(([k,v])=>`<div><b class="num">${qs(v)}</b><span>${esc(k||tr('الكمية','quantity'))}</span></div>`).join('')}<div><b class="num">${fn(es)}</b><span>${esc(tr(cfg.ent.pl[0],cfg.ent.pl[1]))}</span></div></div>
    <p class="muted" style="margin:4px 0;font-size:12.5px">${esc(tr(`الملف: ${P.file} · الورقة: ${P.sheet} · صف العناوين: ${P.header}`,`File: ${P.file} · sheet: ${P.sheet} · header row: ${P.header}`))}${P.skipped?` · <b style="color:var(--warn)">${esc(tr(`تُجوهل ${P.skipped} صف بلا تاريخ أو كمية أو جهة`,`${P.skipped} rows skipped (no date, quantity or party)`))}</b>`:''}</p>
    ${window.FuelUnits?`<p class="muted" style="margin:0 0 4px;font-size:12px">${esc(tr('الكميات أعلاه بوحدات الملف الأصلية، وتُعرض في اللوحة بالمتر المكعب.','Quantities above are in the file’s own units; the dashboard shows them in cubic metres.'))}</p>`:''}
-   <div class="sm-cols-map">${cfg.fields.map(f=>`<span class="${P.map[f[0]]!=null?'ok':'no'}">${P.map[f[0]]!=null?'✓':'✗'} ${esc(tr(f[2],f[3]))}</span>`).join('')}</div>
+   <div class="sm-cols-map">${cfg.fields.filter(f=>f!==F_TEMP||P.map[f[0]]!=null).map(f=>`<span class="${P.map[f[0]]!=null?'ok':'no'}">${P.map[f[0]]!=null?'✓':'✗'} ${esc(tr(f[2],f[3]))}</span>`).join('')}</div>
    ${ov.length?`<div class="banner warn" style="margin-top:8px">${esc(tr(`تتداخل هذه الفترة مع ${ov.length} ملف محفوظ سابقًا:`,`This period overlaps ${ov.length} saved file(s):`))} ${ov.map(b=>esc(`${b.file} (${fdi(b.from)} – ${fdi(b.to)})`)).join('، ')}
      <label style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="cx-replace" checked> ${esc(tr('استبدال الملفات المتداخلة بهذا الملف (يمنع تكرار الأرقام)','Replace the overlapping files with this one (avoids double counting)'))}</label></div>`:''}
    ${!s.canImport?`<p class="muted" style="font-size:12.5px">${esc(tr('الحفظ في المنظومة متاح لمحرري إدارة الشؤون التجارية والتحصيلات والإدارة العامة ومدير النظام. يمكنك عرض التحليل مؤقتًا على جهازك.','Saving is for editors of Commercial Affairs & Collections, the General Administration and the administrator. You can view the analysis on this device.'))}</p>`:''}

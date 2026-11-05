@@ -125,6 +125,19 @@ const num = s => +String(s).replace(/[^\d.-]/g, '');
     await page.evaluate(() => { FuelUnits.state.over['44347'] = 850; FuelUnits.state.ver++; go('transfers'); }); await page.waitForTimeout(500);
     const after = await page.evaluate(() => window.__cx.data('transfers').filter(r => r.p === '44347').reduce((a, r) => a + r.q, 0));
     out.densityApplied = Math.abs(after / before - 835 / 850) < 0.001 && f.tons > 0;
+    // temperature: general setting and per-type setting saved; litres corrected to 15 °C, tonnes and LPG not
+    await page.evaluate(() => go('settings')); await page.waitForTimeout(500);
+    await page.fill('#fu-temp', '30'); await page.fill('#fu-panel [data-fu-t="@diesel"]', '35'); await page.click('#fu-panel [data-fu="save"]'); await page.waitForTimeout(800);
+    out.tempSaved = await page.evaluate(() => window.__FBLOG.some(l => l[0] === 'set' && l[1] === 'config' && l[2] === 'units' && l[3].temp === 30 && l[3].temps['@diesel'] === 35));
+    out.tempBad = await page.evaluate(async () => { const i = document.getElementById('fu-temp'); i.value = '200'; document.querySelector('#fu-panel [data-fu="save"]').click(); await new Promise(r => setTimeout(r, 300)); const m = /−18/.test(document.getElementById('fu-panel').textContent); i.value = '30'; return m; });
+    out.vcf = await page.evaluate(() => { const F = window.FuelUnits; F.state.over = {}; F.state.temp = 30; F.state.temps = { '@diesel': 35 };
+      const r = (q, u, c, n, t) => F.toM3(q, u, c, n, t);
+      const ok = [F.vcf(835, 30) === 0.9872, F.vcf(740, 30) === 0.9815, F.vcf(835, 15) === 1,
+        r(1000, 'لتر', '44347', 'بيع وقود الديزل', 30).q === 0.9872, r(1000, 'لتر', '44347', 'بيع وقود الديزل').vcf === 0.9829,
+        r(1000, 'لتر', '33500', 'بيع البنزين').t === 30, r(1000, 'لتر', '16291', 'بيع منتج غاز مسال', 30).q === 1,
+        Math.abs(r(1, 'طن', '44347', 'بيع وقود الديزل', 30).q - 1000 / 835) < 1e-9, r(5, 'لتر', '', 'صيانة', 30) === null];
+      const rows = F.normalize([{ p: '44347', pn: 'ديزل', q: 2000, u: 'لتر', tc: 30 }]); const note = F.explain(rows);
+      F.state.temp = 15; F.state.temps = {}; return ok.every(Boolean) && Math.abs(rows[0].q - 1.9744) < 1e-6 && /0\.9872/.test(note) && /30°م/.test(note); });
     await browser.close(); }
   // English + dark
   { const { browser, page } = await open({ user: { email: 'ca@test.ly', displayName: 'CA' }, data, lang: 'en', theme: 'dark' });
