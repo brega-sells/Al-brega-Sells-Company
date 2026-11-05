@@ -16,7 +16,7 @@ node tests/browser/govern.js  # access review with re-auth, account register CSV
 node tests/browser/polish.js    # external seed file + empty-database banner, skip link + live toast region, sequential meeting decision numbers
 node tests/browser/offline.js   # offline writes resolve on the device, pending counter + status chip, sync toast, late rejection reported, cache reads, offline sign-in with the saved role, logout guard
 node tests/browser/sms055.js    # SMS055 dashboard: import, parts, KPIs, previous-period comparison, replace overlap, CSV, permissions, English
-node tests/browser/debts.js     # debts dashboard: ledger + fuel statement import, stated-total check, DSO, collection rate, FIFO aging over three months, priorities, replace a month, wrong file, permissions, English + dark
+node tests/browser/debts.js     # debts dashboard: template sheets, every KPI to the dinar, six aging buckets, government vs private, actions, customer statement, replace, monthly statement, large month, EN + dark
 node tests/browser/closures.js  # sales / transfers / receipts dashboards: import of the three closing reports, units (m³ conversion, densities), comparison, replace overlap, wrong file, permissions, English + dark
 node tests/browser/margin.js    # profit margin: Sales_Report import, m³, price board with effective dates + history, two price lists (local / foreign × rate), profit = hand calculation, price-list import, simulator, calculator, permissions, XSS, English + dark
 node tests/browser/meetnotify.js # meeting notices in the bell for invitees (new/changed/cancelled), «notify everyone» dialog: WhatsApp, e-mail Bcc, .ics, sent marks
