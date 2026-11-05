@@ -525,6 +525,7 @@ async function load(force){if(ST.loading&&!force)return ST.loading;
         try{let o=JSON.parse(ps.map(p=>p.d).join(''));if(o.T==='ledger')o=fromLedger(o);if(o.T!=='ar')return;o.b=b.id;o.file=b.file;snaps.push(o)}catch(e){b.ok=false}});
       ST.batches=batches;ST.snaps=snaps;ST.err=''}
     catch(e){ST.err=e&&e.code==='permission-denied'?'denied':(e&&e.message)||'error';ST.batches=[];ST.snaps=[]}
+    if(ST.err==='denied'&&window.__denyPrep)await window.__denyPrep();
     ST.loaded=true;
     try{const u=await recMyUnit();const m=me();ST.canImport=m.role==='admin'||(!!S.canWrite&&m.role!=='viewer'&&(u===UNIT||u==='gm'))}catch(e){ST.canImport=false}
   })();return ST.loading}
