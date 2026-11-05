@@ -390,4 +390,6 @@ recPanel=function(id){const h=__rp(id);if(id!==UNIT)return h;
 const __vod=viewOrgDuties;
 viewOrgDuties=function(el){__vod(el);const sec=el.querySelector('#od-'+UNIT+' .od-acts');if(sec&&!sec.querySelector('[data-org-go="sms055"]'))sec.insertAdjacentHTML('afterbegin',`<button type="button" class="btn sm primary" data-org-go="sms055">${esc(tr('لوحة SMS055','SMS055 dashboard'))}</button>`)};
 window.__sms=SM;window.__smsParse=parseFile;
+/* shared with the other closing-reports dashboards (closures.js): file readers, number/date helpers and the small chart builders */
+window.__smsLib={readGrids,hn,AD,num,serialIso,niceMax,colChart,bars,stack,money,money2,pct,isoAdd,days,fdi,mName,me};
 })();

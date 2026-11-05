@@ -267,7 +267,26 @@ await T('editor writes access-review denied',W.doc('config/access-review').set({
  await T('saved batch cannot be edited',CA.doc('sms055/B1').update({rows:999}),0);
  await T('ca viewer cannot delete',CAV.doc('sms055/B1').delete(),0);
  await T('ca editor deletes a file',CA.doc('sms055/B1_p0').delete(),1);
- await T('admin deletes a file',A.doc('sms055/B4').delete(),1);}
+ await T('admin deletes a file',A.doc('sms055/B4').delete(),1);
+ // --- closing-reports dashboards (sales_report / transfers_report / receipts_report): same shape and rights as sms055
+ for(const col of ['sales_report','transfers_report','receipts_report']){
+  const cb=(o)=>Object.assign(bt({file:col+'.xlsx'}),o),cp=(o)=>Object.assign(pt({d:'{"F":[],"D":{},"R":[]}'}),o);
+  await T(col+': ca editor saves a part',CA.doc(col+'/B1_p0').set(cp()),1);
+  await T(col+': ca editor saves a batch',CA.doc(col+'/B1').set(cb()),1);
+  await T(col+': ca viewer reads',CAV.collection(col).get(),1);
+  await T(col+': gm reads',G.collection(col).get(),1);
+  await T(col+': board reads',B.collection(col).get(),1);
+  await T(col+': w cannot read',W.collection(col).get(),0);
+  await T(col+': ca viewer cannot import',CAV.doc(col+'/B2').set(cb({createdBy:'cav@b.ly'})),0);
+  await T(col+': w editor cannot import',W.doc(col+'/B3').set(cb({createdBy:'w@b.ly'})),0);
+  await T(col+': batch extra field denied',CA.doc(col+'/B6').set(cb({x:1})),0);
+  await T(col+': part id must match batch and n',CA.doc(col+'/B1_p7').set(cp({n:0})),0);
+  await T(col+': saved batch cannot be edited',CA.doc(col+'/B1').update({rows:999}),0);
+  await T(col+': ca viewer cannot delete',CAV.doc(col+'/B1').delete(),0);
+  await T(col+': ca editor deletes a file',CA.doc(col+'/B1_p0').delete(),1);}
+ // the wildcard match must not open other collections
+ await T('wildcard does not open the log to ca',CA.collection('log').get(),0);
+ await T('wildcard does not allow a batch in another collection',CA.doc('companies/B9').set(bt()),0);}
 // --- config/security: admins must sign in with Google once enforced (2-step via Google, no paid plan)
 {const AG=as('admin@b.ly',{firebase:{sign_in_provider:'google.com'}}),AP=as('admin@b.ly',{firebase:{sign_in_provider:'password'}});
  const sec=(v,by)=>({adminGoogle:v,by:by||'admin@b.ly',at:'2026-11-04T00:00:00Z'});

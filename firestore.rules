@@ -137,6 +137,25 @@ service cloud.firestore {
       allow create: if smsWriter() && (validBatch() || validPart());
       allow delete: if smsWriter();
     }
+    // لوحات مركز تقارير الإقفال الأخرى (تحليل المبيعات sales_report، حركة التحويلات transfers_report، أذونات الاستلام receipts_report):
+    // الشكل نفسه والصلاحيات نفسها كـ sms055 — ملف مستورد (batch) وأجزاء صفوفه (part)، لا تُعدَّل بعد الحفظ.
+    match /{col}/{id} {
+      function isClosures() { return col in ['sales_report', 'transfers_report', 'receipts_report']; }
+      function clxWriter() { return isAdmin() || (canWrite() && myUnit() in ['ca', 'gm']); }
+      function validClxBatch() { return request.resource.data.kind == 'batch'
+        && request.resource.data.keys().hasOnly(['kind', 'file', 'sheet', 'from', 'to', 'rows', 'parts', 'value', 'returns', 'createdBy', 'by', 'at'])
+        && request.resource.data.createdBy == me() && str(request.resource.data, 'file', 200) && str(request.resource.data, 'sheet', 100)
+        && str(request.resource.data, 'from', 10) && str(request.resource.data, 'to', 10) && str(request.resource.data, 'by', 120)
+        && request.resource.data.rows is int && request.resource.data.parts is int && request.resource.data.parts <= 200
+        && request.resource.data.value is number && request.resource.data.returns is number && str(request.resource.data, 'at', 40); }
+      function validClxPart() { return request.resource.data.kind == 'part'
+        && request.resource.data.keys().hasOnly(['kind', 'batch', 'n', 'd', 'createdBy'])
+        && request.resource.data.createdBy == me() && request.resource.data.n is int
+        && request.resource.data.d is string && request.resource.data.d.size() <= 900000 && id == request.resource.data.batch + '_p' + string(request.resource.data.n); }
+      allow read: if isClosures() && (top() || mine('ca'));
+      allow create: if isClosures() && clxWriter() && (validClxBatch() || validClxPart());
+      allow delete: if isClosures() && clxWriter();
+    }
     // مهام الإدارات المضافة من داخل المنظومة: يقرؤها الجميع ويكتبها مدير النظام فقط
     match /duties/{unit} {
       allow read: if hasRole();
