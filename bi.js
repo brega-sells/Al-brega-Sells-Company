@@ -161,7 +161,7 @@ function decorate(){
   roots.forEach(root=>root.querySelectorAll('.btn:not([data-bi-done]):not([data-bi])').forEach(b=>{
     const txt=(b.textContent||'').trim();
     const exp=isExcel(b)&&(b.tagName==='BUTTON')&&(/تصدير|export/i.test(txt)||!!b.querySelector('svg path[d^="M12 4v11"]'));
-    const imp=(b.tagName==='LABEL'&&isExcel(b)&&b.querySelector('input[type=file]'))||(b.dataset.sm==='import')||(b.dataset.cx==='import');
+    const imp=(b.tagName==='LABEL'&&isExcel(b)&&b.querySelector('input[type=file]'))||(b.dataset.sm==='import')||(b.dataset.cx==='import')||(b.dataset.dbt==='import');
     if(!exp&&!imp)return;
     b.dataset.biDone='1';if(!b.id)b.id='bi-src-'+(++seq);
     const sm=b.classList.contains('sm');const prim=b.classList.contains('primary');
