@@ -2,7 +2,7 @@
    xlsx, xlsm, xlsb, xls, WPS et/ett (binary and xlsx layout), ods, fods, Excel 2003 XML, HTML, CSV (UTF-8, ;-separated,
    Windows-1256 Arabic), TSV, UTF-16 text, pipe-separated text and JSON; every dashboard import input accepts the full
    list; the SMS055, sales-analysis and debts dashboards read the WPS and OpenDocument files end to end; a file that is
-   not a spreadsheet gets a clear Arabic message. Fixtures: tests/fixtures/formats (make.py rebuilds them). */
+   not a spreadsheet, or a damaged PDF, gets a clear Arabic message. Fixtures: tests/fixtures/formats (make.py rebuilds them). */
 const { open } = require('./harness');
 const fs = require('fs'); const path = require('path');
 const DIR = path.join(__dirname, '..', 'fixtures', 'formats');
@@ -39,7 +39,7 @@ const out = {};
     fs.readFileSync(path.join(DIR, 'sample.ods')).toString('base64'));
   // clear messages for what is not a spreadsheet
   const msg = (name, bytes) => page.evaluate(async ({ name, bytes }) => { try { await FileImport.readGrids(new File([new Uint8Array(bytes)], name)); return 'read'; } catch (e) { return e.message; } }, { name, bytes });
-  out.pdfRefused = /صيغة الملف غير مدعومة/.test(await msg('report.pdf', [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0]));
+  out.pdfDamaged = /تالف/.test(await msg('report.pdf', [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0]));
   out.emptyRefused = /الملف فارغ/.test(await msg('a.xlsx', []));
   out.brokenZip = /تالف/.test(await msg('a.xlsx', [0x50, 0x4b, 3, 4, 1, 2, 3, 4, 5, 6]));
   out.binaryRefused = /غير مدعومة/.test(await msg('a.dat', Array.from({ length: 400 }, (_, i) => (i * 7) % 9)));
@@ -60,9 +60,9 @@ const out = {};
   }
   await put('#sm-file', 'sample.et'); await page.click('[data-sm="save"]'); await page.waitForTimeout(1200);
   out.smsSaved = await page.evaluate(n => window.__sms.rows.length === n && window.__sms.rows[0].cn !== undefined, EXP.rows);
-  // a PDF picked by mistake: an Arabic message in the import dialog, nothing saved
-  await page.setInputFiles('#sm-file', { name: 'كشف.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\n\x00\x01\x02\x03binary') }); await page.waitForTimeout(500);
-  out.smsPdf = await page.evaluate(() => dlg.open && /تعذّر الاستيراد/.test(dlg.textContent) && /صيغة الملف غير مدعومة/.test(dlg.textContent) && /WPS/.test(dlg.textContent));
+  // a damaged PDF: an Arabic message in the import dialog, nothing saved (readable PDFs: tests/browser/pdf.js)
+  await page.setInputFiles('#sm-file', { name: 'كشف.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\n\x00\x01\x02\x03binary') }); await page.waitForTimeout(1500);
+  out.smsPdf = await page.evaluate(() => dlg.open && /تعذّر الاستيراد/.test(dlg.textContent) && /تالف/.test(dlg.textContent));
   await page.evaluate(() => dlg.close());
   out.errors = errors.filter(e => !/favicon|ERR_|net::/.test(e));
   await browser.close();
