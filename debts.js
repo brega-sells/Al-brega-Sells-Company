@@ -184,7 +184,7 @@ const TPL=[
    ['v','قيمة الضمان','Guarantee value','n',1,300000,'',['القيمه','المبلغ','value','amount']],
    ['iss','تاريخ الإصدار','Issue date','d',0,'2026-01-20','',['issue date']],
    ['exp','تاريخ الانتهاء','Expiry date','d',1,'2027-01-19','',['تاريخ انتهاء الضمان','صالح حتى','expiry','expiry date']]]},
- {k:'inv',ar:'الفواتير',en:'Invoices',names:['الفواتير','المبيعات الاجله','حركه المبيعات الاجله','invoices','credit sales'],desc:'حركة المبيعات الآجلة فاتورة بفاتورة.',cols:[CODE,CNAME,
+ {k:'inv',ar:'الفواتير',en:'Invoices',names:['الفواتير','الفواتير الاجله','المبيعات الاجله','حركه المبيعات الاجله','invoices','credit sales'],desc:'حركة المبيعات الآجلة فاتورة بفاتورة.',cols:[CODE,CNAME,
    ['no','رقم الفاتورة','Invoice number','s',1,'F-26-10-0457','',['الفاتوره','invoice','invoice no']],
    ['d','تاريخ الفاتورة','Invoice date','d',1,'2026-10-04','',['التاريخ','invoice date','date']],
    ['p','المنتج','Product','s',0,'وقود الديزل','',['الصنف','نوع المنتج','product']],
@@ -199,7 +199,8 @@ const TPL=[
    ['v','مبلغ الدفعة','Amount','n',1,2000,'',['المبلغ','المبلغ المحصل','القيمه','amount']],
    ['m','طريقة الدفع','Payment method','s',1,'صك','نقدًا · صك · تحويل · مقاصّة مع الدولة',['طريقه السداد','method','payment method']],
    ['ref','رقم الإيصال','Receipt number','s',0,'R-8812','رقم الإيصال أو الصك أو الحوالة.',['رقم المستند','رقم الصك','المرجع','receipt','reference']],
-   ['inv','الفواتير المسددة','Invoices settled','s',0,'F-26-10-0457','رقم فاتورة أو أكثر مفصولة بفاصلة.',['الفواتير','رقم الفاتوره','invoices']]]},
+   ['inv','الفواتير المسددة','Invoices settled','s',0,'F-26-10-0457','رقم فاتورة أو أكثر مفصولة بفاصلة.',['الفواتير','رقم الفاتوره','رقم الفاتوره المسدده','invoices']],
+   ['bnc','صك مرتجع؟','Returned cheque?','s',0,'','نعم للصك المرتجع: لا يُحسب تحصيلًا.',['صك مرتجع','مرتجع','returned'],1]]},
  {k:'bnc',ar:'الصكوك المرتجعة',en:'Returned cheques',names:['الصكوك المرتجعه','الشيكات المرتجعه','returned cheques','bounced cheques'],desc:'صف لكل صك مرتجع.',cols:[CODE,
    ['no','رقم الصك','Cheque number','s',1,'004512','',['الصك','cheque','cheque no']],
    ['d','تاريخ الإرجاع','Return date','d',1,'2026-10-25','',['التاريخ','date']],
@@ -214,8 +215,8 @@ const TPL=[
    ['v','المبلغ المطالب به','Amount claimed','n',0,3400,'',['المبلغ','amount']],
    ['note','ملاحظات','Notes','s',0,'','',['notes']]]},
  {k:'sch',ar:'الجدولة',en:'Rescheduling',names:['الجدوله','اتفاقيات الجدوله','rescheduling'],desc:'اتفاقيات جدولة الديون ومدى الالتزام بها.',cols:[CODE,
-   ['ref','رقم الاتفاقية','Agreement number','s',0,'ج/2026/09','',['الاتفاقيه','agreement']],
-   ['d','تاريخ الاتفاقية','Agreement date','d',0,'2026-06-01','',['date']],
+   ['ref','رقم الاتفاقية','Agreement number','s',0,'ج/2026/09','',['الاتفاقيه','رقم الاتفاق','agreement']],
+   ['d','تاريخ الاتفاقية','Agreement date','d',0,'2026-06-01','',['تاريخ الاتفاق','date']],
    ['v','المبلغ المجدول','Rescheduled amount','n',1,120000,'',['المبلغ','amount']],
    ['n','عدد الأقساط','Instalments','n',1,12,'',['الاقساط','instalments']],
    ['inst','قيمة القسط','Instalment value','n',0,10000,'إن تُرك فارغًا = المبلغ ÷ عدد الأقساط.',['القسط','instalment']],
@@ -228,13 +229,16 @@ const TPL=[
    ['v','المبلغ','Amount','n',1,25000,'',['القيمه','amount']],
    ['inv','رقم الفاتورة','Invoice number','s',0,'','',['الفاتوره','invoice']],
    ['note','رقم القرار / السبب','Decision / reason','s',0,'قرار لجنة الديون 4/2026','',['السبب','القرار','note']]]},
- {k:'note',ar:'الإشعارات',en:'Credit & debit notes',names:['الاشعارات','الاشعارات الدائنه والمدينه','notes'],desc:'الإشعارات الدائنة والمدينة (الخصومات والتسويات اللاحقة للفاتورة).',cols:[CODE,
+ {k:'note',ar:'الإشعارات',en:'Credit & debit notes',names:['الاشعارات','الاشعارات والتسويات','الاشعارات الدائنه والمدينه','notes'],desc:'الإشعارات الدائنة والمدينة (الخصومات والتسويات اللاحقة للفاتورة).',cols:[CODE,
    ['t','نوع الإشعار','Note type','s',1,'دائن','دائن · مدين',['النوع','type']],
    ['no','رقم الإشعار','Note number','s',0,'CN-118','',['الاشعار','note no']],
    ['d','التاريخ','Date','d',1,'2026-10-15','',['date']],
    ['inv','رقم الفاتورة','Invoice number','s',0,'F-26-10-0457','',['الفاتوره','invoice']],
    ['v','المبلغ','Amount','n',1,200,'',['القيمه','amount']],
-   ['why','السبب','Reason','s',0,'خصم كمية','',['reason']]]},
+   ['why','السبب','Reason','s',0,'خصم كمية','',['reason']],
+   ['ref','المرجع / رقم القرار','Reference','s',0,'','',['المرجع','رقم القرار','reference'],1],
+   ['sub','الدعم المستحق للشركة','Subsidy owed to the company','n',0,'','لسطور المقاصّة فقط.',['الدعم المستحق','subsidy'],1],
+   ['st','حالة المقاصة','Offset status','s',0,'','لسطور المقاصّة فقط: منفذة · قيد الإجراء.',['الحاله','status'],1]]},
  {k:'off',ar:'مقاصة الدعم',en:'Subsidy offsets',names:['مقاصه الدعم','المقاصه','مقاصه مع الدوله','subsidy offsets'],desc:'المقاصّة بين ديون الجهات الحكومية والدعم المستحق للشركة.',cols:[CODE,
    ['d','التاريخ','Date','d',1,'2026-10-30','',['date']],
    ['sub','الدعم المستحق للشركة','Subsidy owed to the company','n',0,900000,'',['الدعم المستحق','الدعم','subsidy']],
@@ -262,23 +266,29 @@ function cellDate(v){if(v&&typeof v==='object'&&'serial' in v)return serialIso(v
   const s=AD(String(v||'')).trim();let x=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);if(x)return x[1]+'-'+x[2].padStart(2,'0')+'-'+x[3].padStart(2,'0');
   x=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(x){let a=+x[1],b=+x[2];const d=a>12?a:b,m=a>12?b:a;if(m<1||m>12||d<1||d>31)return '';return x[3]+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')}return ''}
 const isTotal=s=>/^(الاجمالي|اجمالي|المجموع|الاجمالي العام|total|grand total)/i.test(hn(s));
+/* the grey sample row of a data-request workbook («مثال-001», «(مثال) شركة …») is never data */
+const isSample=s=>/^\(?\s*مثال/.test(hn(String(s||'')));
 /* read every sheet that looks like a template sheet: by its name first, then by its headers */
 function readTemplate(sheets){const found={};const used=new Set();
   const tryRead=(sh,spec)=>{const g=sh.grid||[];for(let i=0;i<Math.min(g.length,15);i++){const hm=headerMap(g[i]||[],spec);if(!hm.ok)continue;
       const rows=[];for(let j=i+1;j<g.length;j++){const r=g[j]||[];if(!r.some(x=>txt(x)!==''))continue;const o={};
         spec.cols.forEach(c=>{const ix=hm.m[c[0]];if(ix==null)return;const v=r[ix];o[c[0]]=c[3]==='n'?(txt(v)===''?null:num(v)):c[3]==='d'?cellDate(v):txt(v)});
-        if(spec.k!=='per'){if(!o.a||isTotal(o.a)||isTotal(o.n||''))continue}rows.push(o)}
+        if(spec.k!=='per'){if(!o.a||isTotal(o.a)||isTotal(o.n||'')||isSample(o.a)||isSample(o.n))continue}rows.push(o)}
       return {rows,sheet:sh.name,m:hm.m,hits:hm.hits,missing:hm.missing.map(c=>c[1])}}return null};
   TPL.forEach(spec=>{const names=[spec.ar,...spec.names].map(hk);const sh=sheets.find(s=>!used.has(s)&&names.includes(hk(s.name)));if(!sh)return;const r=tryRead(sh,spec);if(r){found[spec.k]=r;used.add(sh)}});
   sheets.forEach(sh=>{if(used.has(sh))return;let best=null;TPL.forEach(spec=>{if(found[spec.k])return;const r=tryRead(sh,spec);if(r&&(!best||r.hits>best.r.hits))best={spec,r}});
     if(best&&best.r.hits>=3){found[best.spec.k]=best.r;used.add(sh)}});
   return found}
 
+/* a data-request workbook keeps the aging date on its instructions sheet: «تاريخ قياس أعمار الديون | 2026-10-31» */
+function agingDate(sheets){for(const sh of sheets){const g=sh.grid||[];for(let i=0;i<Math.min(g.length,12);i++){const r=g[i]||[];
+    const j=r.findIndex(x=>/تاريخ (قياس )?اعمار الديون|تاريخ القياس/.test(hn(txt(x))));if(j<0)continue;for(let k=j+1;k<r.length;k++){const d=cellDate(r[k]);if(d)return d}}}return ''}
 function parseTemplate(sheets,file){const F=readTemplate(sheets);
   if(!F.inv&&!F.age&&!(F.cust&&F.cust.m.bal!=null))return null;
   const W=[];const R=k=>F[k]?F[k].rows:[];
   /* period */
   let from='',to='';const per=R('per').find(r=>r.to||r.from);if(per){from=per.from||'';to=per.to||''}
+  if(!to){to=agingDate(sheets);if(to)W.push(['i',tr(`لا توجد ورقة «الفترة»؛ اعتُمد تاريخ قياس أعمار الديون ${fdi(to)} نهايةً للفترة.`,`No «Period» sheet; the aging date ${fdi(to)} was taken as the period end.`)])}
   if(!to){const ds=[...R('inv').map(r=>r.d),...R('pay').map(r=>r.d)].filter(Boolean).sort();const x=AD(file||'').match(/(?:^|\D)(\d{1,2})\s*[-_.\/ ]\s*(20\d\d)(?:\D|$)/);
     if(x)to=monthEnd(+x[2],+x[1]);else if(ds.length){const d=ds[ds.length-1];to=monthEnd(+d.slice(0,4),+d.slice(5,7))}
     if(to)W.push(['i',tr(`لا توجد ورقة «الفترة»؛ اعتُبر ${fdi(to)} نهاية الفترة.`,`No «Period» sheet; ${fdi(to)} was taken as the period end.`)])}
@@ -309,11 +319,15 @@ function parseTemplate(sheets,file){const F=readTemplate(sheets);
   if(badRef)W.push(['w',tr(`${badRef} دفعة تذكر رقم فاتورة غير موجود في ورقة الفواتير.`,`${badRef} payments name an invoice that is not in the Invoices sheet.`)]);
   const guar=R('guar').filter(r=>r.v).map(r=>{ensure(r.a);return {a:r.a,gt:gtypeOf(r.gt),ref:r.ref||'',bank:r.bank||'',v:r2(r.v),iss:r.iss||'',exp:r.exp||''}});
   const bnc=R('bnc').filter(r=>r.v).map(r=>{ensure(r.a);return {a:r.a,no:r.no||'',d:r.d||'',v:r2(r.v),bank:r.bank||'',why:r.why||'',rec:yes(r.rec)}});
+  /* a payment marked «صك مرتجع؟ = نعم» stays in the collections and becomes a returned cheque (collected = payments − returned), unless the cheque is already listed */
+  {const known=new Set(bnc.map(b=>b.a+'|'+b.no));let n=0;R('pay').filter(r=>r.v&&yes(r.bnc)).forEach(r=>{const no=r.ref||'';if(no&&known.has(r.a+'|'+no))return;bnc.push({a:r.a,no,d:r.d||'',v:r2(r.v),bank:'',why:'',rec:false});n++});
+    if(n)W.push(['i',tr(`${n} دفعة معلّمة «صك مرتجع» في التحصيلات؛ عُدّت صكوكًا مرتجعة ولا تدخل في المحصَّل.`,`${n} payments are marked as returned cheques; they are counted as returned and not as collected.`)])}
   const act=R('act').map(r=>{ensure(r.a);return {a:r.a,d:r.d||'',t:actOf(r.t),ref:r.ref||'',v:r2(r.v),note:r.note||''}});
   const sch=R('sch').filter(r=>r.v).map(r=>{ensure(r.a);const n=Math.max(1,Math.round(r.n||1));return {a:r.a,ref:r.ref||'',d:r.d||'',v:r2(r.v),n,inst:r2(r.inst||r.v/n),first:r.first||r.d||'',every:Math.max(1,Math.round(r.every||1)),paid:r2(r.paid)}});
-  const prov=R('prov').filter(r=>r.v).map(r=>{ensure(r.a);return {a:r.a,t:/شطب|معدوم|write/i.test(hn(r.t))?'wo':'pr',d:r.d||'',v:r2(r.v),inv:r.inv||'',note:r.note||''}});
-  const note=R('note').filter(r=>r.v).map(r=>{ensure(r.a);return {a:r.a,t:noteOf(r.t),no:r.no||'',d:r.d||'',inv:r.inv||'',v:r2(r.v),why:r.why||''}});
-  const off=R('off').filter(r=>r.v||r.sub).map(r=>{ensure(r.a);return {a:r.a,d:r.d||'',sub:r2(r.sub),v:r2(r.v),st:/قيد|مقترح|انتظار|pending/i.test(hn(r.st))?'pend':'done',ref:r.ref||''}});
+  const NR=R('note').filter(r=>r.v||r.sub),kindN=r=>{const t=hn(String(r.t||''));return /مخصص|مشكوك|provision/i.test(t)?'pr':/شطب|معدوم|write/i.test(t)?'wo':/مقاص|offset|netting/i.test(t)?'off':'note'};
+  const prov=[...R('prov'),...NR.filter(r=>['pr','wo'].includes(kindN(r))).map(r=>({a:r.a,t:kindN(r)==='wo'?'شطب':'مخصص',d:r.d,v:r.v,inv:r.inv,note:[r.why,r.ref].filter(Boolean).join(' · ')}))].filter(r=>r.v).map(r=>{ensure(r.a);return {a:r.a,t:/شطب|معدوم|write/i.test(hn(r.t))?'wo':'pr',d:r.d||'',v:r2(r.v),inv:r.inv||'',note:r.note||''}});
+  const note=NR.filter(r=>r.v&&kindN(r)==='note').map(r=>{ensure(r.a);return {a:r.a,t:noteOf(r.t),no:r.no||'',d:r.d||'',inv:r.inv||'',v:r2(r.v),why:r.why||''}});
+  const off=[...R('off'),...NR.filter(r=>kindN(r)==='off')].filter(r=>r.v||r.sub).map(r=>{ensure(r.a);return {a:r.a,d:r.d||'',sub:r2(r.sub),v:r2(r.v),st:/قيد|مقترح|انتظار|pending/i.test(hn(r.st))?'pend':'done',ref:r.ref||''}});
   const age=R('age').map(r=>{ensure(r.a,r.n);const o={a:r.a};BK.forEach(k=>o[k]=r2(r[k]));return o});
   if(auto.size)W.push(['w',tr(`${auto.size} زبونًا ورد في الأوراق دون أن يكون في ورقة «الزبائن»؛ أُضيف بلا سقف ائتمان ولا فئة.`,`${auto.size} customers appear in the sheets but not in «Customers»; added without a credit limit or category.`)]);
   const cust=[...C.values()];const nc=cust.filter(c=>!c.cat).length;
@@ -742,7 +756,7 @@ async function importFile(file){toast(tr('جارٍ قراءة الملف…','Re
 /* ---------- the template ---------- */
 function templateSheets(){const guide=[];
   TPL.forEach(s=>{guide.push({'الورقة':s.ar,'العمود':'','مطلوب':'','الصيغة':'','القيم المسموحة / الشرح':s.desc,'مثال':''});
-    s.cols.forEach(c=>guide.push({'الورقة':'','العمود':c[1],'مطلوب':c[4]?'نعم':'اختياري','الصيغة':{s:'نص',n:'رقم',d:'تاريخ (سنة-شهر-يوم)'}[c[3]],'القيم المسموحة / الشرح':c[6]||'','مثال':c[5]===''?'':c[5]}))});
+    s.cols.filter(c=>!c[8]).forEach(c=>guide.push({'الورقة':'','العمود':c[1],'مطلوب':c[4]?'نعم':'اختياري','الصيغة':{s:'نص',n:'رقم',d:'تاريخ (سنة-شهر-يوم)'}[c[3]],'القيم المسموحة / الشرح':c[6]||'','مثال':c[5]===''?'':c[5]}))});
   const notes=[{'#':1,'إرشاد':'لا تغيّر أسماء الأوراق ولا عناوين الأعمدة. يمكن حذف ورقة لا تتوفر بياناتها، أو ترك عمود اختياري فارغًا.'},
     {'#':2,'إرشاد':'كود الزبون هو الرابط بين كل الأوراق: يجب أن يكون هو نفسه في الزبائن والضمانات والفواتير والتحصيلات وبقية الأوراق.'},
     {'#':3,'إرشاد':'المبالغ بالدينار الليبي، أرقامًا دون رموز عملة. التواريخ بصيغة تاريخ Excel أو 2026-10-31.'},
@@ -750,7 +764,7 @@ function templateSheets(){const guide=[];
     {'#':5,'إرشاد':'الجهات الحكومية: الفئة «جهة حكومية» أو «كهرباء»، و«نوع الجهة العامة»: الكهرباء أو وزارة أو بلدية. تُعرض مؤشراتها منفصلة عن القطاع الخاص.'},
     {'#':6,'إرشاد':'التحصيل بطريقة «مقاصّة مع الدولة» يُسجّل في التحصيلات كأي دفعة، وتفاصيل المقاصّة مع الدعم في ورقة «مقاصة الدعم» للمتابعة.'},
     {'#':7,'إرشاد':'ملف واحد لكل فترة. استيراد فترة محفوظة سابقًا يستبدلها.'}];
-  const empty=s=>[Object.fromEntries(s.cols.map(c=>[c[1],'']))];
+  const empty=s=>[Object.fromEntries(s.cols.filter(c=>!c[8]).map(c=>[c[1],'']))];
   return [['اقرأني',notes],['دليل الأعمدة',guide],...TPL.map(s=>[s.ar,s.k==='per'?[{'بداية الفترة':'','نهاية الفترة':''}]:empty(s)])]}
 async function downloadTemplate(){try{const blob=buildXlsx(templateSheets());await S.downloads.save({filename:TPL_NAME,data:blob});toast(tr('تم تنزيل القالب','Template downloaded'))}catch(e){console.error(e);toast(tr('تعذّر تجهيز القالب','Could not build the template'))}}
 function templateHelp(){modal(tr('قالب بيانات الديون','Debts data template'),`<div class="db-tpl"><p style="margin:0 0 6px;line-height:1.8">${esc(tr('ملف Excel واحد لكل فترة، بالأوراق التالية. كود الزبون يربط الأوراق ببعضها، وأعمار الديون تُحسب تلقائيًا في تاريخ نهاية الفترة.','One Excel file per period with these sheets. The customer code links the sheets; aging is computed at the period end.'))}</p>
