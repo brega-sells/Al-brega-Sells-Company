@@ -288,7 +288,7 @@ function after(){const u=UI();
 
 /* ---------- import ---------- */
 async function importFile(file){toast(tr('جارٍ قراءة الملف…','Reading the file…'));let P;
-  try{P=await parseFile(file)}catch(e){modal(tr('تعذّر الاستيراد','Import failed'),`<p style="line-height:1.8">${esc(e.message||String(e))}</p>`,`<button type="button" class="btn" data-act="close-dlg">${esc(tr('إغلاق','Close'))}</button>`);return}
+  try{P=await parseFile(file)}catch(e){if(e&&e.cancelled)return;modal(tr('تعذّر الاستيراد','Import failed'),`<p style="line-height:1.8">${esc(e.message||String(e))}</p>`,`<button type="button" class="btn" data-act="close-dlg">${esc(tr('إغلاق','Close'))}</button>`);return}
   SM.pending=P;const ov=SM.local?[]:overlaps(P);const tot=P.rows.reduce((a,r)=>{a.v+=r.v;a.rv+=r.rv;return a},{v:0,rv:0});const cs=new Set(P.rows.map(r=>r.c)).size;
   const FL=EN()?FIELD_EN:FIELD_AR;
   modal(tr('مراجعة ملف SMS055 قبل الحفظ','Review the SMS055 file'),`

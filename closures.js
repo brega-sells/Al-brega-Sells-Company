@@ -313,7 +313,7 @@ function after(id){const u=UI(id);
 
 /* ---------- import ---------- */
 async function importFile(id,file){const cfg=REPORTS[id],s=ST[id];toast(tr('جارٍ قراءة الملف…','Reading the file…'));let P;
-  try{P=await parseFile(cfg,file)}catch(e){modal(tr('تعذّر الاستيراد','Import failed'),`<p style="line-height:1.8">${esc(e.message||String(e))}</p>`,`<button type="button" class="btn" data-act="close-dlg">${esc(tr('إغلاق','Close'))}</button>`);return}
+  try{P=await parseFile(cfg,file)}catch(e){if(e&&e.cancelled)return;modal(tr('تعذّر الاستيراد','Import failed'),`<p style="line-height:1.8">${esc(e.message||String(e))}</p>`,`<button type="button" class="btn" data-act="close-dlg">${esc(tr('إغلاق','Close'))}</button>`);return}
   s.pending=P;const ov=s.local?[]:overlaps(id,P);const es=new Set(P.rows.map(r=>r[cfg.ent.k])).size;
   const byU=new Map();P.rows.forEach(r=>byU.set(r.u||'',(byU.get(r.u||'')||0)+r.q));
   modal(tr(`مراجعة ملف ${cfg.label[0]} قبل الحفظ`,`Review the ${cfg.label[1].toLowerCase()} file`),`

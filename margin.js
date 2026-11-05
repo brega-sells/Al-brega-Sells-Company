@@ -398,7 +398,7 @@ function priceList(grids){for(const s of grids){const g=s.grid;for(let i=0;i<Mat
       const fv=v('from');if(fv&&typeof fv==='object'&&fv.serial)o.from=L.serialIso(fv.serial);else if(/^\d{4}-\d{2}-\d{2}/.test(String(fv)))o.from=String(fv).slice(0,10);
       rows.push(o)});if(rows.length)return {rows,map:m,sheet:s.name}}}}return null}
 async function importFile(file){toast(tr('جارٍ قراءة الملف…','Reading the file…'));let grids;
-  try{grids=await readGrids(file)}catch(e){fail(e.message||String(e));return}
+  try{grids=await readGrids(file)}catch(e){if(e&&e.cancelled)return;fail(e.message||String(e));return}
   if(window.__pmx&&await window.__pmx.tryImport(grids,file))return;
   const pl=priceList(grids);if(pl){pl.file=file.name;PM.pendingPrices=pl;priceReview(pl);return}
   const cx=CX();if(!cx){fail(tr('تعذّر قراءة الملف.','Could not read the file.'));return}

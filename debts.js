@@ -751,7 +751,7 @@ function acctDetail(a){const P=cur();if(!P)return;const c=prep(P).map.get(a);if(
 
 /* ---------- import ---------- */
 async function importFile(file){toast(tr('جارٍ قراءة الملف…','Reading the file…'));let P;
-  try{P=await parseFile(file)}catch(e){modal(tr('تعذّر الاستيراد','Import failed'),`<p style="line-height:1.8">${esc(e.message||String(e))}</p>`,`<button type="button" class="btn" data-dbt="template">${esc(tr('تنزيل القالب','Download template'))}</button><button type="button" class="btn" data-act="close-dlg">${esc(tr('إغلاق','Close'))}</button>`);return}
+  try{P=await parseFile(file)}catch(e){if(e&&e.cancelled)return;modal(tr('تعذّر الاستيراد','Import failed'),`<p style="line-height:1.8">${esc(e.message||String(e))}</p>`,`<button type="button" class="btn" data-dbt="template">${esc(tr('تنزيل القالب','Download template'))}</button><button type="button" class="btn" data-act="close-dlg">${esc(tr('إغلاق','Close'))}</button>`);return}
   ST.pending=P;const ov=ST.local?[]:overlaps(P);const X=prep(P);const tot=sum(X.cs,c=>Math.max(0,c.bal));const gov=sum(X.cs.filter(c=>c.gov),c=>Math.max(0,c.bal));
   const nm=k=>k==='ledger'?tr('كشف أرصدة المدينين','Debtors balances statement'):tr(TPLK[k].ar,TPLK[k].en);
   modal(tr('مراجعة الملف قبل الحفظ','Review the file before saving'),`<p class="muted" style="margin:0;font-size:12.5px">${esc(tr('الملف: ','File: ')+file.name)} · ${esc(tr(`الفترة ${fdi(P.from)} – ${fdi(P.to)}`,`Period ${fdi(P.from)} – ${fdi(P.to)}`))}</p>

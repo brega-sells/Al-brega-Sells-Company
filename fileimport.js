@@ -7,7 +7,9 @@
      text → .csv .tsv .tab .txt (comma, semicolon, tab or pipe; UTF-8, UTF-16 or Windows-1256 Arabic)
             .htm .html (tables, including the «.xls» files that are really HTML), Excel 2003 XML (.xml),
             flat OpenDocument (.fods) and .json (array of rows, array of arrays, or {sheet:[rows]})
-     PDF  → .pdf printed reports, rebuilt from the text layer (pdf.js, loaded on demand); scans get a clear message
+     PDF  → .pdf printed reports, rebuilt from the text layer (pdf.js, loaded on demand); a scan (no text layer) goes to
+            the text recogniser with its compulsory review window (ocrimport.js)
+     image → .jpg .png .webp .bmp .gif photos or scanner pictures of a report: text recogniser and review (ocrimport.js)
    FileImport.readGrids(file) → [{name, grid}] where grid is rows of cells: number, string, boolean, or {serial:n}
    for a date-formatted cell (Excel serial day, 1900 system). FileImport.readWorkbook(file) → {SheetNames, rows(name)}
    with the first row as the header (dates as yyyy-mm-dd). Errors are thrown with a clear message in the page language. */
@@ -15,9 +17,9 @@
 (function(){
 const EN=()=>{if(window.I18N&&I18N.lang)return I18N.lang==='en';try{return localStorage.getItem('cm_lang')==='en'}catch(e){return false}};
 const tr=(ar,en)=>EN()&&en?en:ar;
-const ACCEPT='.xlsx,.xlsm,.xltx,.xltm,.xlsb,.xls,.xlt,.et,.ett,.ods,.ots,.fods,.csv,.tsv,.tab,.txt,.htm,.html,.xml,.json,.pdf,'+
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/tab-separated-values,application/pdf';
-const LIST='Excel (xlsx · xlsm · xlsb · xls) · WPS (et · ett) · OpenDocument (ods) · PDF · CSV · TSV · TXT · HTML · XML · JSON';
+const ACCEPT='.xlsx,.xlsm,.xltx,.xltm,.xlsb,.xls,.xlt,.et,.ett,.ods,.ots,.fods,.csv,.tsv,.tab,.txt,.htm,.html,.xml,.json,.pdf,.jpg,.jpeg,.png,.webp,.bmp,.gif,'+
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/tab-separated-values,application/pdf,image/jpeg,image/png,image/webp';
+const LIST='Excel (xlsx · xlsm · xlsb · xls) · WPS (et · ett) · OpenDocument (ods) · PDF (also scanned) · JPG · PNG · CSV · TSV · TXT · HTML · XML · JSON';
 const MAX=200*1024*1024,MAX_CELLS=5e6;
 const fail=(ar,en)=>{const e=new Error(tr(ar,en));e.importError=true;return e};
 const unsupported=()=>fail('صيغة الملف غير مدعومة. الصيغ المقبولة: '+LIST+'. افتح الملف في Excel أو WPS واحفظه بإحدى هذه الصيغ ثم أعد المحاولة.','This file type is not supported. Accepted: '+LIST+'. Open the file in Excel or WPS, save it in one of these formats and try again.');
@@ -351,8 +353,9 @@ async function readPdf(buf,base){let lib;try{lib=await pdfjs()}catch(e){throw fa
   catch(e){if(e&&e.name==='PasswordException')throw fail('ملف PDF محمي بكلمة مرور. افتحه واحفظه بدون كلمة مرور (أو صدّر التقرير بصيغة Excel) ثم أعد الاستيراد.','The PDF is password-protected. Save it without a password (or export the report as Excel) and import again.');throw damaged()}
   try{const n=Math.min(doc.numPages,PDF_MAX_PAGES);const pages=[];let chars=0;
     for(let i=1;i<=n;i++){const pg=await doc.getPage(i);const {glyphs,rules,width,height}=await pdfGlyphs(lib,pg);chars+=glyphs.length;pages.push({lines:pdfLines(glyphs,rules),width,height});pg.cleanup()}
-    if(chars<8)throw fail('ملف PDF هذا صورة ممسوحة ضوئيًا (أو صورة من الهاتف) ولا يحتوي نصًا يمكن قراءته، فلا تُستخرج منه الأرقام بدقة. صدّر التقرير من النظام بصيغة Excel (أو احفظه PDF من Excel نفسه) ثم استورده.',
-      'This PDF is a scanned image (or a phone photo) with no text layer, so its figures cannot be read reliably. Export the report as Excel (or save it as PDF from Excel itself) and import that file.');
+    /* a scan or a phone photo saved as PDF: no text layer, so the pages are read by the text recogniser and reviewed */
+    if(chars<8){if(!window.OCRImport)throw fail('ملف PDF هذا صورة ممسوحة ضوئيًا ولا يحتوي نصًا. صدّر التقرير من النظام بصيغة Excel ثم استورده.','This PDF is a scanned image with no text layer. Export the report as Excel and import that file.');
+      return await OCRImport.readScannedPdf(doc,base)}
     /* running titles and footers: lines in the top or bottom margin that come back on several pages (page numbers aside) */
     const edge=(l,p)=>l.y<0.09*p.height||l.y>0.91*p.height;const shape=l=>l.segs.length<=4&&l.segs.reduce((n,c)=>n+c.t.length,0)<=40?lineKey(l).replace(/[\d٠-٩]+/g,'#'):lineKey(l);const seen={};
     pages.forEach(p=>new Set(p.lines.filter(l=>edge(l,p)).map(shape)).forEach(k=>seen[k]=(seen[k]||0)+1));
@@ -369,7 +372,12 @@ async function readPdf(buf,base){let lib;try{lib=await pdfjs()}catch(e){throw fa
 
 /* ---------- entry points ---------- */
 const EXT=f=>(String(f&&f.name||'').match(/\.([a-z0-9]+)$/i)||['',''])[1].toLowerCase();
+/* a scan is read (and reviewed) once: a dashboard that reads the same file twice gets the reviewed table again */
+const SCANNED=new WeakMap();
 async function readGrids(file){
+  if(file&&typeof file==='object'&&SCANNED.has(file))return SCANNED.get(file).map(s=>Object.assign({},s,{grid:s.grid.map(r=>r.slice())}));
+  const out=await readAny(file);if(out.some(s=>s.ocr)&&file&&typeof file==='object')SCANNED.set(file,out);return out}
+async function readAny(file){
   if(!file||!file.size)throw fail('الملف فارغ.','The file is empty.');
   if(file.size>MAX)throw fail('الملف أكبر من 200 ميغابايت. قسّمه إلى ملفات أصغر.','The file is over 200 MB. Split it into smaller files.');
   const ext=EXT(file);const buf=await file.arrayBuffer();const u8=new Uint8Array(buf);const base=String(file.name||'sheet').replace(/\.[^.]+$/,'')||'sheet';
@@ -395,6 +403,7 @@ async function readGrids(file){
   else if(u8[0]===0x25&&u8[1]===0x50&&u8[2]===0x44&&u8[3]===0x46)out=await readPdf(buf,base);
   else{
     /* binary that is none of the above (images, archives…) */
+    if(window.OCRImport&&OCRImport.isImage(u8))return await OCRImport.readImage(file);
     const bin=[[0x89,0x50,0x4E,0x47],[0xFF,0xD8,0xFF],[0x52,0x61,0x72,0x21],[0x37,0x7A,0xBC,0xAF],[0x1F,0x8B]];
     if(bin.some(m=>m.every((x,i)=>u8[i]===x)))throw unsupported();
     if(!wideText(u8)){let ctrl=0;const k=Math.min(u8.length,4000);for(let i=0;i<k;i++){const x=u8[i];if(x<9||(x>13&&x<32&&x!==27))ctrl++}if(ctrl>k*0.02)throw unsupported()}
