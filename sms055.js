@@ -179,7 +179,10 @@ async function delBatch(b,quiet){const FS=window.__fs();const n=b.parts||0;const
 
 /* ---------- analysis ---------- */
 function UI(){return S.ui.sm||(S.ui.sm={pre:'all',from:'',to:'',prod:'',type:'',q:'',sort:'net',dir:'desc',lim:25})}
-function data(){return SM.local?SM.local.rows:SM.rows}
+function raw(){return SM.local?SM.local.rows:SM.rows}
+/* quantities shown in cubic metres (units.js); the value columns (LYD) are untouched */
+function data(){const r=raw();if(window.FuelUnits){FuelUnits.seen(r);return FuelUnits.normalize(r)}return r}
+const qty=v=>fn(Math.round(v*100)/100);
 function bounds(rows){if(!rows.length)return null;let a=rows[0].d,b=a;rows.forEach(r=>{if(r.d<a)a=r.d;if(r.d>b)b=r.d});return {min:a,max:b}}
 function range(){const u=UI(),bd=bounds(data());if(!bd)return null;let from=bd.min,to=bd.max;
   if(u.pre==='day')from=to;else if(u.pre==='7')from=isoAdd(to,-6);else if(u.pre==='month')from=to.slice(0,8)+'01';else if(u.pre==='custom'){from=u.from||bd.min;to=u.to||bd.max}
@@ -238,7 +241,7 @@ function viewSms(){
   const deltaHtml=dNet==null?'':`<span class="sm-delta">${dNet>=0?'▲':'▼'} ${Math.abs(Math.round(dNet*10)/10)}% ${esc(tr('عن الفترة السابقة','vs previous period'))}</span>`;
   const PC=prodColors();
   const prods=[...new Map(rows.map(r=>[r.p,r.pn])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'ar'));
-  const types=uniq(rows.map(r=>r.t));
+  const types=uniq(rows.map(r=>r.t));const unitNote=window.FuelUnits?FuelUnits.explain(cur):'';
   const custs=A.custs.slice().sort((a,b)=>b.net-a.net);const top10=custs.slice(0,10),top10v=top10.reduce((s,c)=>s+c.net,0);
   const activeDays=A.day.size,avgDay=activeDays?A.net/activeDays:0,retRate=pct(A.rv,A.v);
   // trend: daily up to 62 days, monthly beyond
@@ -254,7 +257,7 @@ function viewSms(){
   const ins=[];const tp=A.prods[0];
   if(dNet!=null)ins.push([dNet>=0?'o':'w',dNet>=0?'▲':'▼',tr(`صافي المبيعات <b>${money(A.net)}</b> د.ل، ${dNet>=0?'بزيادة':'بانخفاض'} <b>${Math.abs(Math.round(dNet*10)/10)}%</b> عن الفترة السابقة المماثلة (${fdi(pFrom)} – ${fdi(pTo)}: ${money(B.net)} د.ل).`,`Net sales <b>${money(A.net)}</b> LYD, ${dNet>=0?'up':'down'} <b>${Math.abs(Math.round(dNet*10)/10)}%</b> on the same-length previous period (${fdi(pFrom)} – ${fdi(pTo)}: ${money(B.net)} LYD).`)]);
   else ins.push(['','i',tr(`صافي المبيعات <b>${money(A.net)}</b> د.ل خلال <b>${activeDays}</b> يوم بيع، بمتوسط <b>${money(avgDay)}</b> د.ل يوميًا. لا تتوفر بيانات للفترة السابقة للمقارنة؛ استورد ملف الفترة السابقة لتظهر المقارنة.`,`Net sales <b>${money(A.net)}</b> LYD over <b>${activeDays}</b> sales days, <b>${money(avgDay)}</b> LYD a day on average. No previous-period data to compare; import it to see the comparison.`)]);
-  if(tp&&A.net)ins.push(['','1',tr(`المنتج الأعلى: <b>${esc(tp.pn)}</b> بنسبة <b>${pct(tp.net,A.net)}%</b> من صافي المبيعات (${fn(Math.round(tp.q))} ${esc(tp.u||'')}).`,`Top product: <b>${esc(tp.pn)}</b>, <b>${pct(tp.net,A.net)}%</b> of net sales (${fn(Math.round(tp.q))} ${esc(tp.u||'')}).`)]);
+  if(tp&&A.net)ins.push(['','1',tr(`المنتج الأعلى: <b>${esc(tp.pn)}</b> بنسبة <b>${pct(tp.net,A.net)}%</b> من صافي المبيعات (${qty(tp.q)} ${esc(tp.u||'')}).`,`Top product: <b>${esc(tp.pn)}</b>, <b>${pct(tp.net,A.net)}%</b> of net sales (${qty(tp.q)} ${esc(tp.u||'')}).`)]);
   if(custs.length){const sh=pct(top10v,A.net);ins.push([sh>=60?'w':'','10',tr(`أعلى 10 زبائن يمثلون <b>${sh}%</b> من صافي المبيعات${sh>=60?'، تركّز مرتفع يستحق متابعة المخاطر الائتمانية':''}. أكبر زبون: <b>${esc(custs[0].cn)}</b> (${money(custs[0].net)} د.ل).`,`The top 10 customers are <b>${sh}%</b> of net sales${sh>=60?', a high concentration worth credit-risk follow-up':''}. Largest: <b>${esc(custs[0].cn)}</b> (${money(custs[0].net)} LYD).`)])}
   if(A.rv>0)ins.push([retRate>=2?'c':'w','↩',tr(`المرتجعات <b>${money(A.rv)}</b> د.ل (<b>${retRate}%</b> من المبيعات) لدى <b>${retC.length}</b> زبون، أعلاها لدى <b>${esc(retC[0].cn)}</b>.`,`Returns <b>${money(A.rv)}</b> LYD (<b>${retRate}%</b> of sales) from <b>${retC.length}</b> customers, most from <b>${esc(retC[0].cn)}</b>.`)]);
   else ins.push(['o','✓',tr('لا توجد مرتجعات في الفترة المحددة.','No returns in the selected period.')]);
@@ -276,6 +279,7 @@ function viewSms(){
     ${types.length>1?`<label class="an-f">${esc(tr('النوع','Type'))}<select id="sm-type"><option value="">${esc(tr('كل الأنواع','All types'))}</option>${types.map(t=>`<option ${u.type===t?'selected':''}>${esc(t)}</option>`).join('')}</select></label>`:''}
     ${u.prod||u.type||u.pre!=='all'?`<button class="btn sm ghost" data-sm="clear">${esc(tr('مسح التصفية','Clear filters'))}</button>`:''}
   </div>
+  ${unitNote?`<p class="sm-note">${esc(unitNote)}</p>`:''}
   ${!A.n?`<div class="panel empty"><b>${esc(tr('لا توجد حركات','No lines'))}</b>${esc(tr('ضمن التصفية الحالية.','for the current filter.'))}</div>`:`
   <div class="kpis an-kpis">
    ${anKpi(tr('إجمالي المبيعات','Gross sales'),money(A.v),esc(tr(`د.ل · ${fn(A.n)} حركة`,`LYD · ${fn(A.n)} lines`)))}
@@ -291,8 +295,8 @@ function viewSms(){
    <section class="panel an-wide"><h3 class="section-title">${esc(tr('المنتجات','Products'))} <small>${esc(tr('الكمية بوحدة كل منتج، والقيمة بالدينار','quantity in each product’s unit, value in LYD'))}</small></h3>
     ${stack(A.prods.slice(0,3).map(p=>({l:p.pn,v:p.net,k:PC.get(p.p)||'sm-k4'})).concat(A.prods.length>3?[{l:tr('منتجات أخرى','Other products'),v:A.prods.slice(3).reduce((s,p)=>s+p.net,0),k:'sm-k4'}]:[]))}
     <div class="sm-prod">${A.prods.map(p=>`<div class="sm-pc"><h4><i class="${PC.get(p.p)||'sm-k4'}"></i>${esc(p.pn)} <small class="muted num">${esc(p.p)}</small></h4>
-      <span class="q">${fn(Math.round(p.q))} <small style="font-size:13px;font-weight:400">${esc(p.u||'')}</small></span>
-      <span class="s">${esc(tr('القيمة','Value'))} <b class="num">${money2(p.v)}</b> · ${esc(tr('صافي','Net'))} <b class="num">${money2(p.net)}</b> ${esc(tr('د.ل','LYD'))}<br>${esc(tr('متوسط سعر الوحدة','Avg unit price'))} <b class="num">${p.q?fn(Math.round(p.v/p.q*1000)/1000):'—'}</b> · ${p.cust.size} ${esc(tr('زبون','customers'))}${p.rq||p.rv?`<br>${esc(tr('مسترجع','Returned'))} <b class="num">${fn(Math.round(p.rq))}</b> ${esc(p.u||'')} · <b class="num">${money2(p.rv)}</b> ${esc(tr('د.ل','LYD'))}`:''}</span></div>`).join('')}</div></section>
+      <span class="q">${qty(p.q)} <small style="font-size:13px;font-weight:400">${esc(p.u||'')}</small></span>
+      <span class="s">${esc(tr('القيمة','Value'))} <b class="num">${money2(p.v)}</b> · ${esc(tr('صافي','Net'))} <b class="num">${money2(p.net)}</b> ${esc(tr('د.ل','LYD'))}<br>${esc(tr('متوسط سعر الوحدة','Avg unit price'))} <b class="num">${p.q?fn(Math.round(p.v/p.q*1000)/1000):'—'}</b> · ${p.cust.size} ${esc(tr('زبون','customers'))}${p.rq||p.rv?`<br>${esc(tr('مسترجع','Returned'))} <b class="num">${qty(p.rq)}</b> ${esc(p.u||'')} · <b class="num">${money2(p.rv)}</b> ${esc(tr('د.ل','LYD'))}`:''}</span></div>`).join('')}</div></section>
    <section class="panel"><h3 class="section-title">${esc(tr('أعلى 10 زبائن','Top 10 customers'))} <small>${esc(tr('صافي المبيعات · اضغط للتفاصيل','net sales · click for details'))}</small></h3>${bars(top10.map(c=>({l:c.cn,v:c.net,go:c.c,tip:`${c.cn} (${c.c}): ${money2(c.net)} ${tr('د.ل','LYD')} · ${pct(c.net,A.net)}%`})))}</section>
    <section class="panel"><h3 class="section-title">${esc(tr('أعلى المرتجعات','Largest returns'))} <small>${esc(tr('القيمة المسترجعة · د.ل','returned value · LYD'))}</small></h3>${retC.length?bars(retC.slice(0,10).map(c=>({l:c.cn,v:c.rv,go:c.c,tip:`${c.cn}: ${money2(c.rv)} ${tr('د.ل','LYD')} · ${pct(c.rv,c.v)}% ${tr('من مشترياته','of its purchases')}`})),{tone:'fl'}):`<div class="empty" style="padding:20px">${esc(tr('لا توجد مرتجعات','No returns'))}</div>`}</section>
    ${A.types.length>1?`<section class="panel"><h3 class="section-title">${esc(tr('حسب نوع الحركة','By line type'))} <small>${esc(tr('عمود «النوع» في التقرير','the report’s “Type” column'))}</small></h3>${stack(A.types.slice(0,3).map((t,i)=>({l:t.t,v:t.v,k:'sm-k'+(i+1)})).concat(A.types.length>3?[{l:tr('أخرى','Other'),v:A.types.slice(3).reduce((s,t)=>s+t.v,0),k:'sm-k4'}]:[]))}</section>`:''}
@@ -329,7 +333,7 @@ async function importFile(file){toast(tr('جارٍ قراءة الملف…','Re
 function custDetail(c){const R=range(),rows=pick(data(),R.from,R.to).filter(r=>r.c===c);if(!rows.length)return;const A=agg(rows),x=A.custs[0];
   const byDay=[...A.day.values()].sort((a,b)=>b.d.localeCompare(a.d));
   modal(`${x.cn} (${x.c})`,`<div class="sm-mini"><div><b class="num">${money2(x.net)}</b><span>${esc(tr('صافي د.ل','Net LYD'))}</span></div><div><b class="num">${money2(x.rv)}</b><span>${esc(tr('مرتجع د.ل','Returns LYD'))}</span></div><div><b class="num">${x.days.size}</b><span>${esc(tr('يوم شراء','purchase days'))}</span></div><div><b class="num">${fdi(x.last)}</b><span>${esc(tr('آخر شراء','last purchase'))}</span></div></div>
-   <h4 style="margin:8px 0 4px">${esc(tr('حسب المنتج','By product'))}</h4><div class="tablewrap" style="max-height:none;min-height:0"><table class="sm-tbl"><thead><tr><th class="nosort">${esc(tr('المنتج','Product'))}</th><th class="nosort n">${esc(tr('الكمية','Quantity'))}</th><th class="nosort n">${esc(tr('القيمة','Value'))}</th><th class="nosort n">${esc(tr('المسترجع','Returned'))}</th></tr></thead><tbody>${A.prods.map(p=>`<tr><td>${esc(p.pn)}</td><td class="n">${fn(Math.round(p.q))} ${esc(p.u)}</td><td class="n">${money2(p.v)}</td><td class="n">${p.rv?money2(p.rv):'—'}</td></tr>`).join('')}</tbody></table></div>
+   <h4 style="margin:8px 0 4px">${esc(tr('حسب المنتج','By product'))}</h4><div class="tablewrap" style="max-height:none;min-height:0"><table class="sm-tbl"><thead><tr><th class="nosort">${esc(tr('المنتج','Product'))}</th><th class="nosort n">${esc(tr('الكمية','Quantity'))}</th><th class="nosort n">${esc(tr('القيمة','Value'))}</th><th class="nosort n">${esc(tr('المسترجع','Returned'))}</th></tr></thead><tbody>${A.prods.map(p=>`<tr><td>${esc(p.pn)}</td><td class="n">${qty(p.q)} ${esc(p.u)}</td><td class="n">${money2(p.v)}</td><td class="n">${p.rv?money2(p.rv):'—'}</td></tr>`).join('')}</tbody></table></div>
    <h4 style="margin:10px 0 4px">${esc(tr('حسب اليوم','By day'))}</h4><div class="tablewrap" style="max-height:260px;min-height:0"><table class="sm-tbl"><thead><tr><th class="nosort">${esc(tr('التاريخ','Date'))}</th><th class="nosort n">${esc(tr('الحركات','Lines'))}</th><th class="nosort n">${esc(tr('المبيعات','Sales'))}</th><th class="nosort n">${esc(tr('المرتجع','Returns'))}</th></tr></thead><tbody>${byDay.map(d=>`<tr><td class="n">${fdi(d.d)}</td><td class="n">${d.n}</td><td class="n">${money2(d.v)}</td><td class="n">${d.rv?money2(d.rv):'—'}</td></tr>`).join('')}</tbody></table></div>`,
    `<button type="button" class="btn" data-act="close-dlg">${esc(tr('إغلاق','Close'))}</button>`)}
 
