@@ -94,6 +94,7 @@ async function load(force){if(PM.loading&&!force)return PM.loading;
     if(!FS){PM.cfg=DEF();PM.loaded=true;return}
     try{const d=await FS.collection(COL).doc(DOC).get();PM.cfg=Object.assign(DEF(),d.exists?d.data():{});PM.err=''}
     catch(e){PM.err=e&&e.code==='permission-denied'?'denied':(e&&e.message)||'error';PM.cfg=DEF()}
+    if(PM.err==='denied'&&window.__denyPrep)await window.__denyPrep();
     ['products','rates','foreign'].forEach(k=>{if(!Array.isArray(PM.cfg[k]))PM.cfg[k]=[]});
     PM.loaded=true;
     try{const u=await recMyUnit();const m=me();PM.canEdit=m.role==='admin'||(!!S.canWrite&&m.role!=='viewer'&&(u===UNIT||u==='gm'))}catch(e){PM.canEdit=false}

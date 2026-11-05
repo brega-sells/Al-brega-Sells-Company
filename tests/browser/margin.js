@@ -113,6 +113,11 @@ const near = (a, b) => Math.abs(a - b) <= Math.max(0.02, Math.abs(b) * 1e-6);
       await new Promise(r => setTimeout(r, 700)); const v = document.getElementById('view').innerText;
       return hasImport && noSave && /بانتظار أسعار المنتجات/.test(v) && /عرض مؤقت/.test(v); });
     await browser.close(); }
+  // administrator refused because «admin via Google» is on and the session used a password: the page says so
+  { const { browser, page } = await open({ user: { email: 'a@test.ly', displayName: 'A' }, data: Object.assign({}, data, { roles: Object.assign({}, data.roles, { 'a@test.ly': { role: 'admin', name: 'A' } }), config: { security: { adminGoogle: true } } }), fail: { margin: { n: 5, code: 'permission-denied' } } });
+    await page.evaluate(() => go('margin')); await page.waitForTimeout(900);
+    out.adminPasswordReason = await page.evaluate(() => /دخلت بكلمة المرور/.test((document.querySelector('.px-why') || {}).textContent || ''));
+    await browser.close(); }
   // stored XSS: payloads in the saved prices and in the imported names render as text
   { const X = t => `"'><img src=x data-p="${t}" onerror="window.__xss=(window.__xss||0)+1">`;
     const bad = { products: [{ p: '44347', pn: X('pn'), u: X('u'), h: [{ from: '2026-01-01', cost: 120, loc: 150, fx: 40, by: X('by'), why: X('why') }] }], rates: [{ from: '2026-01-01', rate: 4.8 }], cur: X('cur'), target: 15, min: 5, foreign: [] };
