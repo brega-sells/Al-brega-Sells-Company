@@ -253,7 +253,7 @@ function toolbar(){const has=snaps().length;return `<div class="toolbar sm-acts"
   ${has?`<button class="btn" data-dbt="export">${I.down}${esc(tr('تصدير التحليل Excel','Export analysis (Excel)'))}</button><button class="btn" data-dbt="print">${esc(tr('طباعة / PDF','Print / PDF'))}</button>`:''}
   ${ST.batches.length?`<button class="btn ghost" data-dbt="files">${esc(tr('الملفات المستوردة','Imported files'))} <span class="num">${ST.batches.length}</span></button>`:''}
   ${ST.local?`<button class="btn ghost" data-dbt="drop-local">${esc(tr('إغلاق العرض المؤقت','Close temporary view'))}</button>`:''}
-  <input type="file" id="db-file" accept=".xlsx,.csv,.htm,.html" hidden></div>`}
+  <input type="file" id="db-file" accept="${FileImport.ACCEPT}" hidden></div>`}
 function emptyView(head){const denied=ST.err==='denied';
   return `<div class="db-page">`+head+heroHtml(esc(tr('حوّل كشف أرصدة حسابات المدينين (المديونية الشهرية) إلى مؤشرات: إجمالي الديون وتغيّرها، المسحوبات والتحصيلات ونسبة التغطية، التوزيع على القطاعات والمناطق، أكبر المدينين والحسابات الراكدة، مع قراءة تحليلية مكتوبة.','Turn the monthly debtors balances statement into KPIs: total debt and its change, withdrawals, collections and coverage, sectors and regions, the largest debtors and dormant accounts, with a written reading.')),null)+
   `<div class="panel sm-empty">${I.debts.replace('<svg','<svg style="width:46px;height:46px;color:var(--accent)"')}<h3>${esc(denied?tr('هذه اللوحة لإدارة الشؤون التجارية والتحصيلات','This dashboard belongs to Commercial Affairs & Collections'):tr('لم يُستورد أي ملف بعد','No file imported yet'))}</h3>

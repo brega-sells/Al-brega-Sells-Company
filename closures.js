@@ -209,7 +209,7 @@ function toolbar(id){const cfg=REPORTS[id],s=ST[id];return `<div class="toolbar 
   ${data(id).length?`<button class="btn" data-cx="export" data-cx-id="${id}">${I.down}${esc(tr('تصدير التحليل Excel','Export analysis (Excel)'))}</button><button class="btn" data-cx="print" data-cx-id="${id}">${esc(tr('طباعة / PDF','Print / PDF'))}</button>`:''}
   ${s.batches.length?`<button class="btn ghost" data-cx="files" data-cx-id="${id}">${esc(tr('الملفات المستوردة','Imported files'))} <span class="num">${s.batches.length}</span></button>`:''}
   ${s.local?`<button class="btn ghost" data-cx="drop-local" data-cx-id="${id}">${esc(tr('إغلاق العرض المؤقت','Close temporary view'))}</button>`:''}
-  <input type="file" id="cx-file-${id}" accept=".xlsx,.xls,.csv,.htm,.html" hidden></div>`}
+  <input type="file" id="cx-file-${id}" accept="${FileImport.ACCEPT}" hidden></div>`}
 function periodLabel(cfg,d){return cfg.grain==='month'?mName(+d.slice(5,7)-1)+' '+d.slice(0,4):fdi(d)}
 function view(id){const cfg=REPORTS[id],s=ST[id];
   if(!s.loaded){load(id).then(()=>{if(S.view===id)render()});return `<div class="cx-${id}">`+heroHtml(cfg,esc(tr('جارٍ تحميل البيانات…','Loading data…')),null)+'<div class="panel muted">'+esc(tr('جارٍ التحميل…','Loading…'))+'</div></div>'}

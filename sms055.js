@@ -97,35 +97,8 @@ function mapHeader(row){const m={};const H=row.map(hn);
   for(const f in FIELDS){const al=FIELDS[f].map(hn);const i=H.findIndex(h=>h&&al.includes(h));if(i>=0)m[f]=i}return m}
 function findHeader(grid){let best=null;for(let i=0;i<Math.min(grid.length,25);i++){const m=mapHeader(grid[i]||[]);const n=Object.keys(m).length;if(!best||n>best.n)best={i,m,n}}return best&&best.n>=3?best:null}
 
-/* ---------- reading files: xlsx, csv, html-table .xls ---------- */
-async function xlsxGrid(file){
-  if(typeof DecompressionStream==='undefined')throw new Error(tr('المتصفح قديم ولا يدعم قراءة ملفات Excel. استخدم Chrome أو Edge حديثًا.','This browser cannot read Excel files. Use a recent Chrome or Edge.'));
-  const z=await unzip(await file.arrayBuffer());const P=s=>new DOMParser().parseFromString(s,'application/xml');const M='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
-  const shared=[];const ss=await z.text('xl/sharedStrings.xml');if(ss){const d=P(ss);[...d.getElementsByTagNameNS(M,'si')].forEach(si=>shared.push([...si.getElementsByTagNameNS(M,'t')].map(t=>t.textContent).join('')))}
-  const dateSt=new Set();const sty=await z.text('xl/styles.xml');if(sty){const d=P(sty);const custom={};[...d.getElementsByTagNameNS(M,'numFmt')].forEach(f=>custom[+f.getAttribute('numFmtId')]=f.getAttribute('formatCode')||'');
-    const xfs=d.getElementsByTagNameNS(M,'cellXfs')[0];if(xfs)[...xfs.getElementsByTagNameNS(M,'xf')].forEach((xf,i)=>{const id=+(xf.getAttribute('numFmtId')||0),code=(custom[id]||'').toLowerCase().replace(/"[^"]*"|\[[^\]]*\]/g,'');if((id>=14&&id<=22)||(id>=45&&id<=47)||(code&&/[dy]/.test(code)&&!/[#0]/.test(code)))dateSt.add(i)})}
-  const wb=P(await z.text('xl/workbook.xml'));const rels=P(await z.text('xl/_rels/workbook.xml.rels'));const rel={};[...rels.getElementsByTagName('Relationship')].forEach(r=>rel[r.getAttribute('Id')]=r.getAttribute('Target'));
-  const out=[];
-  for(const sh of [...wb.getElementsByTagNameNS(M,'sheet')]){const rid=sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');let t=rel[rid]||'';t=t.startsWith('/')?t.slice(1):'xl/'+t.replace(/^\.\//,'');const xml=await z.text(t);if(!xml)continue;
-    const d=P(xml);const grid=[];
-    [...d.getElementsByTagNameNS(M,'row')].forEach(row=>{const vals=[];[...row.getElementsByTagNameNS(M,'c')].forEach((c,j)=>{const ref=c.getAttribute('r')||'';const L=(ref.match(/[A-Z]+/)||[''])[0];let ci=0;for(const ch of L)ci=ci*26+(ch.charCodeAt(0)-64);ci=L?ci-1:j;
-      const ty=c.getAttribute('t'),s=+(c.getAttribute('s')||0),v=c.getElementsByTagNameNS(M,'v')[0];let val='';
-      if(ty==='s'&&v)val=shared[+v.textContent]??'';else if(ty==='inlineStr')val=[...c.getElementsByTagNameNS(M,'t')].map(x=>x.textContent).join('');else if(ty==='str'||ty==='e')val=v?v.textContent:'';
-      else if(v){const n=parseFloat(v.textContent);if(isNaN(n))val=v.textContent;else if(dateSt.has(s))val={serial:n};else val=n}
-      vals[ci]=val});grid.push(Array.from(vals,x=>x===undefined?'':x))});
-    out.push({name:sh.getAttribute('name'),grid})}
-  return out}
-function csvGrid(text){const first=text.split(/\r?\n/,1)[0]||'';const sep=[',',';','\t'].sort((a,b)=>first.split(b).length-first.split(a).length)[0];
-  const rows=[];let row=[],cell='',q=false;for(let i=0;i<text.length;i++){const ch=text[i];
-    if(q){if(ch==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=ch}
-    else if(ch==='"')q=true;else if(ch===sep){row.push(cell);cell=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell=''}else cell+=ch}
-  if(cell||row.length){row.push(cell);rows.push(row)}return [{name:'csv',grid:rows}]}
-function htmlGrid(text){const d=new DOMParser().parseFromString(text,'text/html');return [...d.querySelectorAll('table')].map((t,i)=>({name:'table'+(i+1),grid:[...t.rows].map(r=>[...r.cells].map(c=>c.textContent.trim()))}))}
-async function readGrids(file){const head=new Uint8Array(await file.slice(0,8).arrayBuffer());
-  if(head[0]===0x50&&head[1]===0x4b){try{return await xlsxGrid(file)}catch(e){throw new Error(e.message&&/Chrome/.test(e.message)?e.message:tr('تعذّرت قراءة الملف. تأكد أنه ملف Excel سليم.','Could not read the file. Make sure it is a valid Excel file.'))}}
-  if(head[0]===0xD0&&head[1]===0xCF)throw new Error(tr('هذا ملف Excel بالصيغة القديمة (xls). افتحه في Excel أو WPS واحفظه بصيغة xlsx ثم استورده.','This is an old-format .xls file. Open it in Excel or WPS, save as .xlsx, then import it.'));
-  let text=await file.text();if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
-  if(/^\s*</.test(text))return htmlGrid(text);return csvGrid(text)}
+/* ---------- reading files: every format through the shared reader (fileimport.js) ---------- */
+const readGrids=file=>FileImport.readGrids(file);
 
 /* dates: Excel serial, ISO, or m/d/yyyy (the SMS055 export shows 8/31/2026 0:00); d/m/yyyy when a first part is above 12 */
 function serialIso(n){return new Date(Date.UTC(1899,11,30)+Math.round(n*86400000)).toISOString().slice(0,10)}
@@ -224,7 +197,7 @@ function toolbar(){return `<div class="toolbar sm-acts">
   ${data().length?`<button class="btn" data-sm="export">${I.down}${esc(tr('تصدير التحليل Excel','Export analysis (Excel)'))}</button><button class="btn" data-sm="print">${esc(tr('طباعة / PDF','Print / PDF'))}</button>`:''}
   ${SM.batches.length?`<button class="btn ghost" data-sm="files">${esc(tr('الملفات المستوردة','Imported files'))} <span class="num">${SM.batches.length}</span></button>`:''}
   ${SM.local?`<button class="btn ghost" data-sm="drop-local">${esc(tr('إغلاق العرض المؤقت','Close temporary view'))}</button>`:''}
-  <input type="file" id="sm-file" accept=".xlsx,.xls,.csv,.htm,.html" hidden></div>`}
+  <input type="file" id="sm-file" accept="${FileImport.ACCEPT}" hidden></div>`}
 function viewSms(){
   if(!SM.loaded){load().then(()=>{if(S.view==='sms055')render()});return heroHtml(esc(tr('جارٍ تحميل بيانات SMS055…','Loading SMS055 data…')),null)+'<div class="panel muted">'+esc(tr('جارٍ التحميل…','Loading…'))+'</div>'}
   const rows=data();
