@@ -168,7 +168,10 @@ async function delBatch(id,b,quiet){const cfg=REPORTS[id],FS=window.__fs();const
 
 /* ---------- analysis ---------- */
 function UI(id){return S.ui['cx_'+id]||(S.ui['cx_'+id]={pre:'all',from:'',to:'',unit:'',prod:'',f:{},q:'',sort:'q',dir:'desc',lim:25})}
-function data(id){const s=ST[id];return s.local?s.local.rows:s.rows}
+function raw(id){const s=ST[id];return s.local?s.local.rows:s.rows}
+/* quantities shown in cubic metres (units.js): litres ÷ 1000, tonnes ÷ density; counts (cylinders) stay as they are */
+function data(id){const r=raw(id);if(window.FuelUnits){FuelUnits.seen(r);return FuelUnits.normalize(r)}return r}
+const qty=v=>fn(Math.round(v*100)/100);
 function bounds(rows){if(!rows.length)return null;let a=rows[0].d,b=a;rows.forEach(r=>{if(r.d<a)a=r.d;if(r.d>b)b=r.d});return {min:a,max:b}}
 function range(id){const cfg=REPORTS[id],u=UI(id),bd=bounds(data(id));if(!bd)return null;let from=bd.min,to=bd.max;
   if(cfg.grain==='month'){if(u.pre==='month')from=to;else if(u.pre==='3')from=addMonths(to,-2);else if(u.pre==='12')from=addMonths(to,-11);else if(u.pre==='custom'){from=(u.from||bd.min).slice(0,7)+'-01';to=(u.to||bd.max).slice(0,7)+'-01'}}
@@ -255,7 +258,7 @@ function view(id){const cfg=REPORTS[id],s=ST[id];
   const sub=esc(tr(`الفترة ${periodLabel(cfg,R.from)} – ${periodLabel(cfg,R.to)} · ${fn(A.n)} حركة · ${A.ents.length} ${E.pl[0]} · البيانات المتاحة ${periodLabel(cfg,R.min)} – ${periodLabel(cfg,R.max)}`,`Period ${periodLabel(cfg,R.from)} – ${periodLabel(cfg,R.to)} · ${fn(A.n)} lines · ${A.ents.length} ${E.pl[1]} · data available ${periodLabel(cfg,R.min)} – ${periodLabel(cfg,R.max)}`));
   const presets=M?[['all',tr('كل البيانات','All data')],['12',tr('آخر 12 شهرًا','Last 12 months')],['3',tr('آخر 3 أشهر','Last 3 months')],['month',tr('آخر شهر','Latest month')],['custom',tr('مخصّص','Custom')]]
     :[['all',tr('كل البيانات','All data')],['month',tr('آخر شهر','Latest month')],['7',tr('آخر 7 أيام','Last 7 days')],['day',tr('آخر يوم','Latest day')],['custom',tr('مخصّص','Custom')]];
-  const filtered=u.prod||u.unit||u.pre!=='all'||Object.values(u.f).some(Boolean);
+  const filtered=u.prod||u.unit||u.pre!=='all'||Object.values(u.f).some(Boolean);const unitNote=window.FuelUnits?FuelUnits.explain(cur):'';
   const barsOf=(list,go)=>bars(list.slice(0,10).map(c=>({l:c.name||c.l,v:c.q,go:go?c.id:'',tip:`${c.name||c.l}: ${q2(c.q)} ${unit} · ${pct(c.q,A.q)}%`})),{fmt:qs});
   const stackOf=list=>stack(list.slice(0,3).map((t,i)=>({l:t.name||t.l,v:t.q,k:'sm-k'+(i+1)})).concat(list.length>3?[{l:tr('أخرى','Other'),v:list.slice(3).reduce((s,t)=>s+t.q,0),k:'sm-k4'}]:[]));
   const stackHtml=h=>h.replace(/ د\.ل \(/g,' '+unit+' (').replace(/ LYD \(/g,' '+unit+' (');
@@ -270,6 +273,7 @@ function view(id){const cfg=REPORTS[id],s=ST[id];
     ${cfg.filters.map(f=>{const vals=uniq(rows.map(r=>r[f.k]));return vals.length>1?`<label class="an-f">${esc(tr(f.ar,f.en))}<select data-cx-f="${f.k}"><option value="">${esc(tr(f.all[0],f.all[1]))}</option>${vals.map(v=>`<option ${u.f[f.k]===v?'selected':''}>${esc(v)}</option>`).join('')}</select></label>`:''}).join('')}
     ${filtered?`<button class="btn sm ghost" data-cx="clear" data-cx-id="${id}">${esc(tr('مسح التصفية','Clear filters'))}</button>`:''}
   </div>
+  ${unitNote?`<p class="sm-note">${esc(unitNote)}</p>`:''}
   ${!A.n?`<div class="panel empty"><b>${esc(tr('لا توجد حركات','No lines'))}</b>${esc(tr('ضمن التصفية الحالية.','for the current filter.'))}</div>`:`
   <div class="kpis an-kpis">
    ${anKpi(tr('إجمالي الكمية','Total quantity'),qs(A.q),esc(`${unit} · ${fn(A.n)} ${tr('حركة','lines')}`))}
@@ -285,7 +289,7 @@ function view(id){const cfg=REPORTS[id],s=ST[id];
    <section class="panel an-wide"><h3 class="section-title">${esc(tr('المنتجات','Products'))} <small>${esc(tr(`الكمية بوحدة ${unit}`,`quantity in ${unit}`))}</small></h3>
     ${stackHtml(stack(A.prods.slice(0,3).map(p=>({l:p.pn,v:p.q,k:PC.get(p.p)||'sm-k4'})).concat(A.prods.length>3?[{l:tr('منتجات أخرى','Other products'),v:A.prods.slice(3).reduce((s,p)=>s+p.q,0),k:'sm-k4'}]:[])))}
     <div class="sm-prod">${A.prods.map(p=>`<div class="sm-pc"><h4><i class="${PC.get(p.p)||'sm-k4'}"></i>${esc(p.pn)} ${p.p!==p.pn?`<small class="muted num">${esc(p.p)}</small>`:''}</h4>
-      <span class="q">${fn(Math.round(p.q))} <small style="font-size:13px;font-weight:400">${esc(p.u||'')}</small></span>
+      <span class="q">${qty(p.q)} <small style="font-size:13px;font-weight:400">${esc(p.u||'')}</small></span>
       <span class="s">${esc(tr('الحصة','Share'))} <b class="num">${pct(p.q,A.q)}%</b> · ${fn(p.n)} ${esc(tr('حركة','lines'))} · ${p.ent.size} ${esc(tr(E.pl[0],E.pl[1]))}</span></div>`).join('')}</div></section>
    <section class="panel"><h3 class="section-title">${esc(tr(`أعلى 10 ${E.pl[1]==='customers'?'زبائن':E.pl[0]==='مورد'?'موردين':'مخازن'}`,`Top 10 ${E.pl[1]}`))} <small>${esc(unit)} · ${esc(tr('اضغط للتفاصيل','click for details'))}</small></h3>${barsOf(top10,true)}</section>
    ${cfg.groups.map(g=>{const list=A.g[g.k]||[];return `<section class="panel"><h3 class="section-title">${esc(tr(g.ar,g.en))} <small>${esc(unit)}</small></h3>${list.length?(g.kind==='stack'?stackHtml(stackOf(list)):barsOf(list,false)):`<div class="empty" style="padding:20px">${esc(tr('لا توجد بيانات','No data'))}</div>`}</section>`}).join('')}
@@ -314,6 +318,7 @@ async function importFile(id,file){const cfg=REPORTS[id],s=ST[id];toast(tr('جا
    <div class="sm-mini"><div><b class="num">${fn(P.rows.length)}</b><span>${esc(tr('حركة مقروءة','lines read'))}</span></div><div><b class="num">${periodLabel(cfg,P.from)} – ${periodLabel(cfg,P.to)}</b><span>${esc(tr('الفترة','Period'))}</span></div>
     ${[...byU.entries()].sort((a,b)=>b[1]-a[1]).slice(0,2).map(([k,v])=>`<div><b class="num">${qs(v)}</b><span>${esc(k||tr('الكمية','quantity'))}</span></div>`).join('')}<div><b class="num">${fn(es)}</b><span>${esc(tr(cfg.ent.pl[0],cfg.ent.pl[1]))}</span></div></div>
    <p class="muted" style="margin:4px 0;font-size:12.5px">${esc(tr(`الملف: ${P.file} · الورقة: ${P.sheet} · صف العناوين: ${P.header}`,`File: ${P.file} · sheet: ${P.sheet} · header row: ${P.header}`))}${P.skipped?` · <b style="color:var(--warn)">${esc(tr(`تُجوهل ${P.skipped} صف بلا تاريخ أو كمية أو جهة`,`${P.skipped} rows skipped (no date, quantity or party)`))}</b>`:''}</p>
+   ${window.FuelUnits?`<p class="muted" style="margin:0 0 4px;font-size:12px">${esc(tr('الكميات أعلاه بوحدات الملف الأصلية، وتُعرض في اللوحة بالمتر المكعب.','Quantities above are in the file’s own units; the dashboard shows them in cubic metres.'))}</p>`:''}
    <div class="sm-cols-map">${cfg.fields.map(f=>`<span class="${P.map[f[0]]!=null?'ok':'no'}">${P.map[f[0]]!=null?'✓':'✗'} ${esc(tr(f[2],f[3]))}</span>`).join('')}</div>
    ${ov.length?`<div class="banner warn" style="margin-top:8px">${esc(tr(`تتداخل هذه الفترة مع ${ov.length} ملف محفوظ سابقًا:`,`This period overlaps ${ov.length} saved file(s):`))} ${ov.map(b=>esc(`${b.file} (${fdi(b.from)} – ${fdi(b.to)})`)).join('، ')}
      <label style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="cx-replace" checked> ${esc(tr('استبدال الملفات المتداخلة بهذا الملف (يمنع تكرار الأرقام)','Replace the overlapping files with this one (avoids double counting)'))}</label></div>`:''}
@@ -334,8 +339,8 @@ function exportXlsx(id){const cfg=REPORTS[id],R=range(id),unit=unitOf(id),rows=p
   const sum=[{[K]:tr('الفترة','Period'),[V]:`${R.from} – ${R.to}`},{[K]:tr('الوحدة','Unit'),[V]:unit},{[K]:tr('إجمالي الكمية','Total quantity'),[V]:Math.round(A.q*100)/100},{[K]:tr('عدد الحركات','Lines'),[V]:A.n},
     {[K]:tr(E.ar,E.en),[V]:A.ents.length},{[K]:tr('المنتجات','Products'),[V]:A.prods.length}];
   if(cfg.docs)sum.push({[K]:tr(cfg.docs==='pm'?'الأذونات':'المستندات',cfg.docs==='pm'?'Permits':'Documents'),[V]:A.docs.size});if(cfg.transit)sum.push({[K]:tr('متوسط زمن النقل (يوم)','Average transit (days)'),[V]:A.trn?Math.round(A.tr/A.trn*10)/10:''});
-  const prod=A.prods.map(p=>({'رمز المنتج':p.p,'اسم المنتج':p.pn,'الوحدة':p.u,'الحركات':p.n,'الكمية':Math.round(p.q*1000)/1000,'الحصة %':pct(p.q,A.q),['عدد '+E.pl[0]]:p.ent.size}));
-  const ent=A.ents.map((c,i)=>{const o={'م':i+1,['رقم '+E.ar]:c.id,[E.ar]:c.name};if(E.parent)o[lbl(cfg,E.parent)]=c.parent;Object.assign(o,{'الحركات':c.n,'الأيام':c.days.size});if(cfg.docs)o[cfg.docs==='pm'?'الأذونات':'المستندات']=c.docs.size;Object.assign(o,{'المنتجات':c.prods.size,'الكمية':Math.round(c.q*1000)/1000,'الحصة %':pct(c.q,A.q)});if(cfg.transit)o['متوسط زمن النقل']=c.trn?Math.round(c.tr/c.trn*10)/10:'';o['آخر حركة']=c.last;return o});
+  const prod=A.prods.map(p=>({'رمز المنتج':p.p,'اسم المنتج':p.pn,'الوحدة':p.u,'الحركات':p.n,['الكمية ('+unit+')']:Math.round(p.q*1000)/1000,'الحصة %':pct(p.q,A.q),['عدد '+E.pl[0]]:p.ent.size}));
+  const ent=A.ents.map((c,i)=>{const o={'م':i+1,['رقم '+E.ar]:c.id,[E.ar]:c.name};if(E.parent)o[lbl(cfg,E.parent)]=c.parent;Object.assign(o,{'الحركات':c.n,'الأيام':c.days.size});if(cfg.docs)o[cfg.docs==='pm'?'الأذونات':'المستندات']=c.docs.size;Object.assign(o,{'المنتجات':c.prods.size,['الكمية ('+unit+')']:Math.round(c.q*1000)/1000,'الحصة %':pct(c.q,A.q)});if(cfg.transit)o['متوسط زمن النقل']=c.trn?Math.round(c.tr/c.trn*10)/10:'';o['آخر حركة']=c.last;return o});
   const grp=[];cfg.groups.forEach(g=>(A.g[g.k]||[]).forEach(x=>grp.push({'التصنيف':g.ar,'البند':x.l,'الحركات':x.n,'الكمية':Math.round(x.q*1000)/1000,'الحصة %':pct(x.q,A.q)})));
   const day=[...A.day.values()].sort((a,b)=>a.d.localeCompare(b.d)).map(d=>({[cfg.grain==='month'?'الشهر':'التاريخ']:cfg.grain==='month'?d.d.slice(0,7):d.d,'الحركات':d.n,[E.ar]:d.ent.size,'الكمية':Math.round(d.q*1000)/1000}));
   saveXlsx([[tr('ملخص','Summary'),sum],[tr('المنتجات','Products'),prod],[tr(E.ar,E.en),ent],[tr('التصنيفات','Groups'),grp],[tr(cfg.grain==='month'?'شهري':'يومي',cfg.grain==='month'?'Monthly':'Daily'),day]],`${cfg.file}-analysis-${R.from}_${R.to}.xlsx`)}
@@ -386,5 +391,5 @@ recPanel=function(unit){const h=__rp(unit);if(unit!==UNIT)return h;
 const __vod=viewOrgDuties;
 viewOrgDuties=function(el){__vod(el);const sec=el.querySelector('#od-'+UNIT+' .od-acts');if(!sec)return;
   IDS.slice().reverse().forEach(id=>{if(!sec.querySelector(`[data-org-go="${id}"]`))sec.insertAdjacentHTML('afterbegin',`<button type="button" class="btn sm" data-org-go="${id}">${esc(tr(REPORTS[id].label[0],REPORTS[id].label[1]))}</button>`)})};
-window.__cx={ST,REPORTS,parseFile:(id,f)=>parseFile(REPORTS[id],f),load:(id,force)=>load(id,force),save:(id,P,replace)=>saveImport(id,P,replace)};
+window.__cx={ST,REPORTS,data,parseFile:(id,f)=>parseFile(REPORTS[id],f),load:(id,force)=>load(id,force),save:(id,P,replace)=>saveImport(id,P,replace)};
 })();
