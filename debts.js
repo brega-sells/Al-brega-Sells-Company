@@ -345,7 +345,7 @@ function parseTemplate(sheets,file){const F=readTemplate(sheets);
    region sheets is added from the summary, so the total equals the statement's total. */
 const LG_STOP=new Set(['شركه','شركات','الشركه','الشركات','العامه','عام','حسابات','ديون','قطاع','القطاع','م','ش','غ','و','من','في','ال']);
 const lgTok=s=>new Set(hn(String(s||'')).replace(/[.()«»"\-–_\/]/g,' ').split(/\s+/).map(w=>w.replace(/^(ال|وال)/,'')).filter(w=>w.length>2&&!LG_STOP.has(w)));
-function ledgerList(P){const sumCats=P.cats.map(c=>Object.assign({a:c.n+(c.rg?' '+c.rg:''),sec:c.g},c));if(!(P.custs&&P.custs.length))return {list:sumCats,added:[]};
+function ledgerList(P){const sumCats=P.cats.map(c=>Object.assign({a:c.n+(c.rg==='W'?' غ':c.rg==='E'?' ش':''),sec:c.g},c));if(!(P.custs&&P.custs.length))return {list:sumCats,added:[]};
   const covered=new Set();const secs=new Map();P.custs.forEach(c=>secs.set(c.rg+'|'+c.cur+'|'+c.sec,c));
   secs.forEach(c=>{const t=lgTok(c.sec);let best=null,bn=0;P.cats.forEach(k=>{if(k.cur!==c.cur||(k.rg&&c.rg&&k.rg!==c.rg))return;const kt=lgTok(k.n);let n=0;t.forEach(w=>{if(kt.has(w))n++});if(n>bn){bn=n;best=k}});if(best)covered.add(best.cur+'|'+best.g)});
   const added=sumCats.filter(c=>!covered.has(c.cur+'|'+c.g)&&Math.abs((c.cb||0)-(c.cc||0))>0.0005);return {list:[...P.custs,...added],added}}
@@ -353,7 +353,7 @@ function ledgerList(P){const sumCats=P.cats.map(c=>Object.assign({a:c.n+(c.rg?' 
 const secCat=s=>{const t=hn(String(s||''));if(/القطاع العام|قطاع عام|ممول/.test(t))return 'gov';if(/محطات|بيع مباشر/.test(t))return 'station';if(/طيران|خطوط|جوي/.test(t))return 'aviation';if(/نفطي|خدمي|توزيع|تزويد/.test(t))return 'private';return ''};
 function fromLedger(P){const LL=ledgerList(P);const list=LL.list.filter(c=>c.cur!=='F');
   const RGN={W:tr('المنطقة الغربية','Western region'),E:tr('المنطقة الشرقية','Eastern region')};
-  const cust=list.map(c=>({a:String(c.a),n:c.n,cat:window.custCat(c.n)||window.custCat(c.sec||'')||secCat(c.sec)||secCat(c.n),pub:'',rg:RGN[c.rg]||'',wh:'',st:'active',lim:0,terms:0,ctr:'',ctrd:'',
+  const cust=list.map(c=>({a:String(c.a),n:c.n,cat:/ممول|وزار/.test(hn(String(c.sec||'')))?(window.custCat(c.n)==='power'?'power':'gov'):window.custCat(c.n)||window.custCat(c.sec||'')||secCat(c.sec)||secCat(c.n),pub:'',rg:RGN[c.rg]||'',wh:'',st:'active',lim:0,terms:0,ctr:'',ctrd:'',
     bal:r2((c.cb||0)-(c.cc||0)),w:r2((c.w||0)+(c.da||0)),c:r2((c.c||0)+(c.ca||0)),ob:r2((c.ob||0)-(c.oc||0)),sec:c.sec||''}));
   const from=P.prev?addDays(P.prev,1):P.asOf.slice(0,8)+'01';
   return {T:'ar',v:2,src:'ledger',from,to:P.asOf,cust,guar:[],inv:[],pay:[],bnc:[],act:[],sch:[],prov:[],note:[],off:[],age:[],warn:[...(LL.added.length?[['i',tr(`${LL.added.filter(c=>c.cur!=='F').length} فئة غير مفصّلة في أوراق المناطق أُخذت من الخلاصة (${[...new Set(LL.added.map(c=>c.g))].join('، ')})، ليطابق الإجمالي الكشف.`,`${LL.added.filter(c=>c.cur!=='F').length} categories not itemised on the region sheets were taken from the summary so the total matches the statement.`)]]:[]),['i',tr('كشف الأرصدة الشهري لا يحوي الفواتير ولا تواريخ الاستحقاق، فلا تظهر أعمار الديون ولا السقوف والضمانات. استعمل قالب بيانات الديون للصورة الكاملة.','The monthly balances statement has no invoices or due dates, so aging, limits and guarantees are not shown. Use the debts data template for the full picture.')]],sheets:[{k:'ledger',sheet:P.sheet||'',rows:cust.length,missing:[]}],file:P.file}}
@@ -381,7 +381,7 @@ function prep(P){if(P.__c)return P.__c;const to=P.to,from=P.from;const inP=d=>d&
     const pr=PR.get(c.a)||[];c.prov=sum(pr.filter(x=>x.t==='pr'),'v');c.wo=sum(pr.filter(x=>x.t==='wo'),'v');c.woP=sum(pr.filter(x=>x.t==='wo'&&inP(x.d)),'v');c.prs=pr;
     const nt=N.get(c.a)||[];c.cn=sum(nt.filter(x=>x.t==='cr'&&inP(x.d)),'v');c.dn=sum(nt.filter(x=>x.t==='dr'&&inP(x.d)),'v');c.notes=nt;
     c.offs=O.get(c.a)||[];c.inv=inv;
-    c.util=c.lim>0?c.bal*100/c.lim:null;c.overLim=c.lim>0&&c.bal>c.lim;c.cov=c.bal>0?c.gv*100/c.bal:null;
+    c.util=c.lim>0?c.bal*100/c.lim:null;c.overLim=c.lim>0&&c.bal>c.lim;c.cov=P.guar.length&&c.bal>0?c.gv*100/c.bal:null;
     c.dso=c.sales>0&&c.bal>0?c.bal/c.sales*days:null;
     c.step=nextStep(c);c.risk=c.ag.b5*4+c.ag.b4*3+c.ag.b3*2+c.ag.b2+c.ag.b1*0.3+(c.overLim?c.bal-c.lim:0)+(c.st==='default'?c.bal*0.5:0);
     return c});
@@ -413,7 +413,7 @@ function analyze(P,u){const X=prep(P);const q=norm(u.q||'');
   A.over=sum(list,'over');A.o90=sum(list,'o90');A.overR=A.total&&A.aged?A.over*100/A.total:null;
   A.hasSales=P.inv.length>0||P.src==='ledger';A.sales=sum(list,'sales');A.dso=A.hasSales&&A.sales>0?A.total/A.sales*X.days:null;
   A.hasColl=P.pay.length>0||P.src==='ledger';A.paid=sum(list,'paid');A.bounced=sum(list,'bounced');A.coll=sum(list,'coll');
-  A.due=A.coll+A.over;A.collR=A.hasColl&&A.due>0?A.coll*100/A.due:null;
+  A.due=A.coll+A.over;/* the monthly statement has no due dates, so what was due (and the ratio) is unknown */A.collR=A.hasColl&&A.due>0&&P.src!=='ledger'?A.coll*100/A.due:null;
   const lim=list.filter(c=>c.lim>0);A.hasLim=lim.length>0;A.lim=sum(lim,'lim');A.limBal=sum(lim,c=>Math.max(0,c.bal));A.util=A.lim?A.limBal*100/A.lim:null;
   A.overLim=list.filter(c=>c.overLim).sort((a,b)=>(b.bal-b.lim)-(a.bal-a.lim));A.overLimV=sum(A.overLim,c=>c.bal-c.lim);
   A.hasG=list.some(c=>c.gs.length>0);A.gv=sum(list,'gv');A.cov=A.total?A.gv*100/A.total:null;A.gCovered=sum(pos,c=>Math.min(c.bal,c.gv));A.unsecured=A.total-A.gCovered;
@@ -602,7 +602,7 @@ function kpiRow(A,P){const days=A.days;
    ${kpi(tr('إجمالي الذمم','Total receivables'),`${big(A.total)}<small>${esc(U())}</small>`,tr('مجموع أرصدة الزبائن','Sum of customer balances'),esc(tr(`${fn(A.nDebt)} زبونًا مدينًا`,`${fn(A.nDebt)} customers owe`))+(A.credit?` · <span class="muted">${esc(tr('أرصدة دائنة','credit balances'))} ${big(A.credit)}</span>`:''),'')}
    ${kpi(tr('نسبة الديون المتأخرة','Overdue ratio'),A.overR==null?'—':P1(A.overR),tr('المتأخر ÷ إجمالي الذمم','Overdue ÷ total receivables'),A.overR==null?esc(tr('تحتاج الفواتير أو ورقة الأعمار','needs invoices or the aging sheet')):esc(tr(`متأخر ${big(A.over)} · أكثر من 90 يومًا ${big(A.o90)}`,`overdue ${big(A.over)} · over 90 days ${big(A.o90)}`)),tone(A.overR,25,50),A.overR)}
    ${kpi(tr('متوسط فترة التحصيل (DSO)','Days sales outstanding (DSO)'),A.dso==null?'—':`${fn(Math.round(A.dso))}<small>${esc(tr('يوم','days'))}</small>`,tr(`(الذمم ÷ المبيعات الآجلة) × ${days} يوم`,`(receivables ÷ credit sales) × ${days} days`),A.dso==null?esc(tr('لا مبيعات آجلة في الفترة','no credit sales in the period')):esc(tr(`مبيعات آجلة ${big(A.sales)}`,`credit sales ${big(A.sales)}`)),tone(A.dso,60,120))}
-   ${kpi(tr('نسبة التحصيل','Collection ratio'),A.collR==null?'—':P1(A.collR),tr('المحصَّل ÷ المستحق في الفترة','Collected ÷ due in the period'),A.collR==null?esc(tr('تحتاج ورقة التحصيلات','needs the collections sheet')):esc(tr(`محصّل ${big(A.coll)} من ${big(A.due)}`,`collected ${big(A.coll)} of ${big(A.due)}`)),tone(A.collR,80,50,false),A.collR)}
+   ${kpi(tr('نسبة التحصيل','Collection ratio'),A.collR==null?'—':P1(A.collR),tr('المحصَّل ÷ المستحق في الفترة','Collected ÷ due in the period'),A.collR==null?esc(P.src==='ledger'?tr(`محصّل ${big(A.coll)}؛ المستحق يحتاج الفواتير بتواريخ استحقاقها`,`Collected ${big(A.coll)}; what was due needs invoices with due dates`):tr('تحتاج ورقة التحصيلات','needs the collections sheet')):esc(tr(`محصّل ${big(A.coll)} من ${big(A.due)}`,`collected ${big(A.coll)} of ${big(A.due)}`)),tone(A.collR,80,50,false),A.collR)}
    ${kpi(tr('استخدام سقف الائتمان','Credit-limit use'),A.util==null?'—':P1(A.util),tr('رصيد الزبون ÷ سقفه','Customer balance ÷ limit'),A.util==null?esc(tr('لا سقوف في ورقة الزبائن','no limits in Customers')):esc(tr(`${big(A.limBal)} من سقوف ${big(A.lim)}`,`${big(A.limBal)} of ${big(A.lim)} limits`)),tone(A.util,80,100),A.util)}
    ${kpi(tr('الزبائن المتجاوزون للسقف','Customers over limit'),A.hasLim?fn(A.overLim.length):'—',tr('الرصيد أكبر من السقف','Balance above the limit'),A.hasLim?esc(tr(`التجاوز ${big(A.overLimV)} ${U()}`,`over by ${big(A.overLimV)} ${U()}`)):'',A.hasLim?(A.overLim.length?'crit':'ok'):'')}
    ${kpi(tr('تغطية الضمانات','Guarantee cover'),A.cov==null||!A.hasG?'—':P1(A.cov),tr('قيمة الضمان ÷ رصيد الزبون','Guarantee value ÷ customer balance'),A.hasG?esc(tr(`ضمانات سارية ${big(A.gv)} · دون غطاء ${big(A.unsecured)}`,`valid ${big(A.gv)} · unsecured ${big(A.unsecured)}`)):esc(tr('لا ضمانات لهؤلاء الزبائن','no guarantees for these customers')),A.hasG?tone(A.cov,50,25,false):'',A.hasG?A.cov:null)}
