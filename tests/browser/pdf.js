@@ -5,7 +5,8 @@
    - the SMS055, sales-analysis, transfers and receipts dashboards and the profit-margin import read a PDF printed the way
      Excel prints these reports (left-to-right sheet, no borders, header fill, dates as 9/1/2026 0:00, long numbers as
      1.30E+13) end to end;
-   - a scanned PDF (picture only), a password-protected PDF and a damaged PDF get clear Arabic messages;
+   - a scanned PDF (picture only) goes to the text recogniser and its review (see ocr.js); a password-protected PDF and a
+     damaged PDF get clear Arabic messages;
    - pdf.js is loaded only when a PDF is chosen. Fixtures: tests/fixtures/formats (make-pdf.js rebuilds the PDFs). */
 const { open } = require('./harness');
 const fs = require('fs'); const path = require('path');
@@ -53,7 +54,9 @@ const excelPrint = rows => {
   out.loadedOnDemand = await loaded();
   // clear messages
   const msg = async (name, buf) => (await read(name, buf)).err || 'read';
-  out.scanned = /ممسوحة ضوئيًا/.test(await msg('scan.pdf', fs.readFileSync(path.join(DIR, 'sample-scan.pdf'))));
+  /* a scan goes to the text recogniser (tests/browser/ocr.js covers it); here: it starts, and cancelling imports nothing */
+  const pending = read('scan.pdf', fs.readFileSync(path.join(DIR, 'sample-scan.pdf')));
+  out.scanned = await page.waitForSelector('.ocr-dlg', { timeout: 30000 }).then(() => page.click('.ocr-dlg [data-ocr="cancel"]')).then(async () => /أُلغي/.test((await pending).err || ''), () => false);
   out.locked = /محمي بكلمة مرور/.test(await msg('locked.pdf', fs.readFileSync(path.join(DIR, 'sample-locked.pdf'))));
   out.damaged = /تالف/.test(await msg('broken.pdf', Buffer.from('%PDF-1.7\n1 0 obj << /Type /Catalog >>\n%%EOF garbage')));
   out.listNamesPdf = await page.evaluate(() => /PDF/.test(FileImport.LIST) && /\.pdf\b/.test(FileImport.ACCEPT));
