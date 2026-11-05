@@ -156,6 +156,24 @@ service cloud.firestore {
       allow create: if isClosures() && clxWriter() && (validClxBatch() || validClxPart());
       allow delete: if isClosures() && clxWriter();
     }
+    // هامش الربح (إدارة الشؤون التجارية والتحصيلات): وثيقة واحدة margin/prices بأسعار المنتجات وتكاليفها (بتاريخ سريان)
+    // وسعر الصرف والهامش المستهدف وقائمة الزبائن الأجانب. بيانات مالية: تقرؤها الإدارة والإدارة العامة والمجلس والمدير،
+    // ويعدّلها المدير أو محرر من الإدارة أو الإدارة العامة باسمه، ولا يحذفها إلا المدير.
+    match /margin/{id} {
+      function marginWriter() { return isAdmin() || (canWrite() && myUnit() in ['ca', 'gm']); }
+      function validMargin() { return id == 'prices'
+        && request.resource.data.keys().hasOnly(['products', 'rates', 'cur', 'target', 'min', 'foreign', 'updatedBy', 'by', 'at'])
+        && request.resource.data.updatedBy == me()
+        && request.resource.data.products is list && request.resource.data.products.size() <= 400
+        && request.resource.data.rates is list && request.resource.data.rates.size() <= 400
+        && request.resource.data.foreign is list && request.resource.data.foreign.size() <= 5000
+        && str(request.resource.data, 'cur', 8) && str(request.resource.data, 'by', 120) && str(request.resource.data, 'at', 40)
+        && request.resource.data.target is number && request.resource.data.target >= 0 && request.resource.data.target < 100
+        && request.resource.data.min is number && request.resource.data.min >= 0 && request.resource.data.min < 100; }
+      allow read: if top() || mine('ca');
+      allow create, update: if marginWriter() && validMargin();
+      allow delete: if isAdmin();
+    }
     // مهام الإدارات المضافة من داخل المنظومة: يقرؤها الجميع ويكتبها مدير النظام فقط
     match /duties/{unit} {
       allow read: if hasRole();
