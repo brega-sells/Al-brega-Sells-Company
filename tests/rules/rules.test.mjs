@@ -269,7 +269,7 @@ await T('editor writes access-review denied',W.doc('config/access-review').set({
  await T('ca editor deletes a file',CA.doc('sms055/B1_p0').delete(),1);
  await T('admin deletes a file',A.doc('sms055/B4').delete(),1);
  // --- closing-reports dashboards (sales_report / transfers_report / receipts_report): same shape and rights as sms055
- for(const col of ['sales_report','transfers_report','receipts_report']){
+ for(const col of ['sales_report','transfers_report','receipts_report','debts_report']){
   const cb=(o)=>Object.assign(bt({file:col+'.xlsx'}),o),cp=(o)=>Object.assign(pt({d:'{"F":[],"D":{},"R":[]}'}),o);
   await T(col+': ca editor saves a part',CA.doc(col+'/B1_p0').set(cp()),1);
   await T(col+': ca editor saves a batch',CA.doc(col+'/B1').set(cb()),1);
