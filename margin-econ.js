@@ -368,6 +368,19 @@ function structure(B,ps,R){const rows=ps.map(p=>{const s=at(B.ST.get(p.k),R.to);
 /* ---------- the page ---------- */
 const kpi=(l,v,s,cls)=>anKpi(l,v,s||'',cls||'');
 function covStrip(B){return `<div class="px-cov">${SH.map(d=>{const n=B.has[d.k]||0;return `<div class="${n?'ok':'no'}" title="${esc(tr(d.why[0],d.why[1]))}"><i>${n?'✓':'–'}</i><b>${esc(tr(d.ar,d.en))}</b><span>${n?esc(tr(`${fn(n)} صف`,`${fn(n)} rows`)):esc(tr('غير مستوردة · ','not imported · ')+tr(d.why[0],d.why[1]))}</span></div>`}).join('')}</div>`}
+/* why this account cannot read the saved financial data: the role, department and sign-in method as the rules see them */
+window.__denyWhy=function(){const m=me()||{};const a=window.__auth&&window.__auth();const u=a&&a.currentUser;
+  const pv=u?(u.providerData||[]).map(x=>x&&x.providerId):[];const google=pv.includes('google.com')&&!pv.includes('password');
+  const unit=m.unit?(((typeof ORG_BY!=='undefined'&&ORG_BY.get(m.unit))||{}).title||m.unit):tr('بلا إدارة','no department');
+  const role=(window.__roleAr||{})[m.role]||m.role||tr('بلا صلاحية','no role');
+  if(u&&u.emailVerified===false)return tr(`بريد الحساب ${m.email||''} غير مؤكد، والمنظومة لا تعطي أي صلاحية قبل تأكيده. افتح رسالة التأكيد في بريدك ثم ادخل من جديد.`,`The account e-mail ${m.email||''} is not verified; no permission applies until it is. Open the verification e-mail, then sign in again.`);
+  if(m.role==='admin'&&window.__adminGoogle&&!google)return tr('حسابك مدير النظام، لكنك دخلت بكلمة المرور، وصلاحيات المدير لا تعمل إلا بالدخول بحساب Google. اخرج ثم ادخل بزر «الدخول بحساب Google».','Your account is the administrator, but you signed in with a password and administrator rights only work after signing in with Google. Sign out, then use «Sign in with Google».');
+  if(m.role==='admin')return tr('حسابك مدير النظام. اخرج ثم ادخل من جديد لتحديث صلاحيتك.','Your account is the administrator. Sign out and in again to refresh your permissions.');
+  return tr(`حسابك ${m.email||''}: الصلاحية «${role}»، والإدارة «${unit}». تُمنح من حساب مدير النظام: الإعدادات ← المستخدمون والصلاحيات ← الإدارة «إدارة الشؤون التجارية والتحصيلات» (أو الصلاحية «مدير النظام»).`,`Your account ${m.email||''}: role «${role}», department «${unit}». Granted from the administrator account: Settings → Users and permissions → department «Commercial Affairs & Collections» (or role «Administrator»).`)};
+function deniedLocal(){return `<div class="panel sm-empty px-empty">${I.pm.replace('<svg','<svg style="width:52px;height:52px;color:var(--accent)"')}<h3>${esc(tr('هذه اللوحة لإدارة الشؤون التجارية والتحصيلات','This dashboard belongs to Commercial Affairs & Collections'))}</h3>
+   <p style="max-width:720px;margin-inline:auto">${esc(tr('لا تملك صلاحية الاطلاع على بيانات الربحية المحفوظة. يمكنك استيراد ملف وتحليله مؤقتًا على جهازك دون حفظه.','You cannot view the saved profitability data. You can still import a file and analyse it on this device without saving it.'))}</p>
+   <p class="px-why" style="max-width:720px;margin-inline:auto;font-size:13px"><b>${esc(tr('السبب: ','Why: '))}</b>${esc(window.__denyWhy())}</p>
+   <div class="cx-links" style="justify-content:center"><button class="btn primary" data-pm="import">${I.up}${esc(tr('استيراد ملف Excel','Import Excel file'))}</button></div></div>`}
 function onboarding(){return `<div class="panel sm-empty px-empty">${I.pm.replace('<svg','<svg style="width:52px;height:52px;color:var(--accent)"')}<h3>${esc(tr('الربحية الشاملة على بيانات البريقة','Full profitability on Brega’s data'))}</h3>
    <p style="max-width:720px;margin-inline:auto">${esc(tr('كل رقم لكل منتج ولكل مستودع أو منطقة ولكل شهر: الإيراد الصافي بعد الخصومات والدعم، وتكلفة البضاعة بمتوسط التكلفة المرجح، والفاقد، والهامش الرسمي مقابل الفعلي، والربح الإجمالي والصافي.','Every figure per product, depot or region and month: net revenue after discounts and subsidy, cost of goods at weighted average cost, losses, official vs actual margin, gross and net profit.'))}</p>
    <div class="px-steps"><div><b><em>1</em>${esc(tr('نزّل القالب','Download the template'))}</b><span class="muted">${esc(tr('عشر أوراق مرتبة حسب الغرض، مع ورقة «اقرأني» تشرح كل عمود.','Ten sheets by purpose, with a “Read me” sheet explaining every column.'))}</span></div>
@@ -403,7 +416,7 @@ function waitBody(B,A,P,G,LS,u,lossCell){const cpm=x=>x.q?x.cogs/x.q:null;
     <tbody>${G.map(g=>`<tr><td class="t-strong">${bd(g.k)}</td><td class="n">${f3(g.q)}</td><td class="n">${f2(g.cogs)}</td><td class="n">${f2(cpm(g))}</td><td class="n">${lossCell(g.L)}</td></tr>`).join('')}</tbody></table></div></section>
   </div>`}
 function view(){if(!X.loaded){load().then(()=>{if(S.view===VIEW)render()});return `<div class="panel muted">${esc(tr('جارٍ تحميل بيانات الربحية…','Loading profitability data…'))}</div>`}
-  if(X.err==='denied')return '';
+  if((X.err==='denied'||PMa.PM.err==='denied')&&!X.local)return deniedLocal();
   const B=build();if(!B.months.length)return onboarding();
   const u=UI(),R=range(B),c=PMa.PM.cfg||{target:15,min:5};
   const cur=fl(B,R.from,R.to),A=sum(cur),cs=fc(B,R.from,R.to),LS=lossOf(cs);
